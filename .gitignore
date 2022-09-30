@@ -1,0 +1,10 @@
+# Ignore node stuff
+node_modules/
+package-lock.json
+.env
+
+.idea
+.openzeppelin
+artifacts
+cache
+typechain

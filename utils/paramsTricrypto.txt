@@ -1,0 +1,35 @@
+governance -> 0xb65cef03b9b89f99517643226d76e286ee999e77 -> modifier _onlyGovernance
+strategist -> 0x86cbd0ce0c087b482782c181da8d191de18c8275 -> address of creator strategiest -> multisig
+
+controller -> 0x9b4efa18c0c6b4822225b81d150f3518160f8609 ->
+
+keeper -> 0x711a339c002386f9db409ca55b6a35a604ab6cf6 ->
+guardian -> 0x6615e67b8b6b6375d38a0a3f937cd8c1a1e96386 -> can pause the contract
+wantConfig:
+0 -> want -> 0xc4ad29ba4b3c580e6d59105fff484999997675ff -> crv3crypto
+1 -> badgerTree -> 0x660802fc641b154aba66a62137e71f331b6d787a -> no token, contratto amministrazione
+2 -> cvxHelperVault -> 0x53c8e199eb2cb7c01543c137078a038937a68e40 -> ISettV4
+3 -> cvxCrvHelperVault -> 0x2B5455aac8d64C14786c3a29858E43b5945819C0 -> ISettV4
+pid -> 38
+feeConfig:
+0 -> performanceFeeGovernance -> 2000
+1 -> performanceFeeStrategist -> 0
+2 -> withdrawalFee -> 10
+
+curvePool: -> diff con le altre strategies
+swap: 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46 -> pool tricrypto2 curve
+wbtcPosition : 1
+numElements: 3
+
+vault -> 0x27E98fC7d05f54E544d16F58C194C2D7ba71e3B5
+tokenVault -> 0xc4ad29ba4b3c580e6d59105fff484999997675ff
+wantStrategy -> 0xc4AD29ba4B3c580e6D59105FFf484999997675Ff
+booster -> 0xf403c135812408bfbe8713b5a23a04b3d48aae31
+strategy -> 0x647eeb5C5ED5A71621183f09F6CE8fa66b96827d
+staker -> 0x989aeb4d175e16225e39e87d0d97a3360524ad80
+operator in base rewards pool -> 0xF403C135812408BFbE8713b5A23a04b3D48AAE31 ( booster contract )
+threeCrv -> 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490
+gauge curve -> 0xDeFd8FdD20e0f34115C7018CCfb655796F6B2168
+baseRewardPool curve -> 0x9D5C5E364D81DaB193b72db9E9BE9D8ee669B652
+gaugeController curve -> 0x2f50d538606fa9edd2b11e2446beb18c9d5846bb
+cvxCrv -> 0x903C9974aAA431A765e60bC07aF45f0A1B3b61fb

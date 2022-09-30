@@ -1,0 +1,23 @@
+1) salva quantità di crv3crypto detenuti dalla strategy
+2) salva quantità di crv3crypto detenuti dalla strategy + quantità di cvxcrv3crypto detenuti dalla strategy
+3) chiama la getReward di baseRewardPool ->
+    3.1) calcola quante reward ( crv ) ha guadagnato la strategy e li trasferisce
+    3.2) richiama rewardClaimed dell'operator ( booster ) che va a mintare i cvx alla strategy
+    3.3) richiama anche le extra reward eventuali ( trycripto non le ha )
+4) richiama il withdraw del cvxCvr dalla rispettiva pool, con claim
+5) richiama il withdraw del cvx dalla rispettiva pool, con claim
+6) salva i bilanci di crxCrv + crv che sono la quantità di token da harvestare
+7) convert 3crv in crv -> // TODO CAPIRE DOVE PRENDE I threeCrv
+    7.1) rimuove liquidità dalla pool di 3crv e riceve gli usdc
+    7.2) swappa gli usdc per crv
+8) vende dei crv per wBTC ->
+    8.1) calcola la quantità prendendo il 20% (autoCompoundingBps) dei cvxCrv a bilancio della strategia
+9) converte i crv restanti in cvxCrv
+10) vende dei cvx per wbtc ->
+    10.1) calcola la quantità prendendo il 20% (autoCompoundingBps) dei cvxCrv a bilancio della strategia
+11) aggiunge liquidità di wbtc alla pool di curve
+12) calcola la quantità di want guadagnati
+13) distribuisce una percentuale ( autoCompoundingPerformanceFeeGovernance ) all'indirizzo settato come controller
+14) deposita i want rimanenti
+15) deposita i cvx e cvxCrv restanti nell'helper vault per conto di governance ( controller.rewards() ) e strtegist
+
