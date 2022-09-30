@@ -68,7 +68,7 @@ pragma experimental ABIEncoderV2;
     v1.0
     - Remove keeper
 */
-contract SCompStrategyFraxusdcv1_2 is
+contract SCompStrategyFrax3crv_fv1_1 is
 BaseStrategy,
 CurveSwapper,
 UniswapSwapper,
@@ -91,8 +91,6 @@ TokenSwapPathRegistry
     IERC20Upgradeable(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
     IERC20Upgradeable public constant fraxToken =
     IERC20Upgradeable(0x853d955aCEf822Db058eb8505911ED77F175b99e);
-    IERC20Upgradeable public constant usdcToken =
-    IERC20Upgradeable(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     IERC20Upgradeable public constant crvToken =
     IERC20Upgradeable(0xD533a949740bb3306d119CC777fa900bA034cd52);
     IERC20Upgradeable public constant cvxToken =
@@ -204,14 +202,14 @@ TokenSwapPathRegistry
         address[] memory path = new address[](3);
         path[0] = crv;
         path[1] = weth;
-        path[2] = usdc;
-        _setTokenSwapPath(crv, usdc, path);
+        path[2] = frax;
+        _setTokenSwapPath(crv, frax, path);
 
         path = new address[](3);
         path[0] = cvx;
         path[1] = weth;
-        path[2] = usdc;
-        _setTokenSwapPath(cvx, usdc, path);
+        path[2] = frax;
+        _setTokenSwapPath(cvx, frax, path);
 
         autoCompoundingBps = 2000;
         autoCompoundingPerformanceFeeGovernance = 5000;
@@ -247,11 +245,11 @@ TokenSwapPathRegistry
 
     /// ===== View Functions =====
     function version() external pure returns (string memory) {
-        return "1.2";
+        return "1.1";
     }
 
     function getName() external pure override returns (string memory) {
-        return "StrategySCompFraxusdcv1.2";
+        return "SCompStrategyFrax3crv-f1.1";
     }
 
     function balanceOfPool() public view override returns (uint256) {
@@ -365,7 +363,7 @@ TokenSwapPathRegistry
                 sushiswap,
                 crv,
                 crvToSell,
-                getTokenSwapPath(crv, usdc)
+                getTokenSwapPath(crv, frax)
             );
         }
 
@@ -375,20 +373,20 @@ TokenSwapPathRegistry
                 sushiswap,
                 cvx,
                 cvxToSell,
-                getTokenSwapPath(cvx, usdc)
+                getTokenSwapPath(cvx, frax)
             );
         }
 
         // 4. Roll Frax gained into want position
-        uint256 usdcToDeposit = usdcToken.balanceOf(address(this));
+        uint256 fraxToDeposit = fraxToken.balanceOf(address(this));
         uint256 wantGained;
 
-        if (usdcToDeposit > 0) {
+        if (fraxToDeposit > 0) {
             _add_liquidity_single_coin(
                 curvePool.swap,
                 want,
-                usdc,
-                usdcToDeposit,
+                frax,
+                fraxToDeposit,
                 curvePool.tokenCompoundPosition,
                 curvePool.numElements,
                 0
