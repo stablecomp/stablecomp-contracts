@@ -61,14 +61,12 @@ async function main(): Promise<void> {
 async function setupContractv1(): Promise<void> {
   // deploy controller
   // todo understand split
-  let split = 500;
 
   let factoryController = await ethers.getContractFactory("SCompController")
   sCompControllerv1 = await upgrades.deployProxy(factoryController, [
     governance.address,
     strategist.address,
     rewards.address,
-    split
   ]);
   await sCompControllerv1.deployed();
 

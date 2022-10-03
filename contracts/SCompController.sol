@@ -16,14 +16,12 @@ contract SCompController is SCompAccessControl {
     using AddressUpgradeable for address;
     using SafeMathUpgradeable for uint256;
 
-    address public onesplit;
     address public rewards;
     mapping(address => address) public vaults;
     mapping(address => address) public strategies;
     mapping(address => mapping(address => address)) public converters;
     mapping(address => mapping(address => bool)) public approvedStrategies;
 
-    uint256 public split;
     uint256 public constant max = 10000;
 
     /// @param _governance Can take any permissioned action within the Controller, with the exception of Vault helper functions
@@ -32,15 +30,12 @@ contract SCompController is SCompAccessControl {
     function initialize(
         address _governance,
         address _strategist,
-        address _rewards,
-        uint _split
+        address _rewards
     ) public initializer {
         governance = _governance;
         strategist = _strategist;
 
         rewards = _rewards;
-        onesplit = address(0x50FDA034C0Ce7a8f7EFDAebDA7Aa7cA21CC1267e);
-        split = _split;
     }
 
     // ===== Modifiers =====
@@ -55,16 +50,6 @@ contract SCompController is SCompAccessControl {
     /// @notice Get the balance of the given tokens' current strategy of that token.
     function balanceOf(address _token) external view returns (uint256) {
         return IStrategy(strategies[_token]).balanceOf();
-    }
-
-    function getExpectedReturn(
-        address _strategy,
-        address _token,
-        uint256 parts
-    ) public view returns (uint256 expected) {
-        uint256 _balance = IERC20Upgradeable(_token).balanceOf(_strategy);
-        address _want = IStrategy(_strategy).want();
-        (expected, ) = IOneSplitAudit(onesplit).getExpectedReturn(_token, _want, _balance, parts, 0);
     }
 
     // ===== Permissioned Actions: Governance Only =====
@@ -85,17 +70,6 @@ contract SCompController is SCompAccessControl {
     function setRewards(address _rewards) public {
         _onlyGovernance();
         rewards = _rewards;
-    }
-
-    function setSplit(uint256 _split) public {
-        _onlyGovernance();
-        split = _split;
-    }
-
-    /// @notice Change the oneSplit contract, which is used in conversion of non-core strategy rewards
-    function setOneSplit(address _onesplit) public {
-        _onlyGovernance();
-        onesplit = _onesplit;
     }
 
     // ===== Permissioned Actions: Governance or Strategist =====

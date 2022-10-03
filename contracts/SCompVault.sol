@@ -90,7 +90,7 @@ contract SCompVault is ERC20 {
         withdraw(balanceOf(msg.sender));
     }
 
-    // Used to swap any borrowed reserve over the debt limit to liquidate to 'token'
+    // Used to swap any borrowed reserve ovaer the debt limit to liquidate to 'token'
     function harvest(address reserve, uint256 amount) external {
         require(msg.sender == controller, "!controller");
         require(reserve != address(token), "token");

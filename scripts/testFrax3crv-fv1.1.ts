@@ -10,6 +10,7 @@ const wethABI = require('../abi/weth.json');
 const baseRewardPoolABI = require('../abi/baseRewardPoolAbi.json');
 const boosterABI = require('../abi/booster.json');
 const frax3crv_fABI = require('../abi/frax3crv_f.json');
+const gauge_ABI = require('../abi/gauge.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -26,9 +27,7 @@ let wethAccount5 : SignerWithAddress;
 let wethAccount6 : SignerWithAddress;
 
 let sCompVaultv1 : Contract;
-let sCompVaultv2 : Contract;
 let sCompControllerv1 : Contract;
-let sCompControllerv2 : Contract;
 let sCompStrategyFrax3crv_fv1_1 : Contract;
 let curveSwapWrapped : Contract;
 let frax3crv_fContract: Contract;
@@ -39,6 +38,7 @@ let crvContract: Contract;
 let cvxContract: Contract;
 let baseRewardPoolContract: Contract;
 let boosterContract: Contract;
+let gaugeContract: Contract;
 
 let want = "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B"; // frax3crv-f // 18 decimals
 let curveCryptoSwapAddress = "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B"; // pool fraxusdc curve
@@ -58,7 +58,7 @@ let pidPool = 32;
 let maxUint = ethers.constants.MaxUint256;
 let blockOneDay: any = 6646;
 let blockTime: any = 13;
-let dayToMine: any = 7;
+let dayToMine: any = 1;
 
 let depositv1Value: any = [];
 let depositv2Value: any = [];
@@ -80,14 +80,12 @@ async function main(): Promise<void> {
 async function setupContractv1(): Promise<void> {
   // deploy controller
   // todo understand split
-  let split = 500;
 
   let factoryController = await ethers.getContractFactory("SCompController")
   sCompControllerv1 = await upgrades.deployProxy(factoryController, [
     governance.address,
     strategist.address,
     rewards.address,
-    split
   ]);
   await sCompControllerv1.deployed();
 
@@ -272,10 +270,18 @@ async function mineBlock(dayToMine: any): Promise<void> {
 async function withdrawv1(account: SignerWithAddress, index: any): Promise<void> {
   console.log("Start withdraw...")
 
-  let tx = await sCompVaultv1.connect(account).withdrawAll();
-  await tx.wait();
 
-  let balanceShare = await sCompVaultv1.balanceOf(account.address);
+    let pricePerFullShare = await sCompVaultv1.getPricePerFullShare()
+
+    let balanceShare = await sCompVaultv1.balanceOf(account.address);
+
+    let wantExpectedWithdraw = balanceShare.mul(pricePerFullShare);
+    console.log("Want expected withdraw: ", ethers.utils.formatUnits(wantExpectedWithdraw, 36))
+
+    let tx = await sCompVaultv1.connect(account).withdrawAll();
+    await tx.wait();
+
+  //let balanceShare = await sCompVaultv1.balanceOf(account.address);
   //console.log("Share balance after deposit: ", ethers.utils.formatEther(balanceShare));
 
   let balanceAfterWantVault = await frax3crv_fContract.balanceOf(account.address);
@@ -290,6 +296,30 @@ async function earnMarkReward(): Promise<void> {
   await boosterContract.connect(governance).earmarkRewards(pidPool);
 }
 
+async function getTotalValueLocked(): Promise<void> {
+    // get totalValueLocked
+    let poolInfo = await boosterContract.poolInfo(pidPool);
+    let gaugeAddress = poolInfo.gauge;
+    console.log("gaugeAddress: ", gaugeAddress);
+    gaugeContract = await new ethers.Contract(gaugeAddress, gauge_ABI, ethers.provider);
+
+    let balanceOfStrategyInGauge = await gaugeContract.balanceOf(sCompStrategyFrax3crv_fv1_1.address);
+    console.log("Balance of strategy in gauge: ", ethers.utils.formatEther(balanceOfStrategyInGauge));
+
+    let balanceOfBooster = await baseRewardPoolContract.balanceOf(boosterContract.address);
+    console.log("Balance of booster: ", ethers.utils.formatEther(balanceOfBooster));
+
+    let balanceOfStrategyInBRP = await baseRewardPoolContract.balanceOf(sCompVaultv1.address);
+    console.log("Balance of base reward pool: ", ethers.utils.formatEther(balanceOfStrategyInBRP));
+
+    let pricePerFullShare = await sCompVaultv1.getPricePerFullShare()
+    console.log("price per full share: ", ethers.utils.formatEther(pricePerFullShare));
+
+    let balanceVault = await sCompVaultv1.balance();
+    console.log("balance: ", ethers.utils.formatEther(balanceVault));
+
+}
+
 
   main()
     .then(async () => {
@@ -302,7 +332,8 @@ async function earnMarkReward(): Promise<void> {
       await depositv1(fraxAccount1, 0);
       await depositv1(fraxAccount2, 1);
       await depositv1(fraxAccount3, 2);
-      await earnv1();
+        await getTotalValueLocked();
+        await earnv1();
       await mineBlock(dayToMine);
       await tendv1();
       await harvestv1();
@@ -314,14 +345,18 @@ async function earnMarkReward(): Promise<void> {
       await mineBlock(dayToMine);
       await tendv1();
       await harvestv1();
-      await withdrawv1(fraxAccount1, 0);
+        await getTotalValueLocked();
+        await withdrawv1(fraxAccount1, 0);
       await withdrawv1(fraxAccount2, 1);
       await withdrawv1(fraxAccount3, 2);
       await removeLiquidity(fraxAccount1, 0);
       await removeLiquidity(fraxAccount2, 1);
       await removeLiquidity(fraxAccount3, 2);
+      await getTotalValueLocked();
 
-      let blockNumber = await ethers.provider.getBlockNumber();
+
+
+        let blockNumber = await ethers.provider.getBlockNumber();
       let block = await ethers.provider.getBlock(blockNumber);
 
       let finalTimestamp = block.timestamp

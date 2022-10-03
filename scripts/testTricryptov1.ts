@@ -10,6 +10,7 @@ const crv3CryptoABI = require('../abi/3crv.json');
 const curveCryptoSwapABI = require('../abi/curveCryptoSwap.json');
 const wethABI = require('../abi/weth.json');
 const boosterABI = require('../abi/booster.json');
+const gauge_ABI = require('../abi/gauge.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -38,6 +39,7 @@ let curveTricryptoPool: Contract;
 let wethContract: Contract;
 let cvxContract: Contract;
 let boosterContract: Contract;
+let gaugeContract: Contract;
 
 let want = "0xc4ad29ba4b3c580e6d59105fff484999997675ff"; // crv3crypto
 let curveCryptoSwapAddress = "0x3993d34e7e99Abf6B6f367309975d1360222D446"; // pool tricrypto2 curve
@@ -60,6 +62,7 @@ let maxUint = ethers.constants.MaxUint256;
 let blockOneDay: any = 6646;
 let blockTime: any = 13;
 let dayToMine: any = 7;
+let pidPool = 38;
 
 let depositv1Value: any = [];
 let depositv2Value: any = [];
@@ -73,14 +76,12 @@ async function main(): Promise<void> {
 
 async function setupContractv1(): Promise<void> {
   // deploy controller
-  let split = 500;
 
   let factoryController = await ethers.getContractFactory("SCompController")
   sCompControllerv1 = await upgrades.deployProxy(factoryController, [
     governance.address,
     strategist.address,
     rewards.address,
-    split
   ]);
   await sCompControllerv1.deployed();
 
@@ -94,14 +95,13 @@ async function setupContractv1(): Promise<void> {
   console.log("Vault deployed to: ", sCompVaultv1.address)
 
   // deploy strategies
-  let pid = 38;
   let factoryStrategy = await ethers.getContractFactory("SCompStrategyTricryptov1")
   sCompStrategyTricryptov1 = await upgrades.deployProxy(factoryStrategy, [
     governance.address,
     strategist.address,
     sCompControllerv1.address,
     want,
-    pid,
+    pidPool,
     [2000, 0, 0], // original fee withdraw 10
     {swap: curveCryptoSwapAddress, wbtcPosition: 1, numElements: 3}
   ]);
@@ -117,14 +117,12 @@ async function setupContractv1(): Promise<void> {
 
 async function setupContractv2(): Promise<void> {
   // deploy controller
-  let split = 500;
 
   let factoryController = await ethers.getContractFactory("SCompController")
   sCompControllerv2 = await upgrades.deployProxy(factoryController, [
     governance.address,
     strategist.address,
     rewards.address,
-    split
   ]);
   await sCompControllerv2.deployed();
 
@@ -431,6 +429,24 @@ async function earnMarkReward(): Promise<void> {
   await boosterContract.connect(governance).earmarkRewards(38);
 }
 
+async function getTotalValueLocked(): Promise<void> {
+  // get totalValueLocked
+  let poolInfo = await boosterContract.poolInfo(pidPool);
+  let gaugeAddress = poolInfo.gauge;
+  console.log("gaugeAddress: ", gaugeAddress);
+  gaugeContract = await new ethers.Contract(gaugeAddress, gauge_ABI, ethers.provider);
+
+  let balanceOfStrategyInGauge = await gaugeContract.balanceOf(sCompStrategyTricryptov1.address);
+  console.log("Balance of strategy in gauge: ", ethers.utils.formatEther(balanceOfStrategyInGauge));
+
+  let pricePerFullShare = await sCompVaultv1.getPricePerFullShare()
+  console.log("price per full share: ", ethers.utils.formatEther(pricePerFullShare));
+
+  let balanceVault = await sCompVaultv1.balance();
+  console.log("balance: ", ethers.utils.formatEther(balanceVault));
+
+}
+
 
 
   main()
@@ -452,6 +468,7 @@ async function earnMarkReward(): Promise<void> {
       await depositv2(wethAccount4, 0);
       await depositv2(wethAccount5, 1);
       await depositv2(wethAccount6, 2);
+      await getTotalValueLocked()
       await earnv1();
       await earnv2();
       await mineBlock(dayToMine);
@@ -465,6 +482,7 @@ async function earnMarkReward(): Promise<void> {
       await tendv2();
       await harvestv1();
       await harvestv2();
+      await getTotalValueLocked()
       await withdrawv1(wethAccount1, 0);
       await withdrawv1(wethAccount2, 1);
       await withdrawv1(wethAccount3, 2);
