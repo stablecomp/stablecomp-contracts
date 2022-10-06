@@ -12,6 +12,9 @@ const wethABI = require('../abi/weth.json');
 const boosterABI = require('../abi/booster.json');
 const gauge_ABI = require('../abi/gauge.json');
 
+const curveSwapABI = require('../abi/europoolSwap.json');
+const info = require('../strategyInfo/tricrypto.json');
+
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
 let strategist : SignerWithAddress;
@@ -34,40 +37,39 @@ let sCompStrategyTricryptov1 : Contract;
 let sCompStrategyTricryptov2 : Contract;
 let curveSwapWrapped : Contract;
 let crv3CryptoContract: Contract;
-let cvxCrv3CryptoContract: Contract;
-let curveTricryptoPool: Contract;
 let wethContract: Contract;
-let cvxContract: Contract;
 let boosterContract: Contract;
 let gaugeContract: Contract;
 
-let want = "0xc4ad29ba4b3c580e6d59105fff484999997675ff"; // crv3crypto
-let curveCryptoSwapAddress = "0x3993d34e7e99Abf6B6f367309975d1360222D446"; // pool tricrypto2 curve
+let nameStrategy = info.nameStrategy
+let want = info.wantAddress; // crv3crypto
+let curveCryptoSwapAddress = info.curveSwapAddress; // pool tricrypto2 curve
 //let curveCryptoSwapAddress = "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46"; // pool tricrypto2 curve
-let wethContractAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-let wethAddress1 = "0x06920c9fc643de77b99cb7670a944ad31eaaa260";
-let wethAddress2 = "0x06601571aa9d3e8f5f7cdd5b993192618964bab5";
-let wethAddress3 = "0x2feb1512183545f48f6b9c5b4ebfcaf49cfca6f3";
-let wethAddress4 = "0x56178a0d5f301baf6cf3e1cd53d9863437345bf9";
-let wethAddress5 = "0x6b44ba0a126a2a1a8aa6cd1adeed002e141bcd44";
-let wethAddress6 = "0x6a3528677e598b47952749b08469ce806c2524e7";
-let stakerAddress = "0x989aeb4d175e16225e39e87d0d97a3360524ad80";
-let gaugeAddress = "0xDeFd8FdD20e0f34115C7018CCfb655796F6B2168";
-let cvxCrv3CryptoAddress = "0x903C9974aAA431A765e60bC07aF45f0A1B3b61fb";
-let baseRewardPoolAddress = "0x9D5C5E364D81DaB193b72db9E9BE9D8ee669B652";
-let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B";
+let tokenDepositAddress = info.tokenDepositAddress;
+let accountDepositAddress1 = info.accountDepositAddress1;
+let accountDepositAddress2 = info.accountDepositAddress2;
+let accountDepositAddress3 = info.accountDepositAddress3;
+let accountDepositAddress4 = info.accountDepositAddress4;
+let accountDepositAddress5 = info.accountDepositAddress5;
+let accountDepositAddress6 = info.accountDepositAddress6;
+let baseRewardPoolAddress = info.baseRewardPoolAddress;
+let tokenCompoundAddress = info.tokenCompoundAddress
+
 let boosterAddress = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31";
 
 let maxUint = ethers.constants.MaxUint256;
 let blockOneDay: any = 6646;
 let blockTime: any = 13;
 let dayToMine: any = 7;
-let pidPool = 38;
+let pidPool = info.pidPool;
+let nElementPool = info.nElementPool;
+let tokenCompoundPosition = info.tokenCompoundPosition;
+
 
 let depositv1Value: any = [];
 let depositv2Value: any = [];
 
-let ethToDeposit: any = ethers.utils.parseEther("100");
+let amountToDepositLiquidity: any = ethers.utils.parseEther(info.amountToDepositLiquidity);
 
 async function main(): Promise<void> {
   await run('compile');
@@ -95,15 +97,17 @@ async function setupContractv1(): Promise<void> {
   console.log("Vault deployed to: ", sCompVaultv1.address)
 
   // deploy strategies
-  let factoryStrategy = await ethers.getContractFactory("SCompStrategyTricryptov1")
+  let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
   sCompStrategyTricryptov1 = await upgrades.deployProxy(factoryStrategy, [
-    governance.address,
-    strategist.address,
-    sCompControllerv1.address,
-    want,
-    pidPool,
-    [2000, 0, 0], // original fee withdraw 10
-    {swap: curveCryptoSwapAddress, wbtcPosition: 1, numElements: 3}
+      nameStrategy,
+      governance.address,
+      strategist.address,
+      sCompControllerv1.address,
+      want,
+      tokenCompoundAddress,
+      pidPool,
+      [2000, 0, 0], // original fee withdraw 10
+      {swap: curveCryptoSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool}
   ]);
   await sCompStrategyTricryptov1.deployed();
 
@@ -166,11 +170,8 @@ async function setupUtilityContract(): Promise<void> {
   // get crv3cryptoContract
   crv3CryptoContract = await new ethers.Contract(want, crv3CryptoABI, ethers.provider);
 
-  cvxCrv3CryptoContract = await new ethers.Contract(cvxCrv3CryptoAddress, crv3CryptoABI, ethers.provider);
-
   // get wethContract
-  wethContract = await new ethers.Contract(wethContractAddress, wethABI, ethers.provider);
-  cvxContract = await new ethers.Contract(cvxAddress, wethABI, ethers.provider);
+  wethContract = await new ethers.Contract(tokenDepositAddress, wethABI, ethers.provider);
   boosterContract = await new ethers.Contract(boosterAddress, boosterABI, ethers.provider);
 
 }
@@ -178,42 +179,42 @@ async function setupUtilityContract(): Promise<void> {
 async function impersonateAccountv1(): Promise<void> {
   await network.provider.request({
     method: "hardhat_impersonateAccount",
-    params: [wethAddress1],
+    params: [accountDepositAddress1],
   });
-  wethAccount1 = await ethers.getSigner(wethAddress1);
+  wethAccount1 = await ethers.getSigner(accountDepositAddress1);
 
   await network.provider.request({
     method: "hardhat_impersonateAccount",
-    params: [wethAddress2],
+    params: [accountDepositAddress2],
   });
-  wethAccount2 = await ethers.getSigner(wethAddress2);
+  wethAccount2 = await ethers.getSigner(accountDepositAddress2);
 
   await network.provider.request({
     method: "hardhat_impersonateAccount",
-    params: [wethAddress3],
+    params: [accountDepositAddress3],
   });
-  wethAccount3 = await ethers.getSigner(wethAddress3);
+  wethAccount3 = await ethers.getSigner(accountDepositAddress3);
 
 }
 
 async function impersonateAccountv2(): Promise<void> {
   await network.provider.request({
     method: "hardhat_impersonateAccount",
-    params: [wethAddress4],
+    params: [accountDepositAddress4],
   });
-  wethAccount4 = await ethers.getSigner(wethAddress4);
+  wethAccount4 = await ethers.getSigner(accountDepositAddress4);
 
   await network.provider.request({
     method: "hardhat_impersonateAccount",
-    params: [wethAddress5],
+    params: [accountDepositAddress5],
   });
-  wethAccount5 = await ethers.getSigner(wethAddress5);
+  wethAccount5 = await ethers.getSigner(accountDepositAddress5);
 
   await network.provider.request({
     method: "hardhat_impersonateAccount",
-    params: [wethAddress6],
+    params: [accountDepositAddress6],
   });
-  wethAccount6 = await ethers.getSigner(wethAddress6);
+  wethAccount6 = await ethers.getSigner(accountDepositAddress6);
 
 }
 
@@ -223,12 +224,12 @@ async function addLiquidity(account: SignerWithAddress): Promise<void> {
   //console.log("Deployer balance: ", ethers.utils.formatEther(balanceWethAccount))
 
   // transfer weth to curveSwapWrapped
-  await wethContract.connect(account).transfer(curveSwapWrapped.address, ethToDeposit);
+  await wethContract.connect(account).transfer(curveSwapWrapped.address, amountToDepositLiquidity);
 
   let balanceBeforeAddLiquidity = await crv3CryptoContract.balanceOf(account.address);
   //console.log("BalanceBeforeAddLiquidity: ", ethers.utils.formatEther(balanceBeforeAddLiquidity));
 
-  let tx = await curveSwapWrapped.connect(account).addLiquidity([0,0,ethToDeposit],0);
+  let tx = await curveSwapWrapped.connect(account).addLiquidity([0,0,amountToDepositLiquidity],0);
   await tx.wait();
 
   let balanceAfterAddLiquidity = await crv3CryptoContract.balanceOf(account.address);
@@ -261,73 +262,23 @@ async function depositv2(account: SignerWithAddress, index: any): Promise<void> 
 
 async function earnv1(): Promise<void> {
 
-  let balanceBeforeWantVault = await crv3CryptoContract.balanceOf(sCompVaultv1.address);
-  //console.log("Want in vault: ", await ethers.utils.formatEther(balanceBeforeWantVault));
-
-  let min = 9500;
-  let max = 10000;
-  let expectedTransfer = balanceBeforeWantVault.mul(min).div(max);
-
-  let expectedRemainInVault = balanceBeforeWantVault.sub(expectedTransfer);
-
-  //console.log("Expected transfer in earn: ", ethers.utils.formatEther(expectedTransfer));
-  //console.log("Expected remaing in vault: ", ethers.utils.formatEther(expectedRemainInVault));
-
-  let balanceWantGaugeBefore = await crv3CryptoContract.balanceOf(gaugeAddress);
-  let balanceCvxCrvBaseRewardPoolBefore = await cvxCrv3CryptoContract.balanceOf(baseRewardPoolAddress);
-
+  console.log("Earn v1...")
   let tx = await sCompVaultv1.earn();
   await tx.wait();
-
-  let balanceAfterWantVault = await crv3CryptoContract.balanceOf(sCompVaultv1.address);
-  //console.log("Want in vault: ", await ethers.utils.formatEther(balanceAfterWantVault));
-
-  let balanceWantGaugeAfter = await crv3CryptoContract.balanceOf(gaugeAddress);
-  //console.log("Want in gauge: ", await ethers.utils.formatEther(balanceWantGaugeAfter));
-  //console.log("Diff want in gauge: ", await ethers.utils.formatEther(balanceWantGaugeAfter.sub(balanceWantGaugeBefore)))
-
-  let balanceCvxCrvBaseRewardPoolAfter = await cvxCrv3CryptoContract.balanceOf(baseRewardPoolAddress);
-  //console.log("CvxCrv in baseRewardPool: ", await ethers.utils.formatEther(balanceCvxCrvBaseRewardPoolAfter));
-  //console.log("Diff cvxCrv in baseRewardPool: ", await ethers.utils.formatEther(balanceCvxCrvBaseRewardPoolAfter.sub(balanceCvxCrvBaseRewardPoolBefore)))
 
 }
 
 async function earnv2(): Promise<void> {
 
-  let balanceBeforeWantVault = await crv3CryptoContract.balanceOf(sCompVaultv2.address);
-  //console.log("Want in vault: ", await ethers.utils.formatEther(balanceBeforeWantVault));
-
-  let min = 9500;
-  let max = 10000;
-  let expectedTransfer = balanceBeforeWantVault.mul(min).div(max);
-
-  let expectedRemainInVault = balanceBeforeWantVault.sub(expectedTransfer);
-
-  //console.log("Expected transfer in earn: ", ethers.utils.formatEther(expectedTransfer));
-  //console.log("Expected remaing in vault: ", ethers.utils.formatEther(expectedRemainInVault));
-
-  let balanceWantGaugeBefore = await crv3CryptoContract.balanceOf(gaugeAddress);
-  let balanceCvxCrvBaseRewardPoolBefore = await cvxCrv3CryptoContract.balanceOf(baseRewardPoolAddress);
-
+  console.log("Earn v2...")
   let tx = await sCompVaultv2.earn();
   await tx.wait();
-
-  let balanceAfterWantVault = await crv3CryptoContract.balanceOf(sCompVaultv2.address);
-  //console.log("Want in vault: ", await ethers.utils.formatEther(balanceAfterWantVault));
-
-  let balanceWantGaugeAfter = await crv3CryptoContract.balanceOf(gaugeAddress);
-  //console.log("Want in gauge: ", await ethers.utils.formatEther(balanceWantGaugeAfter));
-  //console.log("Diff want in gauge: ", await ethers.utils.formatEther(balanceWantGaugeAfter.sub(balanceWantGaugeBefore)))
-
-  let balanceCvxCrvBaseRewardPoolAfter = await cvxCrv3CryptoContract.balanceOf(baseRewardPoolAddress);
-  //console.log("CvxCrv in baseRewardPool: ", await ethers.utils.formatEther(balanceCvxCrvBaseRewardPoolAfter));
-  //console.log("Diff cvxCrv in baseRewardPool: ", await ethers.utils.formatEther(balanceCvxCrvBaseRewardPoolAfter.sub(balanceCvxCrvBaseRewardPoolBefore)))
 
 }
 
 async function tendv1(): Promise<void> {
 
-  console.log("Tend...")
+  console.log("Tend v1...")
   let tx = await sCompStrategyTricryptov1.connect(governance).tend();
   await tx.wait();
 
@@ -335,7 +286,7 @@ async function tendv1(): Promise<void> {
 
 async function tendv2(): Promise<void> {
 
-  console.log("Tend...")
+  console.log("Tend v2...")
   let tx = await sCompStrategyTricryptov2.connect(governance).tend();
   await tx.wait();
 
@@ -415,15 +366,6 @@ async function withdrawv2(account: SignerWithAddress, index: any): Promise<void>
 
 }
 
-async function checkTokenInContract(): Promise<void> {
-
-  let balanceCvxOfStrategy = await cvxContract.balanceOf(sCompStrategyTricryptov1.address);
-  console.log("Balance of cvx in strategy: ", ethers.utils.formatEther(balanceCvxOfStrategy))
-  let balanceCvxCrvOfStrategy = await cvxCrv3CryptoContract.balanceOf(sCompStrategyTricryptov1.address);
-  console.log("Balance of cvxCrv in strategy: ", ethers.utils.formatEther(balanceCvxCrvOfStrategy))
-}
-
-
 async function earnMarkReward(): Promise<void> {
 
   await boosterContract.connect(governance).earmarkRewards(38);
@@ -486,7 +428,6 @@ async function getTotalValueLocked(): Promise<void> {
       await withdrawv1(wethAccount1, 0);
       await withdrawv1(wethAccount2, 1);
       await withdrawv1(wethAccount3, 2);
-      await checkTokenInContract();
       await withdrawv2(wethAccount4, 0);
       await withdrawv2(wethAccount5, 1);
       await withdrawv2(wethAccount6, 2);

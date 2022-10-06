@@ -1,0 +1,20 @@
+{
+  "nameStrategy": "Europool",
+  "wantAddress": "0xe7A3b38c39F97E977723bd1239C3470702568e7B",
+  "tokenCompoundAddress": "0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8",
+  "curveSwapAddress": "0xe7A3b38c39F97E977723bd1239C3470702568e7B",
+  "tokenDepositAddress": "0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8",
+  "accountDepositAddress1": "0x12d3d411d010891a88bff2401bd73fa41fb1316e",
+  "accountDepositAddress2": "0xb0b0f6f13a5158eb67724282f586a552e75b5728",
+  "accountDepositAddress3": "0xa5a81a7bf4a737dabcd8a4c5fc2a36598c1943bf",
+  "baseRewardPoolAddress": "0x14F02f3b47B407A7a0cdb9292AA077Ce9E124803",
+  "pidPool": 112,
+  "nElementPool": 3,
+  "tokenCompoundPosition": 1,
+  "feeGovernance": 0,
+  "feeStrategist": 0,
+  "feeWithdraw": 0,
+  "amountToDepositLiquidity": "10000",
+  "swapPathCrv": ["0xD533a949740bb3306d119CC777fa900bA034cd52","0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0x956f47f50a910163d8bf957cf5846d573e7f87ca", "0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8"],
+  "swapPathCvx": ["0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8"]
+}

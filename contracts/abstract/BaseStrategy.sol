@@ -319,7 +319,7 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
     // function harvest() external virtual;
 
     /// @dev User-friendly name for this strategy for purposes of convenient reading
-    function getName() external pure virtual returns (string memory);
+    function getName() external virtual returns (string memory);
 
     /// @dev Balance of want currently held in strategy positions
     function balanceOfPool() public view virtual returns (uint256);

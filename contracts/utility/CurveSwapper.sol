@@ -96,7 +96,7 @@ contract CurveSwapper is BaseSwapper {
         ICurveFi(pool).add_liquidity(amounts, min_mint_amount);
     }
 
-    function _add_liquidity(
+    function _add_liquidity_4coins(
         address pool,
         uint256[4] memory amounts,
         uint256 min_mint_amount

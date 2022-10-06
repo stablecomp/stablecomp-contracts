@@ -1,0 +1,18 @@
+{
+  "nameStrategy": "Magic Internet Money 3Pool",
+  "wantAddress": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
+  "tokenCompoundAddress": "0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3",
+  "curveSwapAddress": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
+  "tokenDepositAddress": "0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3",
+  "accountDepositAddress1": "0x77134cbc06cb00b66f4c7e623d5fdbf6777635ec",
+  "accountDepositAddress2": "0x983873529f95132bd1812a3b52c98fb271d2f679",
+  "accountDepositAddress3": "0x93c08a3168fc469f3fc165cd3a471d19a37ca19e",
+  "baseRewardPoolAddress": "0xFd5AbF66b003881b88567EB9Ed9c651F14Dc4771",
+  "pidPool": 40,
+  "nElementPool": 4,
+  "tokenCompoundPosition": 0,
+  "feeGovernance": 0,
+  "feeStrategist": 0,
+  "feeWithdraw": 0,
+  "amountToDepositLiquidity": "100000"
+}

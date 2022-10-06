@@ -1,0 +1,19 @@
+{
+  "nameStrategy": "",
+  "wantAddress": "",
+  "tokenCompoundAddress": "",
+  "curveSwapAddress": "",
+  "tokenDepositAddress": "",
+  "accountDepositAddress1": "",
+  "accountDepositAddress2": "",
+  "accountDepositAddress3": "",
+  "baseRewardPoolAddress": "",
+  "pidPool": 0,
+  "nElementPool": 0,
+  "tokenCompoundPosition": 0,
+  "feeGovernance": 0,
+  "feeStrategist": 0,
+  "feeWithdraw": 0,
+  "amountToDepositLiquidity": "",
+  "routerIndex": 0
+}

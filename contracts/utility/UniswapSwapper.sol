@@ -17,6 +17,8 @@ contract UniswapSwapper is BaseSwapper {
 
     address internal constant uniswap =
     0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D; // Uniswap router
+    address internal constant uniswapv3 =
+    0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45; // Uniswapv3 router
     address internal constant sushiswap =
     0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F; // Sushiswap router
 

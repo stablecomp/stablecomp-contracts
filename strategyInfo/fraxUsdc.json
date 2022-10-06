@@ -1,0 +1,18 @@
+{
+  "nameStrategy": "FraxUsdc",
+  "wantAddress": "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC",
+  "tokenCompoundAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "curveSwapAddress": "0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2",
+  "tokenDepositAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "accountDepositAddress1": "0x19d675bbb76946785249a3ad8a805260e9420cb8",
+  "accountDepositAddress2": "0x72a53cdbbcc1b9efa39c834a540550e23463aacb",
+  "accountDepositAddress3": "0x1b7baa734c00298b9429b518d621753bb0f6eff2",
+  "baseRewardPoolAddress": "0x7e880867363A7e321f5d260Cade2B0Bb2F717B02\n",
+  "pidPool": 100,
+  "nElementPool": 2,
+  "tokenCompoundPosition": 1,
+  "feeGovernance": 0,
+  "feeStrategist": 0,
+  "feeWithdraw": 0,
+  "amountToDepositLiquidity": "10000"
+}
