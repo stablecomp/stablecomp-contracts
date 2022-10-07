@@ -1,14 +1,14 @@
 import hardhat, {network} from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
+import {deploy} from "@openzeppelin/hardhat-upgrades/dist/utils";
+import {BigNumber} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const { run, ethers, upgrades } = hardhat;
 
-const crv3CryptoABI = require('../abi/3crv.json');
-const curveCryptoSwapABI = require('../abi/curveCryptoSwap.json');
-const wethABI = require('../abi/weth.json');
-const baseRewardPoolABI = require('../abi/baseRewardPoolAbi.json');
-const boosterABI = require('../abi/booster.json');
+const crv3CryptoABI = require('../../abi/3crv.json');
+const curveCryptoSwapABI = require('../../abi/curveCryptoSwap.json');
+const wethABI = require('../../abi/weth.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -29,45 +29,31 @@ let sCompVaultv2 : Contract;
 let sCompControllerv1 : Contract;
 let sCompControllerv2 : Contract;
 let sCompStrategyFraxusdcv1 : Contract;
+let sCompStrategyFraxusdcv2 : Contract;
 let curveSwapWrapped : Contract;
 let crvFraxCryptoContract: Contract;
 let fraxContract: Contract;
 let usdcContract: Contract;
-let crvContract: Contract;
-let cvxContract: Contract;
-let baseRewardPoolContract: Contract;
-let boosterContract: Contract;
 
-let want = "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC"; // crvFrax // 18 decimals
+let want = "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC"; // crvFrax
 let curveCryptoSwapAddress = "0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2"; // pool fraxusdc curve
 let fraxContractAddress = "0x853d955aCEf822Db058eb8505911ED77F175b99e";
-let usdcContractAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"; // 6 decimals
+let usdcContractAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 let usdcAddress1 = "0x19d675bbb76946785249a3ad8a805260e9420cb8";
 let usdcAddress2 = "0x72a53cdbbcc1b9efa39c834a540550e23463aacb";
 let usdcAddress3 = "0x1b7baa734c00298b9429b518d621753bb0f6eff2";
-let baseRewardPoolCrvFraxAddress = "0x7e880867363A7e321f5d260Cade2B0Bb2F717B02";
-let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
-let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
-let boosterAddress = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31";
 
 let maxUint = ethers.constants.MaxUint256;
 let blockOneDay: any = 6646;
 let blockTime: any = 13;
-let dayToMine: any = 8;
+let dayToMine: any = 7;
 
 let depositv1Value: any = [];
 let depositv2Value: any = [];
-let initialBalanceUsdc: any = [];
-let blockFinishBaseReward: any;
+
 let usdcToDeposit: any = ethers.utils.parseUnits("10000", 6);
 
-let initialTimestamp: any;
-
 async function main(): Promise<void> {
-  let blockNumber = await ethers.provider.getBlockNumber();
-  let block = await ethers.provider.getBlock(blockNumber);
-  initialTimestamp = block.timestamp
-
   await run('compile');
   [deployer, governance, strategist, rewards, account1, account2] = await ethers.getSigners();
 }
@@ -95,7 +81,7 @@ async function setupContractv1(): Promise<void> {
 
   // deploy strategies
   let pid = 100;
-  let factoryStrategy = await ethers.getContractFactory("SCompStrategyFraxusdcv1_2")
+  let factoryStrategy = await ethers.getContractFactory("SCompStrategyFraxusdcv1")
   sCompStrategyFraxusdcv1 = await upgrades.deployProxy(factoryStrategy, [
     governance.address,
     strategist.address,
@@ -103,7 +89,7 @@ async function setupContractv1(): Promise<void> {
     want,
     pid,
     [2000, 0, 0], // original fee withdraw 10
-    {swap: curveCryptoSwapAddress, tokenCompoundPosition: 1, numElements: 2}
+    {swap: curveCryptoSwapAddress, tokenCompoundPosition: 0, numElements: 2}
   ]);
   await sCompStrategyFraxusdcv1.deployed();
 
@@ -127,13 +113,6 @@ async function setupUtilityContract(): Promise<void> {
   // get wethContract
   fraxContract = await new ethers.Contract(fraxContractAddress, wethABI, ethers.provider);
   usdcContract = await new ethers.Contract(usdcContractAddress, wethABI, ethers.provider);
-  crvContract = await new ethers.Contract(crvAddress, wethABI, ethers.provider);
-  cvxContract = await new ethers.Contract(cvxAddress, wethABI, ethers.provider);
-  baseRewardPoolContract = await new ethers.Contract(baseRewardPoolCrvFraxAddress, baseRewardPoolABI, ethers.provider);
-  boosterContract = await new ethers.Contract(boosterAddress, boosterABI, ethers.provider);
-
-  blockFinishBaseReward = await baseRewardPoolContract.periodFinish();
-  console.log("Block period finish: ", ethers.utils.formatUnits(blockFinishBaseReward, 0));
 
 }
 
@@ -158,56 +137,16 @@ async function impersonateAccountv1(): Promise<void> {
 
 }
 
-async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
+async function addLiquidity(account: SignerWithAddress): Promise<void> {
 
-  initialBalanceUsdc[index] = await usdcContract.balanceOf(account.address);
+  let balanceOf = await usdcContract.balanceOf(account.address);
+  console.log("Balance of ", account.address, " is: ", ethers.utils.formatUnits(balanceOf, 6))
 
   // transfer usdc to curveSwapWrapped
   await usdcContract.connect(account).transfer(curveSwapWrapped.address, usdcToDeposit);
 
   let tx = await curveSwapWrapped.connect(account).addLiquidity([0,usdcToDeposit],0);
   await tx.wait();
-
-}
-
-async function removeLiquidity(account: SignerWithAddress, index: any): Promise<void> {
-
-  let balanceCrvFrax = await crvFraxCryptoContract.balanceOf(account.address);
-
-  // transfer usdc to curveSwapWrapped
-  await crvFraxCryptoContract.connect(account).transfer(curveSwapWrapped.address, balanceCrvFrax);
-
-  let tx = await curveSwapWrapped.connect(account).removeLiquidity();
-  await tx.wait();
-
-  let balanceUsdc = await usdcContract.balanceOf(account.address);
-
-  let diff = balanceUsdc.sub(initialBalanceUsdc[index]);
-  console.log("Initial balance of account ", account.address, " is: ", ethers.utils.formatUnits(initialBalanceUsdc[index], 6));
-  console.log("Actual balance is: ", ethers.utils.formatUnits(balanceUsdc, 6));
-  console.log("Diff is: ", ethers.utils.formatUnits(diff, 6))
-}
-
-async function checkBalance(): Promise<void> {
-  let balanceBoosterCrv = await crvContract.balanceOf(boosterAddress);
-  console.log("Balance crv booster: ", ethers.utils.formatEther(balanceBoosterCrv))
-  let balanceCrv = await crvContract.balanceOf(baseRewardPoolCrvFraxAddress);
-  let balanceCvx = await cvxContract.balanceOf(baseRewardPoolCrvFraxAddress);
-
-  console.log("Balance crv: ", ethers.utils.formatEther(balanceCrv))
-  console.log("Balance cvx: ", ethers.utils.formatEther(balanceCvx))
-
-  let balanceContractUsdc = await usdcContract.balanceOf(curveSwapWrapped.address)
-  console.log("Balance usdc Contract : ", ethers.utils.formatUnits(balanceContractUsdc, 6))
-
-  let balanceContractCrvFrax = await crvFraxCryptoContract.balanceOf(curveSwapWrapped.address)
-  console.log("Balance crvFrax Contract : ", ethers.utils.formatEther(balanceContractCrvFrax))
-
-  let balanceCrvInStrategy = await crvContract.balanceOf(sCompStrategyFraxusdcv1.address);
-  console.log("Balance crv strategy : ", ethers.utils.formatEther(balanceCrvInStrategy))
-
-  let balanceCvxInStrategy = await cvxContract.balanceOf(sCompStrategyFraxusdcv1.address);
-  console.log("Balance cvx strategy : ", ethers.utils.formatEther(balanceCvxInStrategy))
 
 }
 
@@ -303,21 +242,15 @@ async function withdrawv1(account: SignerWithAddress, index: any): Promise<void>
 
 }
 
-async function earnMarkReward(): Promise<void> {
-
-  await boosterContract.connect(governance).earmarkRewards(100);
-}
-
 
   main()
     .then(async () => {
       await setupContractv1();
       await setupUtilityContract();
       await impersonateAccountv1();
-      await addLiquidity(usdcAccount1, 0);
-      await addLiquidity(usdcAccount2, 1);
-      await addLiquidity(usdcAccount3, 2);
-      await checkBalance();
+      await addLiquidity(usdcAccount1);
+      await addLiquidity(usdcAccount2);
+      await addLiquidity(usdcAccount3);
       await depositv1(usdcAccount1, 0);
       await depositv1(usdcAccount2, 1);
       await depositv1(usdcAccount3, 2);
@@ -325,27 +258,12 @@ async function earnMarkReward(): Promise<void> {
       await mineBlock(dayToMine);
       await tendv1();
       await harvestv1();
-      await earnMarkReward();
-      await mineBlock(dayToMine);
-      await tendv1();
-      await harvestv1();
-      await earnMarkReward();
       await mineBlock(dayToMine);
       await tendv1();
       await harvestv1();
       await withdrawv1(usdcAccount1, 0);
       await withdrawv1(usdcAccount2, 1);
       await withdrawv1(usdcAccount3, 2);
-      await removeLiquidity(usdcAccount1, 0);
-      await removeLiquidity(usdcAccount2, 1);
-      await removeLiquidity(usdcAccount3, 2);
-      await checkBalance();
-
-      let blockNumber = await ethers.provider.getBlockNumber();
-      let block = await ethers.provider.getBlock(blockNumber);
-
-      let finalTimestamp = block.timestamp
-      console.log("Timestamp passed: ", finalTimestamp - initialTimestamp);
 
       process.exit(0)
     })

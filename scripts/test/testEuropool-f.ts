@@ -5,13 +5,13 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 const { run, ethers, upgrades } = hardhat;
 
 // constant json
-const wethABI = require('../abi/weth.json');
-const baseRewardPoolABI = require('../abi/baseRewardPoolAbi.json');
-const boosterABI = require('../abi/booster.json');
+const wethABI = require('../../abi/weth.json');
+const baseRewardPoolABI = require('../../abi/baseRewardPoolAbi.json');
+const boosterABI = require('../../abi/booster.json');
 
 // variable json
-const curveSwapABI = require('../abi/europoolSwap.json');
-const info = require('../strategyInfo/fraxUsdc.json');
+const curveSwapABI = require('../../abi/europoolSwap.json');
+const info = require('../../strategyInfo/europool.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -39,7 +39,7 @@ let crvContract: Contract;
 let boosterContract: Contract;
 
 // variable address
-let wantAddress = info.want; // **name** // 18 decimals
+let wantAddress = info.wantAddress; // **name** // 18 decimals
 let tokenCompoundAddress = info.tokenCompoundAddress; // **name** // 18 decimals
 let curveSwapAddress = info.curveSwapAddress; // pool **name pool** curve
 let tokenDepositAddress = info.tokenDepositAddress; // token deposit in pool curve
@@ -47,6 +47,9 @@ let accountDepositAddress1 = info.accountDepositAddress1; // account have amount
 let accountDepositAddress2 = info.accountDepositAddress2; // account have amount of token deposit
 let accountDepositAddress3 = info.accountDepositAddress3; // account have amount of token deposit
 let baseRewardPoolAddress = info.baseRewardPoolAddress; // address of baseRewardPool in convex
+let swapPathCrv = info.swapPathCrv;
+let swapPathCvx = info.swapPathCvx;
+let routerIndex = 0; // 0 -> uniswap / 1 -> sushiswap
 
 // constant address
 let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
@@ -73,7 +76,7 @@ let dayToMine: any = 1;
 let depositv1Value: any = [];
 let initialBalanceDepositPool: any = [];
 let blockFinishBaseReward: any;
-let amountToDepositLiquidity: any = ethers.utils.parseUnits(info.amountToDepositLiquidity, 6);
+let amountToDepositLiquidity: any = ethers.utils.parseEther(info.amountToDepositLiquidity);
 let initialTimestamp: any;
 
 async function main(): Promise<void> {
@@ -108,7 +111,7 @@ async function setupContract(): Promise<void> {
   console.log("Vault deployed to: ", sCompVault.address)
 
   // deploy strategies
-  let factoryStrategy = await ethers.getContractFactory("SCompStrategy")
+  let factoryStrategy = await ethers.getContractFactory("SCompStrategyEuropool")
   sCompStrategy = await upgrades.deployProxy(factoryStrategy, [
       nameStrategy,
       governance.address,
@@ -118,23 +121,22 @@ async function setupContract(): Promise<void> {
       tokenCompoundAddress,
       pidPool,
       [feeGovernance, feeStrategist, feeWithdraw],
-      {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool}
+      {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool},
+      routerIndex
   ]);
   await sCompStrategy.deployed();
 
-  console.log("Strategy deployed to: ", sCompStrategy.address)
+  console.log("Strategy v1 deployed to: ", sCompStrategy.address)
   // set strategy in controller
   await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
   await sCompController.connect(governance).setStrategy(wantAddress, sCompStrategy.address);
   await sCompController.connect(governance).setVault(wantAddress, sCompVault.address);
-  console.log("Setup complete")
 }
 
 async function setupUtilityContract(): Promise<void> {
 
-    console.log("Setup utility contract...")
 
-    // deploy curveSwapWrapped
+  // deploy curveSwapWrapped
     let factoryCurveSwapWrapped = await ethers.getContractFactory("CurveSwapWrapped");
     curveSwapWrapped = await factoryCurveSwapWrapped.deploy(
         tokenDepositAddress,
@@ -156,41 +158,40 @@ async function setupUtilityContract(): Promise<void> {
     baseRewardPoolContract = await new ethers.Contract(baseRewardPoolAddress, baseRewardPoolABI, ethers.provider);
     boosterContract = await new ethers.Contract(boosterAddress, boosterABI, ethers.provider);
 
+    blockFinishBaseReward = await baseRewardPoolContract.periodFinish();
+    console.log("Block period finish: ", ethers.utils.formatUnits(blockFinishBaseReward, 0));
 
 }
 
 async function impersonateAccount(): Promise<void> {
-    console.log("Impersonate account...")
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress1],
-    });
-    depositAccount1 = await ethers.getSigner(accountDepositAddress1);
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [accountDepositAddress1],
+  });
+  depositAccount1 = await ethers.getSigner(accountDepositAddress1);
 
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress2],
-    });
-    depositAccount2 = await ethers.getSigner(accountDepositAddress2);
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [accountDepositAddress2],
+  });
+  depositAccount2 = await ethers.getSigner(accountDepositAddress2);
 
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress3],
-    });
-    depositAccount3 = await ethers.getSigner(accountDepositAddress3);
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [accountDepositAddress3],
+  });
+  depositAccount3 = await ethers.getSigner(accountDepositAddress3);
 
 }
 
 async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
-    console.log("Add liquidity...")
-
     initialBalanceDepositPool[index] = await tokenDepositContract.balanceOf(account.address);
 
     //await depositToken.connect(account).transfer(curveSwapWrapped.address, amountToDepositLiquidity);
 
     await tokenDepositContract.connect(account).transfer(curveSwapWrapped.address, amountToDepositLiquidity);
 
-    let tx = await curveSwapWrapped.connect(account).addLiquidity_2coins([0, amountToDepositLiquidity],0);
+    let tx = await curveSwapWrapped.connect(account).addLiquidity_3coins([0, amountToDepositLiquidity, 0],0);
     await tx.wait();
 
 }

@@ -4,13 +4,13 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const { run, ethers, upgrades } = hardhat;
 
-const crv3CryptoABI = require('../abi/3crv.json');
-const curveCryptoSwapABI = require('../abi/curveCryptoSwap.json');
-const wethABI = require('../abi/weth.json');
-const baseRewardPoolABI = require('../abi/baseRewardPoolAbi.json');
-const boosterABI = require('../abi/booster.json');
-const frax3crv_fABI = require('../abi/frax3crv_f.json');
-const gauge_ABI = require('../abi/gauge.json');
+const crv3CryptoABI = require('../../abi/3crv.json');
+const curveCryptoSwapABI = require('../../abi/curveCryptoSwap.json');
+const wethABI = require('../../abi/weth.json');
+const baseRewardPoolABI = require('../../abi/baseRewardPoolAbi.json');
+const boosterABI = require('../../abi/booster.json');
+const frax3crv_fABI = require('../../abi/frax3crv_f.json');
+const gauge_ABI = require('../../abi/gauge.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;

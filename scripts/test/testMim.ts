@@ -5,13 +5,13 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 const { run, ethers, upgrades } = hardhat;
 
 // constant json
-const wethABI = require('../abi/weth.json');
-const baseRewardPoolABI = require('../abi/baseRewardPoolAbi.json');
-const boosterABI = require('../abi/booster.json');
+const wethABI = require('../../abi/weth.json');
+const baseRewardPoolABI = require('../../abi/baseRewardPoolAbi.json');
+const boosterABI = require('../../abi/booster.json');
 
 // variable json
-const curveSwapABI = require('../abi/europoolSwap.json');
-const info = require('../strategyInfo/europool.json');
+const curveSwapABI = require('../../abi/europoolSwap.json');
+const info = require('../../strategyInfo/magic_internet_money_3pool.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -39,7 +39,7 @@ let crvContract: Contract;
 let boosterContract: Contract;
 
 // variable address
-let wantAddress = info.wantAddress; // **name** // 18 decimals
+let wantAddress = info.want; // **name** // 18 decimals
 let tokenCompoundAddress = info.tokenCompoundAddress; // **name** // 18 decimals
 let curveSwapAddress = info.curveSwapAddress; // pool **name pool** curve
 let tokenDepositAddress = info.tokenDepositAddress; // token deposit in pool curve
@@ -111,7 +111,7 @@ async function setupContract(): Promise<void> {
   console.log("Vault deployed to: ", sCompVault.address)
 
   // deploy strategies
-  let factoryStrategy = await ethers.getContractFactory("SCompStrategyEuropool")
+  let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
   sCompStrategy = await upgrades.deployProxy(factoryStrategy, [
       nameStrategy,
       governance.address,
@@ -121,29 +121,30 @@ async function setupContract(): Promise<void> {
       tokenCompoundAddress,
       pidPool,
       [feeGovernance, feeStrategist, feeWithdraw],
-      {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool},
-      routerIndex
+      {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool}
   ]);
   await sCompStrategy.deployed();
 
-  console.log("Strategy v1 deployed to: ", sCompStrategy.address)
+  console.log("Strategy deployed to: ", sCompStrategy.address)
   // set strategy in controller
   await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
   await sCompController.connect(governance).setStrategy(wantAddress, sCompStrategy.address);
   await sCompController.connect(governance).setVault(wantAddress, sCompVault.address);
+
+  console.log("Setup controller completed")
 }
 
 async function setupUtilityContract(): Promise<void> {
 
+    console.log("Setup utility contract...");
 
-  // deploy curveSwapWrapped
-    let factoryCurveSwapWrapped = await ethers.getContractFactory("CurveSwapWrapped");
+    // deploy curveSwapWrapped
+    let factoryCurveSwapWrapped = await ethers.getContractFactory("CurveSwapWrappedMim");
     curveSwapWrapped = await factoryCurveSwapWrapped.deploy(
         tokenDepositAddress,
         curveSwapAddress,
         wantAddress
     );
-
 
     // Get curve swap contract
     curveSwap = await new ethers.Contract(curveSwapAddress, curveSwapABI, ethers.provider);
@@ -159,39 +160,38 @@ async function setupUtilityContract(): Promise<void> {
     boosterContract = await new ethers.Contract(boosterAddress, boosterABI, ethers.provider);
 
     blockFinishBaseReward = await baseRewardPoolContract.periodFinish();
-    console.log("Block period finish: ", ethers.utils.formatUnits(blockFinishBaseReward, 0));
+    //console.log("Block period finish: ", ethers.utils.formatUnits(blockFinishBaseReward, 0));
 
 }
 
 async function impersonateAccount(): Promise<void> {
-  await network.provider.request({
+    console.log("Impersonate account...")
+    await network.provider.request({
     method: "hardhat_impersonateAccount",
     params: [accountDepositAddress1],
   });
-  depositAccount1 = await ethers.getSigner(accountDepositAddress1);
+    depositAccount1 = await ethers.getSigner(accountDepositAddress1);
 
-  await network.provider.request({
+    await network.provider.request({
     method: "hardhat_impersonateAccount",
     params: [accountDepositAddress2],
   });
-  depositAccount2 = await ethers.getSigner(accountDepositAddress2);
+    depositAccount2 = await ethers.getSigner(accountDepositAddress2);
 
-  await network.provider.request({
+    await network.provider.request({
     method: "hardhat_impersonateAccount",
     params: [accountDepositAddress3],
   });
-  depositAccount3 = await ethers.getSigner(accountDepositAddress3);
-
+    depositAccount3 = await ethers.getSigner(accountDepositAddress3);
 }
 
 async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
+    console.log("Add liquidity...")
     initialBalanceDepositPool[index] = await tokenDepositContract.balanceOf(account.address);
-
-    //await depositToken.connect(account).transfer(curveSwapWrapped.address, amountToDepositLiquidity);
 
     await tokenDepositContract.connect(account).transfer(curveSwapWrapped.address, amountToDepositLiquidity);
 
-    let tx = await curveSwapWrapped.connect(account).addLiquidity_3coins([0, amountToDepositLiquidity, 0],0);
+    let tx = await curveSwapWrapped.connect(account).addLiquidity_4coins([amountToDepositLiquidity, 0, 0, 0], 0);
     await tx.wait();
 
 }
