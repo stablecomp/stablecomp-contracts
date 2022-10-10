@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../interface/IController.sol";
 import "../utility/SCompAccessControl.sol";
@@ -27,10 +27,10 @@ import "../utility/SCompAccessControl.sol";
     - Remove keeper
     - Remove guardian
 */
-abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address;
-    using SafeMathUpgradeable for uint256;
+abstract contract BaseStrategy is Pausable, SCompAccessControl {
+    using SafeERC20 for IERC20;
+    using Address for address;
+    using SafeMath for uint256;
 
     event Withdraw(uint256 amount);
     event WithdrawAll(uint256 balance);
@@ -56,12 +56,11 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
 
     uint256 public withdrawalMaxDeviationThreshold;
 
-    function __BaseStrategy_init(
+    constructor(
         address _governance,
         address _strategist,
         address _controller
-    ) public initializer whenNotPaused {
-        __Pausable_init();
+    ){
         governance = _governance;
         strategist = _strategist;
         controller = _controller;
@@ -96,7 +95,7 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
 
     /// @notice Get the balance of want held idle in the Strategy
     function balanceOfWant() public view returns (uint256) {
-        return IERC20Upgradeable(want).balanceOf(address(this));
+        return IERC20(want).balanceOf(address(this));
     }
 
     /// @notice Get the total balance of want realized in the strategy, whether idle or active in Strategy positions.
@@ -155,7 +154,7 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
 
     function deposit() public virtual whenNotPaused {
         _onlyAuthorizedActorsOrController();
-        uint256 _want = IERC20Upgradeable(want).balanceOf(address(this));
+        uint256 _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
             _deposit(_want);
         }
@@ -174,7 +173,7 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
 
         _withdrawAll();
 
-        _transferToVault(IERC20Upgradeable(want).balanceOf(address(this)));
+        _transferToVault(IERC20(want).balanceOf(address(this)));
     }
 
     /// @notice Withdraw partial funds from the strategy, unrolling from strategy positions as necessary
@@ -186,7 +185,7 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
         // Withdraw from strategy positions, typically taking from any idle want first.
         _withdrawSome(_amount);
         uint256 _postWithdraw =
-        IERC20Upgradeable(want).balanceOf(address(this));
+        IERC20(want).balanceOf(address(this));
 
         // Sanity check: Ensure we were able to retrieve sufficent want from strategy positions
         // If we end up with less than the amount requested, make sure it does not deviate beyond a maximum threshold
@@ -202,7 +201,7 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
         }
 
         // Return the amount actually withdrawn if less than amount requested
-        uint256 _toWithdraw = MathUpgradeable.min(_postWithdraw, _amount);
+        uint256 _toWithdraw = Math.min(_postWithdraw, _amount);
 
         // Process withdrawal fee
         uint256 _fee = _processWithdrawalFee(_toWithdraw);
@@ -222,8 +221,8 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
         _onlyController();
         _onlyNotProtectedTokens(_asset);
 
-        balance = IERC20Upgradeable(_asset).balanceOf(address(this));
-        IERC20Upgradeable(_asset).safeTransfer(controller, balance);
+        balance = IERC20(_asset).balanceOf(address(this));
+        IERC20(_asset).safeTransfer(controller, balance);
     }
 
     /// ===== Permissioned Actions: Authoized Contract Pausers =====
@@ -248,7 +247,7 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
         }
 
         uint256 fee = _amount.mul(withdrawalFee).div(MAX_FEE);
-        IERC20Upgradeable(want).safeTransfer(
+        IERC20(want).safeTransfer(
             IController(controller).rewards(),
             fee
         );
@@ -268,14 +267,14 @@ abstract contract BaseStrategy is PausableUpgradeable, SCompAccessControl {
             return 0;
         }
         uint256 fee = amount.mul(feeBps).div(MAX_FEE);
-        IERC20Upgradeable(token).safeTransfer(recipient, fee);
+        IERC20(token).safeTransfer(recipient, fee);
         return fee;
     }
 
     function _transferToVault(uint256 _amount) internal {
         address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
-        IERC20Upgradeable(want).safeTransfer(_vault, _amount);
+        IERC20(want).safeTransfer(_vault, _amount);
     }
 
     /// @notice Utility function to diff two numbers, expects higher value in first position

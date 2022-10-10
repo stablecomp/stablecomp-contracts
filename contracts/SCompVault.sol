@@ -115,6 +115,7 @@ contract SCompVault is ERC20 {
         }
 
         token.safeTransfer(msg.sender, r);
+        // todo withdraw fee
     }
 
     function getPricePerFullShare() public view returns (uint256) {

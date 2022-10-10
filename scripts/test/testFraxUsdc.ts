@@ -11,7 +11,7 @@ const boosterABI = require('../../abi/booster.json');
 
 // variable json
 const curveSwapABI = require('../../abi/europoolSwap.json');
-const info = require('../../strategyInfo/fraxUsdc.json');
+const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;

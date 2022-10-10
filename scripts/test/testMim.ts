@@ -11,7 +11,7 @@ const boosterABI = require('../../abi/booster.json');
 
 // variable json
 const curveSwapABI = require('../../abi/europoolSwap.json');
-const info = require('../../strategyInfo/magic_internet_money_3pool.json');
+const info = require('../../strategyInfo/infoPool/magic_internet_money_3pool.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;

@@ -13,7 +13,7 @@ const boosterABI = require('../../abi/booster.json');
 const gauge_ABI = require('../../abi/gauge.json');
 
 const curveSwapABI = require('../../abi/europoolSwap.json');
-const info = require('../../strategyInfo/tricrypto.json');
+const info = require('../../strategyInfo/infoPool/tricrypto.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;

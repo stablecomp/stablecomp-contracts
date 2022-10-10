@@ -11,7 +11,7 @@ const boosterABI = require('../../abi/booster.json');
 
 // variable json
 const curveSwapABI = require('../../abi/europoolSwap.json');
-const info = require('../../strategyInfo/infoPool/europool.json');
+const info = require('../../strategyInfo/infoPool/frax3crv.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -47,9 +47,6 @@ let accountDepositAddress1 = info.accountDepositAddress1; // account have amount
 let accountDepositAddress2 = info.accountDepositAddress2; // account have amount of token deposit
 let accountDepositAddress3 = info.accountDepositAddress3; // account have amount of token deposit
 let baseRewardPoolAddress = info.baseRewardPoolAddress; // address of baseRewardPool in convex
-let swapPathCrv = info.swapPathCrv;
-let swapPathCvx = info.swapPathCvx;
-let routerIndex = 0; // 0 -> uniswap / 1 -> sushiswap
 
 // constant address
 let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
@@ -71,7 +68,7 @@ let feeWithdraw = info.feeWithdraw;
 let maxUint = ethers.constants.MaxUint256;
 let blockOneDay: any = 6646;
 let blockTime: any = 13;
-let dayToMine: any = 1;
+let dayToMine: any = 7;
 
 let depositv1Value: any = [];
 let initialBalanceDepositPool: any = [];
@@ -91,11 +88,11 @@ async function main(): Promise<void> {
 async function setupContract(): Promise<void> {
   // deploy controller
   let factoryController = await ethers.getContractFactory("SCompController")
-  sCompController = await upgrades.deployProxy(factoryController, [
+  sCompController = await factoryController.deploy(
     governance.address,
     strategist.address,
     rewards.address,
-  ]);
+  );
   await sCompController.deployed();
 
   console.log("Controller deployed to: ", sCompController.address)
@@ -111,8 +108,8 @@ async function setupContract(): Promise<void> {
   console.log("Vault deployed to: ", sCompVault.address)
 
   // deploy strategies
-  let factoryStrategy = await ethers.getContractFactory("SCompStrategyEuropool")
-  sCompStrategy = await upgrades.deployProxy(factoryStrategy, [
+  let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
+  sCompStrategy = await factoryStrategy.deploy(
       nameStrategy,
       governance.address,
       strategist.address,
@@ -121,28 +118,31 @@ async function setupContract(): Promise<void> {
       tokenCompoundAddress,
       pidPool,
       [feeGovernance, feeStrategist, feeWithdraw],
-      {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool},
-      routerIndex
-  ]);
+      {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool}
+  );
   await sCompStrategy.deployed();
 
-  console.log("Strategy v1 deployed to: ", sCompStrategy.address)
+  console.log("Strategy deployed to: ", sCompStrategy.address)
   // set strategy in controller
   await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
   await sCompController.connect(governance).setStrategy(wantAddress, sCompStrategy.address);
   await sCompController.connect(governance).setVault(wantAddress, sCompVault.address);
+  console.log("Setup complete")
 }
 
 async function setupUtilityContract(): Promise<void> {
 
+    console.log("Setup utility contract...")
 
-  // deploy curveSwapWrapped
+    // deploy curveSwapWrapped
     let factoryCurveSwapWrapped = await ethers.getContractFactory("CurveSwapWrapped");
     curveSwapWrapped = await factoryCurveSwapWrapped.deploy(
         tokenDepositAddress,
         curveSwapAddress,
         wantAddress
     );
+
+    console.log("Curve swap wrapped deploy to: ", curveSwapWrapped.address)
 
 
     // Get curve swap contract
@@ -158,40 +158,41 @@ async function setupUtilityContract(): Promise<void> {
     baseRewardPoolContract = await new ethers.Contract(baseRewardPoolAddress, baseRewardPoolABI, ethers.provider);
     boosterContract = await new ethers.Contract(boosterAddress, boosterABI, ethers.provider);
 
-    blockFinishBaseReward = await baseRewardPoolContract.periodFinish();
-    console.log("Block period finish: ", ethers.utils.formatUnits(blockFinishBaseReward, 0));
 
 }
 
 async function impersonateAccount(): Promise<void> {
-  await network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [accountDepositAddress1],
-  });
-  depositAccount1 = await ethers.getSigner(accountDepositAddress1);
+    console.log("Impersonate account...")
+    await network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [accountDepositAddress1],
+    });
+    depositAccount1 = await ethers.getSigner(accountDepositAddress1);
 
-  await network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [accountDepositAddress2],
-  });
-  depositAccount2 = await ethers.getSigner(accountDepositAddress2);
+    await network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [accountDepositAddress2],
+    });
+    depositAccount2 = await ethers.getSigner(accountDepositAddress2);
 
-  await network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [accountDepositAddress3],
-  });
-  depositAccount3 = await ethers.getSigner(accountDepositAddress3);
+    await network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [accountDepositAddress3],
+    });
+    depositAccount3 = await ethers.getSigner(accountDepositAddress3);
 
 }
 
 async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
+    console.log("Add liquidity...")
+
     initialBalanceDepositPool[index] = await tokenDepositContract.balanceOf(account.address);
 
     //await depositToken.connect(account).transfer(curveSwapWrapped.address, amountToDepositLiquidity);
 
     await tokenDepositContract.connect(account).transfer(curveSwapWrapped.address, amountToDepositLiquidity);
 
-    let tx = await curveSwapWrapped.connect(account).addLiquidity_3coins([0, amountToDepositLiquidity, 0],0);
+    let tx = await curveSwapWrapped.connect(account).addLiquidity_2coins([amountToDepositLiquidity, 0],0);
     await tx.wait();
 
 }

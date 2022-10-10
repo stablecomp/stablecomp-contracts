@@ -1,0 +1,19 @@
+{
+  "nameStrategy": "Frax3crv-f",
+  "wantAddress": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+  "tokenCompoundAddress": "0x853d955aCEf822Db058eb8505911ED77F175b99e",
+  "curveSwapAddress": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+  "tokenDepositAddress": "0x853d955aCEf822Db058eb8505911ED77F175b99e",
+  "accountDepositAddress1": "0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626",
+  "accountDepositAddress2": "0xc83a1bb26dc153c009d5baad9855fe90cf5a1529",
+  "accountDepositAddress3": "0xd3d176f7e4b43c70a68466949f6c64f06ce75bb9",
+  "baseRewardPoolAddress": "0xB900EF131301B307dB5eFcbed9DBb50A3e209B2e",
+  "pidPool": 32,
+  "nElementPool": 2,
+  "tokenCompoundPosition": 0,
+  "feeGovernance": 0,
+  "feeStrategist": 0,
+  "feeWithdraw": 0,
+  "amountToDepositLiquidity": "10000",
+  "routerIndex": 0
+}

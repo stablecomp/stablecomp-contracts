@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../abstract/BaseStrategy.sol";
@@ -17,7 +17,6 @@ import "../interface/IBooster.sol";
 import "../interface/IBaseRewardsPool.sol";
 import "../interface/ICvxRewardsPool.sol";
 
-import "hardhat/console.sol"; // todo remove
 
 pragma experimental ABIEncoderV2;
 
@@ -73,20 +72,20 @@ CurveSwapper,
 UniswapSwapper,
 TokenSwapPathRegistry
 {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address;
-    using SafeMathUpgradeable for uint256;
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    using SafeERC20 for IERC20;
+    using Address for address;
+    using SafeMath for uint256;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     // ===== Token Registry =====
     address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant crv = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address public constant cvx = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
 
-    IERC20Upgradeable public constant crvToken =
-    IERC20Upgradeable(0xD533a949740bb3306d119CC777fa900bA034cd52);
-    IERC20Upgradeable public constant cvxToken =
-    IERC20Upgradeable(0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B);
+    IERC20 public constant crvToken =
+    IERC20(0xD533a949740bb3306d119CC777fa900bA034cd52);
+    IERC20 public constant cvxToken =
+    IERC20(0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B);
 
     // ===== Convex Registry =====
     IBooster public constant booster =
@@ -97,7 +96,7 @@ TokenSwapPathRegistry
 
     uint256 public pid;
     address public tokenCompoundAddress;
-    IERC20Upgradeable public tokenCompound;
+    IERC20 public tokenCompound;
 
     /**
     The default conditions for a rewards token are:
@@ -155,7 +154,7 @@ TokenSwapPathRegistry
 
     event TendState(uint crvTended, uint cvxTended);
 
-    function initialize(
+    constructor(
         string memory nameStrategy,
         address _governance,
         address _strategist,
@@ -165,12 +164,7 @@ TokenSwapPathRegistry
         uint256 _pid,
         uint256[3] memory _feeConfig,
         CurvePoolConfig memory _curvePool
-    ) public initializer whenNotPaused {
-        __BaseStrategy_init(
-            _governance,
-            _strategist,
-            _controller
-        );
+    ) BaseStrategy(_governance, _strategist, _controller) {
 
         want = _want;
 
@@ -184,10 +178,10 @@ TokenSwapPathRegistry
         withdrawalFee = _feeConfig[2];
 
         tokenCompoundAddress = _tokenCompound;
-        tokenCompound = IERC20Upgradeable(_tokenCompound);
+        tokenCompound = IERC20(_tokenCompound);
 
         // Approvals: Staking Pools
-        IERC20Upgradeable(want).approve(address(booster), MAX_UINT_256);
+        IERC20(want).approve(address(booster), MAX_UINT_256);
 
         curvePool = CurvePoolConfig(
             _curvePool.swap,
@@ -224,7 +218,7 @@ TokenSwapPathRegistry
     function setTokenCompound(address _tokenCompound, uint _tokenCompoundPosition) external {
         _onlyGovernance();
         tokenCompoundAddress = _tokenCompound;
-        tokenCompound = IERC20Upgradeable(_tokenCompound);
+        tokenCompound = IERC20(_tokenCompound);
         curvePool.tokenCompoundPosition = _tokenCompoundPosition;
 
         // Set Swap Paths
@@ -298,7 +292,7 @@ TokenSwapPathRegistry
     returns (uint256)
     {
         // Get idle want in the strategy
-        uint256 _preWant = IERC20Upgradeable(want).balanceOf(address(this));
+        uint256 _preWant = IERC20(want).balanceOf(address(this));
 
         // If we lack sufficient idle want, withdraw the difference from the strategy position
         if (_preWant < _amount) {
@@ -307,10 +301,10 @@ TokenSwapPathRegistry
         }
 
         // Confirm how much want we actually end up with
-        uint256 _postWant = IERC20Upgradeable(want).balanceOf(address(this));
+        uint256 _postWant = IERC20(want).balanceOf(address(this));
 
         // Return the actual amount withdrawn if less than requested
-        uint256 _withdrawn = MathUpgradeable.min(_postWant, _amount);
+        uint256 _withdrawn = Math.min(_postWant, _amount);
         emit WithdrawState(_amount, _preWant, _postWant, _withdrawn);
 
         return _withdrawn;
@@ -347,7 +341,7 @@ TokenSwapPathRegistry
     function harvest() external whenNotPaused returns (uint256) {
         _onlyAuthorizedActors();
 
-        uint256 idleWant = IERC20Upgradeable(want).balanceOf(address(this));
+        uint256 idleWant = IERC20(want).balanceOf(address(this));
         uint256 totalWantBefore = balanceOf();
 
         // 1. Withdraw accrued rewards from staking positions (claim unclaimed positions as well)
@@ -388,7 +382,7 @@ TokenSwapPathRegistry
                 curvePool.numElements,
                 0
             );
-            wantGained = IERC20Upgradeable(want).balanceOf(address(this)).sub(
+            wantGained = IERC20(want).balanceOf(address(this)).sub(
                 idleWant
             );
 
@@ -398,7 +392,7 @@ TokenSwapPathRegistry
                 wantGained.mul(performanceFeeGovernance).div(
                     MAX_FEE
                 );
-                IERC20Upgradeable(want).transfer(
+                IERC20(want).transfer(
                     governance,
                     autoCompoundedPerformanceFeeGovernance
                 );
@@ -415,7 +409,7 @@ TokenSwapPathRegistry
                 wantGained.mul(performanceFeeStrategist).div(
                     MAX_FEE
                 );
-                IERC20Upgradeable(want).transfer(
+                IERC20(want).transfer(
                     strategist,
                     autoCompoundedPerformanceFeeStrategist
                 );
@@ -432,7 +426,7 @@ TokenSwapPathRegistry
 
         // Deposit remaining want (including idle want) into strategy position
         uint256 wantToDeposited =
-        IERC20Upgradeable(want).balanceOf(address(this));
+        IERC20(want).balanceOf(address(this));
 
         if (wantToDeposited > 0) {
             _deposit(wantToDeposited);

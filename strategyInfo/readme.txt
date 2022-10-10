@@ -1,0 +1,2 @@
+-Fraxusdc token compound non può essere 3crv con router sushiswap ?? o forse bisogna settare un path diverso o forse bisogna usare uniswap
+-

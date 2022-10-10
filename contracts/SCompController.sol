@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interface/IStrategy.sol";
 import "./interface/IOneSplitAudit.sol";
@@ -12,9 +12,9 @@ import "./interface/IConverter.sol";
 import "./utility/SCompAccessControl.sol";
 
 contract SCompController is SCompAccessControl {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address;
-    using SafeMathUpgradeable for uint256;
+    using SafeERC20 for IERC20;
+    using Address for address;
+    using SafeMath for uint256;
 
     address public rewards;
     mapping(address => address) public vaults;
@@ -27,11 +27,11 @@ contract SCompController is SCompAccessControl {
     /// @param _governance Can take any permissioned action within the Controller, with the exception of Vault helper functions
     /// @param _strategist Can configure new Vaults, choose strategies among those approved by governance, and call operations involving non-core tokens
     /// @param _rewards The recipient of standard fees (such as performance and withdrawal fees) from Strategies
-    function initialize(
+    constructor(
         address _governance,
         address _strategist,
         address _rewards
-    ) public initializer {
+    ) {
         governance = _governance;
         strategist = _strategist;
 
@@ -120,7 +120,7 @@ contract SCompController is SCompAccessControl {
     /// @dev Token balance are never meant to exist in the controller, this is purely a safeguard.
     function inCaseTokensGetStuck(address _token, uint256 _amount) public {
         _onlyGovernanceOrStrategist();
-        IERC20Upgradeable(_token).safeTransfer(msg.sender, _amount);
+        IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 
     /// @dev Transfer an amount of the specified token from the controller to the sender.
@@ -144,11 +144,11 @@ contract SCompController is SCompAccessControl {
 
         if (_want != _token) {
             address converter = converters[_token][_want];
-            IERC20Upgradeable(_token).safeTransfer(converter, _amount);
+            IERC20(_token).safeTransfer(converter, _amount);
             _amount = IConverter(converter).convert(_strategy);
-            IERC20Upgradeable(_want).safeTransfer(_strategy, _amount);
+            IERC20(_want).safeTransfer(_strategy, _amount);
         } else {
-            IERC20Upgradeable(_token).safeTransfer(_strategy, _amount);
+            IERC20(_token).safeTransfer(_strategy, _amount);
         }
         IStrategy(_strategy).deposit();
     }

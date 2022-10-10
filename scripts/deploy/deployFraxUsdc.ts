@@ -4,7 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const { run, ethers, upgrades } = hardhat;
 
-const info = require('../../strategyInfo/fraxUsdc.json');
+const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
