@@ -1,7 +1,7 @@
 # @version 0.2.4
 """
-@title Voting Escrow
-@author Curve Finance
+@title Voting Escrow Scomp
+@author Scaling Parrots
 @license MIT
 @notice Votes have a weight depending on time, so that users are
         committed to the future of (whatever they are voting for)
@@ -58,10 +58,7 @@ INCREASE_LOCK_AMOUNT: constant(int128) = 2
 INCREASE_UNLOCK_TIME: constant(int128) = 3
 
 
-event CommitOwnership:
-    admin: address
-
-event ApplyOwnership:
+event TransferOwnership:
     admin: address
 
 event Deposit:
@@ -96,9 +93,6 @@ user_point_history: public(HashMap[address, Point[1000000000]])  # user -> Point
 user_point_epoch: public(HashMap[address, uint256])
 slope_changes: public(HashMap[uint256, int128])  # time -> signed slope change
 
-# Aragon's view methods for compatibility
-controller: public(address)
-transfersEnabled: public(bool)
 
 name: public(String[64])
 symbol: public(String[32])
@@ -117,8 +111,9 @@ future_admin: public(address)
 @external
 def __init__(token_addr: address, _name: String[64], _symbol: String[32], _version: String[32]):
     """
+
     @notice Contract constructor
-    @param token_addr `ERC20CRV` token address
+    @param token_addr `ERC20Scomp` token address
     @param _name Token name
     @param _symbol Token symbol
     @param _version Contract version - required for Aragon compatibility
@@ -127,8 +122,6 @@ def __init__(token_addr: address, _name: String[64], _symbol: String[32], _versi
     self.token = token_addr
     self.point_history[0].blk = block.number
     self.point_history[0].ts = block.timestamp
-    self.controller = msg.sender
-    self.transfersEnabled = True
 
     _decimals: uint256 = ERC20(token_addr).decimals()
     assert _decimals <= 255
@@ -140,26 +133,16 @@ def __init__(token_addr: address, _name: String[64], _symbol: String[32], _versi
 
 
 @external
-def commit_transfer_ownership(addr: address):
+def transfer_ownership(addr: address):
     """
     @notice Transfer ownership of VotingEscrow contract to `addr`
     @param addr Address to have ownership transferred to
     """
     assert msg.sender == self.admin  # dev: admin only
-    self.future_admin = addr
-    log CommitOwnership(addr)
-
-
-@external
-def apply_transfer_ownership():
-    """
-    @notice Apply ownership transfer
-    """
-    assert msg.sender == self.admin  # dev: admin only
-    _admin: address = self.future_admin
+    _admin: address = addr
     assert _admin != ZERO_ADDRESS  # dev: admin not set
     self.admin = _admin
-    log ApplyOwnership(_admin)
+    log TransferOwnership(_admin)
 
 
 @external
@@ -438,7 +421,7 @@ def increase_amount(_value: uint256):
     self.assert_not_contract(msg.sender)
     _locked: LockedBalance = self.locked[msg.sender]
 
-    assert _value > 0  # dev: need non-zero value
+    assert _value > 0 # dev: need non-zero value
     assert _locked.amount > 0, "No existing lock found"
     assert _locked.end > block.timestamp, "Cannot add to expired lock. Withdraw"
 
@@ -658,14 +641,3 @@ def totalSupplyAt(_block: uint256) -> uint256:
     # Now dt contains info on how far are we beyond point
 
     return self.supply_at(point, point.ts + dt)
-
-
-# Dummy methods for compatibility with Aragon
-
-@external
-def changeController(_newController: address):
-    """
-    @dev Dummy method required for Aragon compatibility
-    """
-    assert msg.sender == self.controller
-    self.controller = _newController

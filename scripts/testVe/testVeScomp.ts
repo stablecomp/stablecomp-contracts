@@ -33,25 +33,28 @@ async function main(): Promise<void> {
 }
 
 let oneWeek = 7 * 86400;
+let blockOneDay: any = 6646;
+let blockTime: any = 13;
+
 let veCrv_1 : Contract;
 let veCrv : Contract;
 let tokenDeposit : Contract;
 let timeLock : any;
 
 let tokenAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52";
-let name = "Vote-escrowed Scomp"
+let name = "Voting Escrow Scomp"
 let symbol = "veScomp"
 let version = "veScomp1.0.0";
 
 async function deployContract(): Promise<void> {
 
-    let factory = await ethers.getContractFactory("veCrv");
+    let factory = await ethers.getContractFactory("veScomp");
     veCrv = await factory.deploy(tokenAddress, name, symbol, version);
     await veCrv.deployed();
 
     console.log("Address: ", veCrv.address);
 
-    veCrv = await new ethers.Contract(veCrv.address, veCrvABI, deployer);
+    veCrv = await ethers.getContractAt("IVotingEscrow", veCrv.address, deployer);
 
 }
 
@@ -98,6 +101,9 @@ async function createLock(account: SignerWithAddress): Promise<void> {
 
     let amountToLock = ethers.utils.parseEther("1000");
 
+    let balanceOfToken = await tokenDeposit.balanceOf(account.address);
+    console.log("Initial balance of token is: ", ethers.utils.formatEther(balanceOfToken));
+
     let tx = await veCrv.connect(account).create_lock(amountToLock, timeLock);
     let txCompleted = await tx.wait()
     let feeTx = await price.getFeeTx(tx, txCompleted);
@@ -105,19 +111,24 @@ async function createLock(account: SignerWithAddress): Promise<void> {
 
 }
 
-async function mineBlockCorrect(): Promise<void> {
+async function mineBlockCorrect(dayToMine: any): Promise<void> {
     let blockNumber = await ethers.provider.getBlockNumber();
     let block = await ethers.provider.getBlock(blockNumber);
-    let newTimestamp = block.timestamp + 13;
+    let newTimestamp = block.timestamp + blockTime;
 
-    await ethers.provider.send('evm_mine', [newTimestamp]);
+    console.log("------ Mine block ------")
+    for (let i = 0; i < blockOneDay*dayToMine ; i++) {
+        newTimestamp = newTimestamp + blockTime
+        await ethers.provider.send('evm_mine', [newTimestamp]);
+    }
 }
 
 async function mineBlock(): Promise<void> {
     let blockNumber = await ethers.provider.getBlockNumber();
     let block = await ethers.provider.getBlock(blockNumber);
-    let newTimestamp = block.timestamp + (oneWeek * 53)
+    let newTimestamp = block.timestamp + (oneWeek * 106)
 
+    console.log("------ Mine block ------")
     await ethers.provider.send('evm_mine', [newTimestamp]);
 }
 
@@ -129,12 +140,8 @@ async function checkpoint(): Promise<void> {
 }
 
 async function read(account: SignerWithAddress): Promise<void> {
-    let blockNumber = await ethers.provider.getBlockNumber();
-    let block = await ethers.provider.getBlock(blockNumber);
-    let blockTimestamp = block.timestamp
-
     let initialVotingPower = await veCrv.balanceOfAt(account.address, blockNumberGlobal+1);
-    console.log("Initial voting power: ", ethers.utils.formatEther(initialVotingPower));
+    //console.log("Initial voting power: ", ethers.utils.formatEther(initialVotingPower));
 
     let currentVotingPower = await veCrv.balanceOf(account.address);
     console.log("Current voting power: ", ethers.utils.formatEther(currentVotingPower));
@@ -143,45 +150,81 @@ async function read(account: SignerWithAddress): Promise<void> {
     console.log("Total voting power: ", ethers.utils.formatEther(totalSupply));
 
     let locked: any = await veCrv.locked(account.address);
-    console.log("Locked: ", ethers.utils.formatEther(locked[0]));
-    console.log("end: ", locked[1]);
+    //console.log("Locked: ", ethers.utils.formatEther(locked[0]));
+    //console.log("end: ", ethers.utils.formatUnits(locked[1], 0));
 
-    /*
-        const example = await Example.deployed();
-        example.methods['setValue(uint256)'](123);
-        example.methods['setValue(uint256,uint256)'](11, 55);
-     */
 }
 
 async function withdraw(account: SignerWithAddress): Promise<void> {
 
-    console.log("lock")
-    blockNumberGlobal = await ethers.provider.getBlockNumber();
+    console.log("Withdraw")
 
+    let tx = await veCrv.connect(account).withdraw();
+    let txCompleted = await tx.wait()
+    let feeTx = await price.getFeeTx(tx, txCompleted);
+    console.log("Fee tx withdraw: ", ethers.utils.formatEther(feeTx));
+
+    let balanceOfToken = await tokenDeposit.balanceOf(account.address);
+    console.log("Final balance of token is: ", ethers.utils.formatEther(balanceOfToken));
+
+}
+
+async function increaseUnlockTime(account: SignerWithAddress): Promise<void> {
+
+    console.log("------ Increase Unlock Time ------")
     const current_date: Date = new Date();
-    timeLock = (((current_date.getTime() / 1000)) + (1 * 365 * 86400)).toFixed(0)
+    timeLock = (((current_date.getTime() / 1000)) + (2 * 365 * 86400)).toFixed(0)
+
+    let tx = await veCrv.connect(account).increase_unlock_time(timeLock);
+    let txCompleted = await tx.wait()
+    let feeTx = await price.getFeeTx(tx, txCompleted);
+    console.log("Fee tx increase lock end: ", ethers.utils.formatEther(feeTx));
+
+}
+
+async function increaseLockAmount(account: SignerWithAddress): Promise<void> {
+
+    console.log("------ Increase Lock Amount ------")
+    let txApprove1 = await tokenDeposit.connect(account).approve(veCrv.address, 0);
+    let txApprovedCompleted1 = await txApprove1.wait();
+    let txApprove = await tokenDeposit.connect(account).approve(veCrv.address, ethers.constants.MaxUint256);
+    let txApprovedCompleted = await txApprove.wait();
 
     let amountToLock = ethers.utils.parseEther("1000");
 
-    let tx = await veCrv.connect(account).create_lock(amountToLock, timeLock);
+    let tx = await veCrv.connect(account).increase_amount(amountToLock);
     let txCompleted = await tx.wait()
     let feeTx = await price.getFeeTx(tx, txCompleted);
-    console.log("Fee tx lock: ", ethers.utils.formatEther(feeTx));
+    console.log("Fee tx increase lock amount: ", ethers.utils.formatEther(feeTx));
 
+}
+
+async function transferOwnership(): Promise<void> {
+
+    console.log("------ Transfer ownership ------")
+
+    let tx = await veCrv.connect(deployer).transfer_ownership(account1.address);
+    let txCompleted = await tx.wait()
 }
 
 
   main()
     .then(async () => {
       await deployContract();
+      await transferOwnership();
       await setupUtilityContract();
       await impersonateAccount();
       await createLock(depositAccount2);
       await read(depositAccount2);
-      await mineBlockCorrect();
-        await checkpoint();
-        await read(depositAccount2);
-        await mineBlock();
+      await mineBlockCorrect(1);
+      await increaseUnlockTime(depositAccount2);
+      await read(depositAccount2);
+      await increaseLockAmount(depositAccount2);
+      await checkpoint();
+      await read(depositAccount2);
+      await mineBlock();
+      await read(depositAccount2);
+      await withdraw(depositAccount2);
 
       /*await checkpoint();
       await read(depositAccount2);
