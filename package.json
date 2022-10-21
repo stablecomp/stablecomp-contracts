@@ -13,6 +13,7 @@
     "test-frax3crv-f": "npx hardhat run scripts/testStrategy/testFrax3Crv.ts --network hardhat",
     "test-checkpoint": "npx hardhat run scripts/testVe/testCheckpoint.ts --network hardhat",
     "test-veScomp": "npx hardhat run scripts/testVe/testVeScomp.ts --network hardhat",
+    "test-farming": "npx hardhat run scripts/testVe/testFarming.ts --network hardhat",
     "test": "npx hardhat test --network hardhat",
     "compile": "npx hardhat compile"
   },
