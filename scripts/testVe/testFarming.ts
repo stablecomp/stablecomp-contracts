@@ -202,10 +202,10 @@ async function simulateCalcFarming(): Promise<void> {
 
     console.log("------ Simulate calc farming ------")
 
-    let dollarProvided1 = 1000;
+    let dollarProvided1 = 111500;
     let dollarProvided2 = 0;
-    let dollarProvided3 = 1000;
-    let dollarProvided4 = 1000;
+    let dollarProvided3 = 111500;
+    let dollarProvided4 = 111500;
     let totalLiquidity = dollarProvided1 + dollarProvided2 + dollarProvided3 + dollarProvided4;
 
     console.log("Account 1 provided liquidity amount : $", dollarProvided1);
