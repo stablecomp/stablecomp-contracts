@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 // Farm distributes the ERC20 rewards based on staked LP to each user.
 //
@@ -159,6 +160,8 @@ contract Farm is Ownable {
             lpSupply != 0
         ) {
             uint256 nrOfBlocks = lastBlock.sub(pool.lastRewardBlock);
+            console.log("nrOfBlocks");
+            console.log(nrOfBlocks);
             uint256 erc20Reward = nrOfBlocks
                 .mul(rewardPerBlock)
                 .mul(pool.allocPoint)

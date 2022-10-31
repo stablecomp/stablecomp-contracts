@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../interface/IERC20.sol";
 import "../interface/IVotingEscrow.sol";
+import "hardhat/console.sol";
 
 contract MasterChefScomp is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
@@ -41,7 +42,6 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
     ///     TOKEN rewards each pool gets.
     /// `accTokenPerShare` Accumulated TOKENs per share, times 1e12.
     /// `lastRewardBlock` Last block number that pool update action is executed.
-    /// `isRegular` The flag to set pool is regular or special. See below:
     ///     In MasterChef V2 farms are "regular pools". "special pools", which use a different sets of
     ///     `allocPoint` and their own `totalSpecialAllocPoint` are designed to handle the distribution of
     ///     the TOKEN rewards to all the PancakeSwap products.
@@ -51,16 +51,10 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         uint256 lastRewardBlock;
         uint256 allocPoint;
         uint256 totalBoostedShare;
-        bool isRegular;
     }
 
     /// @notice Address of TOKEN contract.
     IERC20 public immutable TOKEN;
-
-    /// @notice The only address can withdraw all the burn TOKEN.
-    address public burnAdmin;
-    /// @notice The contract handles the share boosts.
-    address public boostContract;
 
     /// @notice Info of each MCV2 pool.
     PoolInfo[] public poolInfo;
@@ -73,68 +67,51 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
     mapping(address => bool) public whiteList;
 
     /// @notice Total regular allocation points. Must be the sum of all regular pools' allocation points.
-    uint256 public totalRegularAllocPoint;
-    /// @notice Total special allocation points. Must be the sum of all special pools' allocation points.
-    uint256 public totalSpecialAllocPoint;
-    ///  @notice 40 tokens per block in MCV1
-    uint256 public constant MASTERCHEF_TOKEN_PER_BLOCK = 40 * 1e18;
+    uint256 public totalAllocPoint;
+
+    ///  @notice Amount tokens per block
+    uint256 public tokenPerBlock;
     uint256 public constant ACC_TOKEN_PRECISION = 1e18;
 
     /// @notice Basic boost factor, none boosted user's boost factor
     uint256 public constant BOOST_PRECISION = 100 * 1e10;
     /// @notice Hard limit for maxmium boost factor, it must greater than BOOST_PRECISION
     uint256 public constant MAX_BOOST_PRECISION = 200 * 1e10;
-    /// @notice total token rate = toBurn + toRegular + toSpecial
-    uint256 public constant TOKEN_RATE_TOTAL_PRECISION = 1e12;
-    /// @notice TOKEN distribute % for burn
-    uint256 public tokenRateToBurn = 1;
-    /// @notice TOKEN distribute % for regular farm pool
-    uint256 public tokenRateToRegularFarm = 1;
-    /// @notice TOKEN distribute % for special pools
-    uint256 public tokenRateToSpecialFarm = 999999999998;
-
-    /// @notice The last block number of TOKEN burn action being executed.
-    uint256 public lastBurnedBlock;
 
     uint maxMultiplier = 8;
 
     IVotingEscrow veContract;
 
+    // The block number when farming starts.
+    uint256 public startBlock;
+    // The block number when farming ends.
+    uint256 public endBlock;
+
+
     event Init();
-    event AddPool(uint256 indexed pid, uint256 allocPoint, IERC20 indexed lpToken, bool isRegular);
+    event AddPool(uint256 indexed pid, uint256 allocPoint, IERC20 indexed lpToken);
     event SetPool(uint256 indexed pid, uint256 allocPoint);
     event UpdatePool(uint256 indexed pid, uint256 lastRewardBlock, uint256 lpSupply, uint256 accTokenPerShare);
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
-    event UpdateTokenRate(uint256 burnRate, uint256 regularFarmRate, uint256 specialFarmRate);
-    event UpdateBurnAdmin(address indexed oldAdmin, address indexed newAdmin);
-    event UpdateWhiteList(address indexed user, bool isValid);
-    event UpdateBoostContract(address indexed boostContract);
     event UpdateBoostMultiplier(address indexed user, uint256 pid, uint256 oldMultiplier, uint256 newMultiplier);
 
     /// @param _TOKEN The TOKEN token contract address.
-    /// @param _burnAdmin The address of burn admin.
     /// @param _veContract The address of voting power contract.
     constructor(
         IERC20 _TOKEN,
-        address _burnAdmin,
-        address _veContract
+        address _veContract,
+        uint _tokenPerBlock,
+        uint _startBlock
     ) public {
         TOKEN = _TOKEN;
-        burnAdmin = _burnAdmin;
         veContract = IVotingEscrow(_veContract);
+        tokenPerBlock = _tokenPerBlock * 1e18;
+        startBlock = _startBlock;
+        endBlock = _startBlock;
 
-        lastBurnedBlock = block.number;
-    }
-
-    /**
-     * @dev Throws if caller is not the boost contract.
-     */
-    modifier onlyBoostContract() {
-        require(boostContract == msg.sender, "Ownable: caller is not the boost contract");
-        _;
     }
 
     /// @notice Returns the number of MCV2 pools.
@@ -142,20 +119,26 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         pools = poolInfo.length;
     }
 
+
+    // Fund the farm, increase the end block
+    function fund(uint256 _amount) public {
+        require(block.number < endBlock, "fund: too late, the farm is closed");
+
+        TOKEN.safeTransferFrom(address(msg.sender), address(this), _amount);
+        endBlock += _amount.div(tokenPerBlock);
+    }
+
     /// @notice Add a new pool. Can only be called by the owner.
     /// DO NOT add the same LP token more than once. Rewards will be messed up if you do.
     /// @param _allocPoint Number of allocation points for the new pool.
     /// @param _lpToken Address of the LP BEP-20 token.
-    /// @param _isRegular Whether the pool is regular or special. LP farms are always "regular". "Special" pools are
     /// @param _withUpdate Whether call "massUpdatePools" operation.
     /// only for TOKEN distributions within PancakeSwap products.
     function add(
         uint256 _allocPoint,
         IERC20 _lpToken,
-        bool _isRegular,
         bool _withUpdate
     ) external onlyOwner {
-        require(_lpToken.balanceOf(address(this)) >= 0, "None BEP20 tokens");
         // stake TOKEN token will cause staked token and reward token mixed up,
         // may cause staked tokens withdraw as reward token,never do it.
         require(_lpToken != TOKEN, "TOKEN token can't be added to farm pools");
@@ -164,23 +147,23 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
             massUpdatePools();
         }
 
-        if (_isRegular) {
-            totalRegularAllocPoint = totalRegularAllocPoint.add(_allocPoint);
-        } else {
-            totalSpecialAllocPoint = totalSpecialAllocPoint.add(_allocPoint);
-        }
+        totalAllocPoint = totalAllocPoint.add(_allocPoint);
+
         lpToken.push(_lpToken);
+
+        uint256 lastRewardBlock = block.number > startBlock
+        ? block.number
+        : startBlock;
 
         poolInfo.push(
             PoolInfo({
         allocPoint: _allocPoint,
-        lastRewardBlock: block.number,
+        lastRewardBlock: lastRewardBlock,
         accTokenPerShare: 0,
-        isRegular: _isRegular,
         totalBoostedShare: 0
         })
         );
-        emit AddPool(lpToken.length.sub(1), _allocPoint, _lpToken, _isRegular);
+        emit AddPool(lpToken.length.sub(1), _allocPoint, _lpToken);
     }
 
     /// @notice Update the given pool's TOKEN allocation point. Can only be called by the owner.
@@ -199,11 +182,8 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
             massUpdatePools();
         }
 
-        if (poolInfo[_pid].isRegular) {
-            totalRegularAllocPoint = totalRegularAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
-        } else {
-            totalSpecialAllocPoint = totalSpecialAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
-        }
+        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
+
         poolInfo[_pid].allocPoint = _allocPoint;
         emit SetPool(_pid, _allocPoint);
     }
@@ -216,13 +196,12 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         UserInfo memory user = userInfo[_pid][_user];
         uint256 accTokenPerShare = pool.accTokenPerShare;
         uint256 lpSupply = pool.totalBoostedShare;
+        uint256 lastBlock = block.number < endBlock ? block.number : endBlock;
 
-        if (block.number > pool.lastRewardBlock && lpSupply != 0) {
-            uint256 multiplier = block.number.sub(pool.lastRewardBlock);
+        if (lastBlock > pool.lastRewardBlock && lpSupply != 0) {
+            uint256 multiplier = lastBlock.sub(pool.lastRewardBlock);
 
-            uint256 tokenReward = multiplier.mul(tokenPerBlock(pool.isRegular)).mul(pool.allocPoint).div(
-                (pool.isRegular ? totalRegularAllocPoint : totalSpecialAllocPoint)
-            );
+            uint256 tokenReward = multiplier.mul(tokenPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
             accTokenPerShare = accTokenPerShare.add(tokenReward.mul(ACC_TOKEN_PRECISION).div(lpSupply));
         }
 
@@ -241,35 +220,19 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         }
     }
 
-    /// @notice Calculates and returns the `amount` of TOKEN per block.
-    /// @param _isRegular If the pool belongs to regular or special.
-    function tokenPerBlock(bool _isRegular) public view returns (uint256 amount) {
-        if (_isRegular) {
-            amount = MASTERCHEF_TOKEN_PER_BLOCK.mul(tokenRateToRegularFarm).div(TOKEN_RATE_TOTAL_PRECISION);
-        } else {
-            amount = MASTERCHEF_TOKEN_PER_BLOCK.mul(tokenRateToSpecialFarm).div(TOKEN_RATE_TOTAL_PRECISION);
-        }
-    }
-
-    /// @notice Calculates and returns the `amount` of TOKEN per block to burn.
-    function tokenPerBlockToBurn() public view returns (uint256 amount) {
-        amount = MASTERCHEF_TOKEN_PER_BLOCK.mul(tokenRateToBurn).div(TOKEN_RATE_TOTAL_PRECISION);
-    }
-
     /// @notice Update reward variables for the given pool.
     /// @param _pid The id of the pool. See `poolInfo`.
     /// @return pool Returns the pool that was updated.
     function updatePool(uint256 _pid) public returns (PoolInfo memory pool) {
         pool = poolInfo[_pid];
-        if (block.number > pool.lastRewardBlock) {
+        uint256 lastBlock = block.number < endBlock ? block.number : endBlock;
+
+        if (lastBlock > pool.lastRewardBlock) {
             uint256 lpSupply = pool.totalBoostedShare;
-            uint256 totalAllocPoint = (pool.isRegular ? totalRegularAllocPoint : totalSpecialAllocPoint);
 
             if (lpSupply > 0 && totalAllocPoint > 0) {
                 uint256 multiplier = block.number.sub(pool.lastRewardBlock);
-                uint256 tokenReward = multiplier.mul(tokenPerBlock(pool.isRegular)).mul(pool.allocPoint).div(
-                    totalAllocPoint
-                );
+                uint256 tokenReward = multiplier.mul(tokenPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
                 pool.accTokenPerShare = pool.accTokenPerShare.add((tokenReward.mul(ACC_TOKEN_PRECISION).div(lpSupply)));
             }
             pool.lastRewardBlock = block.number;
@@ -285,16 +248,7 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
 
-        require(
-            pool.isRegular || whiteList[msg.sender],
-            "MasterChefV2: The address is not available to deposit in this pool"
-        );
-
         uint256 multiplier = getBoostMultiplier(msg.sender, _pid);
-
-        if (user.amount > 0) {
-            settlePendingToken(msg.sender, _pid, multiplier);
-        }
 
         if (_amount > 0) {
             uint256 before = lpToken[_pid].balanceOf(address(this));
@@ -311,6 +265,8 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         );
         poolInfo[_pid] = pool;
 
+        _updateBoostMultiplier(msg.sender, _pid);
+
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -322,6 +278,8 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         UserInfo storage user = userInfo[_pid][msg.sender];
 
         require(user.amount >= _amount, "withdraw: Insufficient");
+
+        _updateBoostMultiplier(msg.sender, _pid);
 
         uint256 multiplier = getBoostMultiplier(msg.sender, _pid);
 
@@ -348,6 +306,8 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
+        _updateBoostMultiplier(msg.sender, _pid);
+
         uint256 amount = user.amount;
         user.amount = 0;
         user.rewardDebt = 0;
@@ -359,107 +319,45 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
 
-    /// @notice Send TOKEN pending for burn to `burnAdmin`.
-    /// @param _withUpdate Whether call "massUpdatePools" operation.
-    function burnToken(bool _withUpdate) public onlyOwner {
-        if (_withUpdate) {
-            massUpdatePools();
-        }
-
-        uint256 multiplier = block.number.sub(lastBurnedBlock);
-        uint256 pendingTokenToBurn = multiplier.mul(tokenPerBlockToBurn());
-
-        // SafeTransfer TOKEN
-        _safeTransfer(burnAdmin, pendingTokenToBurn);
-        lastBurnedBlock = block.number;
-    }
-
-    /// @notice Update the % of TOKEN distributions for burn, regular pools and special pools.
-    /// @param _burnRate The % of TOKEN to burn each block.
-    /// @param _regularFarmRate The % of TOKEN to regular pools each block.
-    /// @param _specialFarmRate The % of TOKEN to special pools each block.
-    /// @param _withUpdate Whether call "massUpdatePools" operation.
-    function updateTokenRate(
-        uint256 _burnRate,
-        uint256 _regularFarmRate,
-        uint256 _specialFarmRate,
-        bool _withUpdate
-    ) external onlyOwner {
-        require(
-            _burnRate > 0 && _regularFarmRate > 0 && _specialFarmRate > 0,
-            "MasterChefV2: Token rate must be greater than 0"
-        );
-        require(
-            _burnRate.add(_regularFarmRate).add(_specialFarmRate) == TOKEN_RATE_TOTAL_PRECISION,
-            "MasterChefV2: Total rate must be 1e12"
-        );
-        if (_withUpdate) {
-            massUpdatePools();
-        }
-        // burn token base on old burn token rate
-        burnToken(false);
-
-        tokenRateToBurn = _burnRate;
-        tokenRateToRegularFarm = _regularFarmRate;
-        tokenRateToSpecialFarm = _specialFarmRate;
-
-        emit UpdateTokenRate(_burnRate, _regularFarmRate, _specialFarmRate);
-    }
-
-    /// @notice Update burn admin address.
-    /// @param _newAdmin The new burn admin address.
-    function updateBurnAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "MasterChefV2: Burn admin address must be valid");
-        require(_newAdmin != burnAdmin, "MasterChefV2: Burn admin address is the same with current address");
-        address _oldAdmin = burnAdmin;
-        burnAdmin = _newAdmin;
-        emit UpdateBurnAdmin(_oldAdmin, _newAdmin);
-    }
-
-    /// @notice Update whitelisted addresses for special pools.
-    /// @param _user The address to be updated.
-    /// @param _isValid The flag for valid or invalid.
-    function updateWhiteList(address _user, bool _isValid) external onlyOwner {
-        require(_user != address(0), "MasterChefV2: The white list address must be valid");
-
-        whiteList[_user] = _isValid;
-        emit UpdateWhiteList(_user, _isValid);
-    }
-
-    /// @notice Update boost contract address and max boost factor.
-    /// @param _newBoostContract The new address for handling all the share boosts.
-    function updateBoostContract(address _newBoostContract) external onlyOwner {
-        require(
-            _newBoostContract != address(0) && _newBoostContract != boostContract,
-            "MasterChefV2: New boost contract address must be valid"
-        );
-
-        boostContract = _newBoostContract;
-        emit UpdateBoostContract(_newBoostContract);
-    }
-
     function calcMultiplier(address _user, uint _pid) external view returns(uint) {
+        uint newMultiplier = _calcMultiplier(_user, _pid);
+        return newMultiplier > BOOST_PRECISION ? newMultiplier : BOOST_PRECISION;
+
+    }
+
+    function _calcMultiplier(address _user, uint _pid) internal view returns(uint) {
         // maxMultiplier = 8
         // temp = (100/maxMultiplier)
 
         // votingPower = lpAmount[user] * ( temp / 100 ) + ((( (totalLpAmount[pid] * votingBalance[user]) / votingTotal )) * (100- temp)) / 100
         // votingPower = min tra lpAmount e votingPower
         // multiplier = votingPower / lpAmount * maxMultiplier;
+        uint PRECISION = 1e18;
 
         UserInfo memory _userInfo = userInfo[_pid][_user];
-        IERC20 lpToken;
+        IERC20 _lpToken = lpToken[_pid];
+
         uint lpAmount = _userInfo.amount;
-        uint totalLpAmount = lpToken.balanceOf(address(this));
+        if ( lpAmount == 0) {
+            return 1;
+        }
+        uint totalLpAmount = _lpToken.balanceOf(address(this));
         uint votingBalance = veContract.balanceOf(_user);
         uint votingTotal = veContract.totalSupply();
 
-        uint votingPower = lpAmount * ((100 / maxMultiplier) / 100) + ((totalLpAmount * votingBalance) / votingTotal) * (100 - (100 / maxMultiplier) ) / 100;
+        uint firstTerm = (lpAmount * ((100 * PRECISION  / maxMultiplier) / 100)) / PRECISION;
+
+        uint secondTerm = votingTotal > 0 ? ((totalLpAmount * votingBalance) / votingTotal) : 0;
+
+        uint thirdTerm = (100 - ( 100 / maxMultiplier));
+
+        uint votingPower = firstTerm + secondTerm * thirdTerm / 100;
 
         if (lpAmount < votingPower) {
             votingPower = lpAmount;
         }
 
-        uint multiplier = votingPower / lpAmount * maxMultiplier;
+        uint multiplier = (votingPower * PRECISION / lpAmount * maxMultiplier);
 
         return multiplier;
     }
@@ -467,18 +365,15 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
     /// @notice Update user boost factor.
     /// @param _user The user address for boost factor updates.
     /// @param _pid The pool id for the boost factor updates.
-    /// @param _newMultiplier New boost multiplier.
     function updateBoostMultiplier(
         address _user,
-        uint256 _pid,
-        uint256 _newMultiplier
-    ) external onlyBoostContract nonReentrant {
+        uint256 _pid
+    ) external nonReentrant {
+        _updateBoostMultiplier(_user, _pid);
+    }
+
+    function _updateBoostMultiplier(address _user, uint _pid) internal {
         require(_user != address(0), "MasterChefV2: The user address must be valid");
-        require(poolInfo[_pid].isRegular, "MasterChefV2: Only regular farm could be boosted");
-        require(
-            _newMultiplier >= BOOST_PRECISION && _newMultiplier <= MAX_BOOST_PRECISION,
-            "MasterChefV2: Invalid new boost multiplier"
-        );
 
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][_user];
@@ -486,16 +381,28 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         uint256 prevMultiplier = getBoostMultiplier(_user, _pid);
         settlePendingToken(_user, _pid, prevMultiplier);
 
-        user.rewardDebt = user.amount.mul(_newMultiplier).div(BOOST_PRECISION).mul(pool.accTokenPerShare).div(
+        uint newMultiplier = _calcMultiplier(_user, _pid);
+
+        console.log("newMultiplier");
+        console.log(newMultiplier);
+
+        user.rewardDebt = user.amount.mul(newMultiplier).div(BOOST_PRECISION).mul(pool.accTokenPerShare).div(
             ACC_TOKEN_PRECISION
         );
-        pool.totalBoostedShare = pool.totalBoostedShare.sub(user.amount.mul(prevMultiplier).div(BOOST_PRECISION)).add(
-            user.amount.mul(_newMultiplier).div(BOOST_PRECISION)
-        );
+        if(pool.totalBoostedShare > 0 ) {
+            pool.totalBoostedShare = pool.totalBoostedShare.sub(user.amount.mul(prevMultiplier).div(BOOST_PRECISION)).add(
+                user.amount.mul(newMultiplier).div(BOOST_PRECISION)
+            );
+        } else {
+            pool.totalBoostedShare = pool.totalBoostedShare
+            .add(
+                user.amount.mul(newMultiplier).div(BOOST_PRECISION)
+            );
+        }
         poolInfo[_pid] = pool;
-        userInfo[_pid][_user].boostMultiplier = _newMultiplier;
+        userInfo[_pid][_user].boostMultiplier = newMultiplier;
 
-        emit UpdateBoostMultiplier(_user, _pid, prevMultiplier, _newMultiplier);
+        emit UpdateBoostMultiplier(_user, _pid, prevMultiplier, newMultiplier);
     }
 
     /// @notice Get user boost multiplier for specific pool id.

@@ -18,88 +18,157 @@ let accountDepositAddress1 = "0x5a52e96bacdabb82fd05763e25335261b270efcb"; // ac
 let accountDepositAddress2 = "0x32d03db62e464c9168e41028ffa6e9a05d8c6451"; // account have amount of token deposit
 let accountDepositAddress3 = "0x7a16ff8270133f063aab6c9977183d9e72835428"; // account have amount of token deposit
 
-async function main(): Promise<void> {
-  await run('compile');
-  [deployer, account1, account2, account3] = await ethers.getSigners();
-}
-
 let oneWeek = 7 * 86400;
 let blockOneDay: any = 6646;
 let blockTime: any = 13;
 
 let veCrv : Contract;
-let tokenDeposit : Contract;
+let masterchefScomp : Contract;
+let tokenLock : Contract;
+let lpToken1 : Contract;
+let lpToken2 : Contract;
+let lpToken3 : Contract;
+
 let timeLock : any;
 
 let tokenAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52";
 let name = "Voting Escrow Scomp"
 let symbol = "veScomp"
 let version = "veScomp1.0.0";
+let tokenPerBlock = 9;
+
 let amountToLock1 = ethers.utils.parseEther("10000");
-let amountToLock2 = ethers.utils.parseEther("100");
+let amountToLock2 = ethers.utils.parseEther("0");
 let amountToLock3 = ethers.utils.parseEther("1000");
+let lockTime1 = (2 * 365 * 86400);
+let lockTime2 = (2 * 365 * 86400);
+let lockTime3 = (2 * 365 * 86400);
+
+let amountToDeposit1 = ethers.utils.parseEther("1000");
+let amountToDeposit2 = ethers.utils.parseEther("1000");
+let amountToDeposit3 = ethers.utils.parseEther("1000");
+
+let initialBlock : any;
+// todo review update multiplier if needed
+
+async function main(): Promise<void> {
+    await run('compile');
+    [deployer, account1, account2, account3] = await ethers.getSigners();
+}
 
 async function deployContract(): Promise<void> {
 
-    let factory = await ethers.getContractFactory("veScomp");
-    veCrv = await factory.deploy(tokenAddress, name, symbol, version);
-    await veCrv.deployed();
+    let factory = await ethers.getContractFactory("StableCompToken");
+    tokenLock = await factory.deploy();
+    await tokenLock.deployed();
+    console.log("Token deposit address: ", tokenLock.address)
 
-    console.log("Address: ", veCrv.address);
+    let factoryVeScomp = await ethers.getContractFactory("veScomp");
+    veCrv = await factoryVeScomp.deploy(tokenLock.address, name, symbol, version);
+    await veCrv.deployed();
+    console.log("Ve Scomp address: ", veCrv.address);
 
     veCrv = await ethers.getContractAt("IVotingEscrow", veCrv.address, deployer);
+
+    let blockNumber = await ethers.provider.getBlockNumber();
+    initialBlock = blockNumber + 100;
+
+    let factoryMasterchef = await ethers.getContractFactory("MasterChefScomp");
+    masterchefScomp = await factoryMasterchef.deploy(
+        tokenLock.address,
+        veCrv.address,
+        tokenPerBlock,
+        initialBlock
+    );
+    await masterchefScomp.deployed();
+    console.log("MasterchefScomp address: ", masterchefScomp.address)
 
 }
 
 async function setupUtilityContract(): Promise<void> {
 
-    let factory = await ethers.getContractFactory("GenericERC20");
-    tokenDeposit = await factory.attach(tokenAddress);
-}
-
-async function impersonateAccount(): Promise<void> {
-    console.log("Impersonate account...")
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress1],
-    });
-    depositAccount1 = await ethers.getSigner(accountDepositAddress1);
-
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress2],
-    });
-    depositAccount2 = await ethers.getSigner(accountDepositAddress2);
-
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress3],
-    });
-    depositAccount3 = await ethers.getSigner(accountDepositAddress3);
+    let factory = await ethers.getContractFactory("StableCompToken");
+    lpToken1 = await factory.deploy();
+    await lpToken1.deployed();
+    lpToken2 = await factory.deploy();
+    await lpToken2.deployed();
+    lpToken3 = await factory.deploy();
+    await lpToken3.deployed();
 
 }
 
-let blockNumberGlobal : any
-async function createLock(account: SignerWithAddress, amount: any): Promise<void> {
+async function fundAccount(account: SignerWithAddress, amountToDeposit: any, amountToLock: any): Promise<void> {
+    // send token to account
+    if (amountToLock > 0) {
+        let tx = await tokenLock.connect(deployer).transfer(account.address, amountToLock);
+        await tx.wait();
+    }
+    if (amountToDeposit > 0) {
+        let tx = await lpToken1.connect(deployer).transfer(account.address, amountToDeposit);
+        await tx.wait();
+        tx = await lpToken2.connect(deployer).transfer(account.address, amountToDeposit);
+        await tx.wait();
+        tx = await lpToken3.connect(deployer).transfer(account.address, amountToDeposit);
+        await tx.wait();
+    }
+}
 
-    console.log("Approve")
-    let txApprove = await tokenDeposit.connect(account).approve(veCrv.address, ethers.constants.MaxUint256);
-    let txApprovedCompleted = await txApprove.wait();
+async function fundContract(): Promise<void> {
+    let balanceDeployer = await tokenLock.balanceOf(deployer.address);
 
-    console.log("lock")
-    blockNumberGlobal = await ethers.provider.getBlockNumber();
+    let amountToFund = balanceDeployer.div(2);
+    let txApprove = await tokenLock.connect(deployer).approve(masterchefScomp.address, amountToFund);
+    await txApprove.wait();
 
-    const current_date: Date = new Date();
-    timeLock = (((current_date.getTime() / 1000)) + (2 * 365 * 86400)).toFixed(0)
+    let tx = await masterchefScomp.connect(deployer).fund(amountToFund);
+    await tx.wait();
+}
 
-    let balanceOfToken = await tokenDeposit.balanceOf(account.address);
-    console.log("Initial balance of token is: ", ethers.utils.formatEther(balanceOfToken));
+async function addPool(lpToken: any): Promise<void> {
+    let tx = await masterchefScomp.add(1000, lpToken, true);
+    await tx.wait();
+}
 
-    let tx = await veCrv.connect(account).create_lock(amount, timeLock);
-    let txCompleted = await tx.wait()
-    let feeTx = await price.getFeeTx(tx, txCompleted);
-    console.log("Fee tx lock: ", ethers.utils.formatEther(feeTx));
+async function deposit(accounts: SignerWithAddress[], pid: any, amountToDeposit: any): Promise<void> {
+    if (amountToDeposit > 0 ) {
+        for (let i = 0; i < accounts.length; i++) {
+            let txApprove = await lpToken1.connect(accounts[i]).approve(masterchefScomp.address, amountToDeposit);
+            await txApprove.wait();
+        }
 
+        for (let i = 0; i < accounts.length; i++) {
+            let tx = await masterchefScomp.connect(accounts[i]).deposit(pid, amountToDeposit);
+            await tx.wait();
+        }
+    }
+}
+
+async function withdraw(account: SignerWithAddress, pid: any, amountToWithdraw: any): Promise<void> {
+
+    let balanceOfAccountBefore = await tokenLock.balanceOf(account.address);
+
+    let tx = await masterchefScomp.connect(account).withdraw(pid, amountToWithdraw);
+    await tx.wait();
+
+    let balanceOfAccount = await tokenLock.balanceOf(account.address);
+    console.log("Token withdraw: ", ethers.utils.formatEther(balanceOfAccount.sub(balanceOfAccountBefore)))
+}
+
+async function createLock(account: SignerWithAddress, amountToLock: any, lockTime: any): Promise<void> {
+
+    if (amountToLock > 0 ) {
+        let txApprove = await tokenLock.connect(account).approve(veCrv.address, ethers.constants.MaxUint256);
+        let txApprovedCompleted = await txApprove.wait();
+        let feeTxApprove = await price.getFeeTx(txApprove, txApprovedCompleted);
+
+        const current_date: Date = new Date();
+        timeLock = (((current_date.getTime() / 1000)) + lockTime).toFixed(0)
+
+        let tx = await veCrv.connect(account).create_lock(amountToLock, timeLock);
+        let txCompleted = await tx.wait()
+        let feeTxCreateLock = await price.getFeeTx(tx, txCompleted);
+
+    }
 }
 
 async function mineBlockCorrect(dayToMine: any): Promise<void> {
@@ -114,13 +183,29 @@ async function mineBlockCorrect(dayToMine: any): Promise<void> {
     }
 }
 
-async function mineBlock(): Promise<void> {
+async function mineBlock(nOfBlock: any): Promise<void> {
     let blockNumber = await ethers.provider.getBlockNumber();
     let block = await ethers.provider.getBlock(blockNumber);
-    let newTimestamp = block.timestamp + (oneWeek * 106)
+    let newTimestamp = block.timestamp + (blockTime)
 
     console.log("------ Mine block ------")
-    await ethers.provider.send('evm_mine', [newTimestamp]);
+    for (let i = 0; i < nOfBlock; i++) {
+        await ethers.provider.send('evm_mine', [newTimestamp]);
+        newTimestamp = newTimestamp + blockTime
+    }
+}
+
+
+async function reachInitialBlock(): Promise<void> {
+    let blockNumber = await ethers.provider.getBlockNumber();
+    let block = await ethers.provider.getBlock(blockNumber);
+    let newTimestamp = block.timestamp + (blockTime)
+
+    console.log("------ reach initial block ------")
+    for (let i = 0; i < initialBlock - blockNumber; i++) {
+        await ethers.provider.send('evm_mine', [newTimestamp]);
+        newTimestamp = newTimestamp + blockTime
+    }
 }
 
 async function checkpoint(): Promise<void> {
@@ -130,23 +215,19 @@ async function checkpoint(): Promise<void> {
 
 }
 
-async function read(account: SignerWithAddress): Promise<void> {
-    let initialVotingPower = await veCrv.balanceOfAt(account.address, blockNumberGlobal+1);
-    //console.log("Initial voting power: ", ethers.utils.formatEther(initialVotingPower));
+async function read(account: SignerWithAddress[]): Promise<void> {
+    for (let i = 0; i < account.length; i++) {
+        let currentVotingPower = await veCrv.balanceOf(account[i].address);
+        console.log("Voting power account ", i+1, " is: ", ethers.utils.formatEther(currentVotingPower));
 
-    let currentVotingPower = await veCrv.balanceOf(account.address);
-    console.log("Current voting power: ", ethers.utils.formatEther(currentVotingPower));
+    }
 
     let totalSupply = await veCrv.totalSupply();
     console.log("Total voting power: ", ethers.utils.formatEther(totalSupply));
 
-    let locked: any = await veCrv.locked(account.address);
-    //console.log("Locked: ", ethers.utils.formatEther(locked[0]));
-    //console.log("end: ", ethers.utils.formatUnits(locked[1], 0));
-
 }
 
-async function withdraw(account: SignerWithAddress): Promise<void> {
+async function unlock(account: SignerWithAddress): Promise<void> {
 
     console.log("Withdraw")
 
@@ -155,7 +236,7 @@ async function withdraw(account: SignerWithAddress): Promise<void> {
     let feeTx = await price.getFeeTx(tx, txCompleted);
     console.log("Fee tx withdraw: ", ethers.utils.formatEther(feeTx));
 
-    let balanceOfToken = await tokenDeposit.balanceOf(account.address);
+    let balanceOfToken = await tokenLock.balanceOf(account.address);
     console.log("Final balance of token is: ", ethers.utils.formatEther(balanceOfToken));
 
 }
@@ -176,9 +257,9 @@ async function increaseUnlockTime(account: SignerWithAddress): Promise<void> {
 async function increaseLockAmount(account: SignerWithAddress): Promise<void> {
 
     console.log("------ Increase Lock Amount ------")
-    let txApprove1 = await tokenDeposit.connect(account).approve(veCrv.address, 0);
+    let txApprove1 = await tokenLock.connect(account).approve(veCrv.address, 0);
     let txApprovedCompleted1 = await txApprove1.wait();
-    let txApprove = await tokenDeposit.connect(account).approve(veCrv.address, ethers.constants.MaxUint256);
+    let txApprove = await tokenLock.connect(account).approve(veCrv.address, ethers.constants.MaxUint256);
     let txApprovedCompleted = await txApprove.wait();
 
     let amountToLock = ethers.utils.parseEther("1000");
@@ -188,14 +269,6 @@ async function increaseLockAmount(account: SignerWithAddress): Promise<void> {
     let feeTx = await price.getFeeTx(tx, txCompleted);
     console.log("Fee tx increase lock amount: ", ethers.utils.formatEther(feeTx));
 
-}
-
-async function transferOwnership(): Promise<void> {
-
-    console.log("------ Transfer ownership ------")
-
-    let tx = await veCrv.connect(deployer).transfer_ownership(account1.address);
-    let txCompleted = await tx.wait()
 }
 
 async function simulateCalcFarming(): Promise<void> {
@@ -257,48 +330,128 @@ async function simulateCalcFarming(): Promise<void> {
 
 }
 
+async function readPool(): Promise<void> {
+    console.log("reading pools...")
+    let poolsLength = await masterchefScomp.poolLength();
+    console.log("Pools length: ", ethers.utils.formatUnits(poolsLength, 0));
+
+    for (let i = 0; i < poolsLength; i++) {
+        let pool = await masterchefScomp.poolInfo(i);
+        console.log("Pool index ", i ," is: ", pool)
+    }
+}
+
+async function readMultiplier(accounts: SignerWithAddress[], pid: any): Promise<void> {
+    for (let i = 0; i < accounts.length; i++) {
+        let multiplier = await masterchefScomp.calcMultiplier(accounts[i].address, pid);
+        console.log("Multiplier for account ", i+1 ," is: ", ethers.utils.formatEther(multiplier))
+    }
+}
+
+async function readPendingToken(account: SignerWithAddress, pid: any): Promise<void> {
+    let pendingToken = await masterchefScomp.pendingToken(pid, account.address)
+    console.log("pendingToken")
+    console.log(ethers.utils.formatEther(pendingToken))
+}
 
   main()
     .then(async () => {
-      await deployContract();
-      await transferOwnership();
-      await setupUtilityContract();
-      await impersonateAccount();
-      await createLock(depositAccount1, amountToLock1);
-      //await createLock(depositAccount2, amountToLock2);
-      await createLock(depositAccount3, amountToLock3);
-      await read(depositAccount1);
-      await simulateCalcFarming();
 
-      /*await mineBlockCorrect(1);
-      await checkpoint();
-      await read(depositAccount2);
-      await mineBlock();
-      await read(depositAccount2);
-      await withdraw(depositAccount2);
+        await deployContract();
 
-      /*await checkpoint();
-      await read(depositAccount2);
-      await mineBlock();
-      await checkpoint();
-      await read(depositAccount2);
-      await mineBlock();
-      await checkpoint();
-      await read(depositAccount2);
+        await fundContract();
+        await setupUtilityContract();
 
-      /*
-      await deposit(account1);
-        await deposit(account2);
-        await mineBlock();
-        await mineBlock();
-        await mineBlock();
-        await mineBlock();
-        await mineBlock();
-        await deposit(account3);
-        await read();
-        await deposit(account3);
+        await fundAccount(account1, amountToDeposit1, amountToLock1);
+        await fundAccount(account2, amountToDeposit2, amountToLock2);
+        await fundAccount(account3, amountToDeposit3, amountToLock3);
 
-       */
+        await fundContract();
+
+        await createLock(account1, amountToLock1, lockTime1);
+        await createLock(account2, amountToLock2, lockTime2);
+        await createLock(account3, amountToLock3, lockTime3);
+
+        await checkpoint();
+
+        await addPool(lpToken1.address);
+        //await addPool(lpToken2.address);
+        //await addPool(lpToken3.address);
+
+        await readMultiplier([account1, account2, account3], 0);
+
+        await deposit([account1, account2, account3],0,amountToDeposit1)
+        //await deposit([account1],0,amountToDeposit1)
+
+        await reachInitialBlock();
+
+        await mineBlock(10);
+
+        await readMultiplier([account1, account2, account3], 0);
+
+        await readPendingToken(account1, 0);
+        await readPendingToken(account2, 0);
+        await readPendingToken(account3, 0);
+
+        await withdraw(account1,0,amountToDeposit1)
+        await withdraw(account2,0,amountToDeposit2)
+        await withdraw(account3,0,amountToDeposit3)
+
+
+        /*
+
+                await deposit([account1, account2, account3],0,amountToDeposit1)
+
+                await mineBlock(10);
+
+                await readMultiplier([account1, account2, account3], 0);
+
+                await readPendingToken(account1, 0);
+                await readPendingToken(account2, 0);
+                await readPendingToken(account3, 0);
+
+                await withdraw(account1,0,amountToDeposit1)
+                await withdraw(account2,0,amountToDeposit2)
+                await withdraw(account3,0,amountToDeposit3)
+
+                await readMultiplier([account1, account2, account3], 0);
+
+
+
+              /*
+              await readPool();
+              await read([account1, account2, account3]);
+              //await simulateCalcFarming();
+
+              /*await mineBlockCorrect(1);
+              await checkpoint();
+              await read(depositAccount2);
+              await mineBlock();
+              await read(depositAccount2);
+              await withdraw(depositAccount2);
+
+              /*await checkpoint();
+              await read(depositAccount2);
+              await mineBlock();
+              await checkpoint();
+              await read(depositAccount2);
+              await mineBlock();
+              await checkpoint();
+              await read(depositAccount2);
+
+              /*
+              await deposit(account1);
+                await deposit(account2);
+                await mineBlock();
+                await mineBlock();
+                await mineBlock();
+                await mineBlock();
+                await mineBlock();
+                await deposit(account3);
+                await read();
+                await deposit(account3);
+
+               */
       process.exit(0)
     })
     .catch((error: Error) => {
