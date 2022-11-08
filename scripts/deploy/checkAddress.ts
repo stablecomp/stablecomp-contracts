@@ -36,6 +36,7 @@ async function main(): Promise<void> {
   await run('compile');
   [deployer] = await ethers.getSigners();
 
+  const balance = await deployer.getBalance();
   let sCompControllerFactory = await ethers.getContractFactory("SCompController");
   sCompController = sCompControllerFactory.attach("0x8caef41c1b564bb20be967e539c8a043f133c6e5")
   let sCompVaultFactory = await ethers.getContractFactory("SCompVault");

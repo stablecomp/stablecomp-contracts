@@ -69,19 +69,19 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
-    mainnet_eth: {
+    eth_mainnet: {
       url: "https://eth-mainnet.nodereal.io/v1/1659dfb40aa24bbb8153a677b98064d7",
       chainId: 1,
       accounts:
           process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
-    mainnet: {
+    bsc_mainnet: {
       url: "https://bsc-dataseed.binance.org/",
       chainId: 56,
       accounts:
           process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
-    testnet: {
+    bsc_testnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
       accounts:
@@ -100,8 +100,10 @@ const config: HardhatUserConfig = {
         //url: "https://dawn-wild-log.discover.quiknode.pro/96a79c024bd930b3378f737417132b40654dd322/",
         //url: "https://eth-mainnet.nodereal.io/v1/375a16da699343ee9e7cd67d8a5690d8",
         url: "https://red-lively-flower.quiknode.pro/d9fdbf99be306441445a56cd45479a6e5a277759/",
+        //url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       },
     },
+
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

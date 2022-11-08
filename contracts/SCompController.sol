@@ -34,7 +34,6 @@ contract SCompController is SCompAccessControl {
     ) {
         governance = _governance;
         strategist = _strategist;
-
         rewards = _rewards;
     }
 

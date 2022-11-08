@@ -377,6 +377,7 @@ async function readPendingToken(account: SignerWithAddress, pid: any): Promise<v
         await addPool(lpToken1.address);
         //await addPool(lpToken2.address);
         //await addPool(lpToken3.address);
+        await readPool();
 
         await readMultiplier([account1, account2, account3], 0);
 
