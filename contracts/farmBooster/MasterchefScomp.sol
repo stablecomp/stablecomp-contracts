@@ -80,7 +80,7 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
 
     uint maxMultiplier = 8;
 
-    IVotingEscrow veContract;
+    IVotingEscrow public veContract;
 
     // The block number when farming starts.
     uint256 public startBlock;

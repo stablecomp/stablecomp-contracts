@@ -204,6 +204,11 @@ TokenSwapPathRegistry
         _setTokenSwapPath(cvx, tokenCompoundAddress, path);
     }
 
+    function approveForAll() external {
+        // Approvals: Staking Pools
+        IERC20(want).approve(address(booster), MAX_UINT_256);
+    }
+
     /// ===== Permissioned Functions =====
     function setPid(uint256 _pid) external {
         _onlyGovernance();

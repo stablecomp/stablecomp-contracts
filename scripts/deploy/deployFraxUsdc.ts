@@ -77,7 +77,6 @@ async function setupContract(): Promise<void> {
   ]);
   await sCompStrategy.deployed();
 
-  /*
   console.log("Strategy deployed to: ", sCompStrategy.address)
   // set strategy in controller
   let tx = await sCompController.connect(deployer).approveStrategy(wantAddress, sCompStrategy.address);
@@ -92,7 +91,6 @@ async function setupContract(): Promise<void> {
   tx.wait();
   console.log("Vault set in controller")
 
-   */
 }
 
 async function verify(): Promise<void> {

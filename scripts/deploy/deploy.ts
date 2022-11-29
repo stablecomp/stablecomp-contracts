@@ -48,6 +48,7 @@ async function main(): Promise<void> {
 
     await run('compile');
     [deployer] = await ethers.getSigners();
+    console.log("Deployer addresss: ", deployer.address)
 }
 
 async function setupContractTest(): Promise<void> {
@@ -60,7 +61,7 @@ async function setupContractTest(): Promise<void> {
     wantAddress = wantContract.address;
 
     sCompVaultFake = await factoryERC20.deploy("VaultFake", "VFake");
-    console.log("Vault fake deployed to address: ", wantContract.address);
+    console.log("Vault fake deployed to address: ", sCompVaultFake.address);
 
 }
 

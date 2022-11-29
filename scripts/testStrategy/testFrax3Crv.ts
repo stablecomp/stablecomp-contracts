@@ -63,6 +63,7 @@ let tokenCompoundPosition = info.tokenCompoundPosition;
 let feeGovernance = info.feeGovernance;
 let feeStrategist = info.feeStrategist;
 let feeWithdraw = info.feeWithdraw;
+let feeDeposit = info.feeDeposit;
 
 // test config
 let maxUint = ethers.constants.MaxUint256;
@@ -101,7 +102,9 @@ async function setupContract(): Promise<void> {
   let factoryVault = await ethers.getContractFactory("SCompVault")
   sCompVault = await factoryVault.deploy(
       wantAddress,
-      sCompController.address
+      sCompController.address,
+      governance.address,
+      feeDeposit
   );
   await sCompVault.deployed();
 
@@ -184,7 +187,7 @@ async function impersonateAccount(): Promise<void> {
 }
 
 async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
-    console.log("Add liquidity...")
+    console.log("Add liquidity with address: ", account.address);
 
     initialBalanceDepositPool[index] = await tokenDepositContract.balanceOf(account.address);
 
@@ -240,6 +243,8 @@ async function checkBalance(): Promise<void> {
 
 async function depositv1(account: SignerWithAddress, index: any): Promise<void> {
 
+    let balanceWantGovernance1 = await wantContract.balanceOf(governance.address);
+
     let balanceLp = await wantContract.balanceOf(account.address);
     console.log("Deposit of ", account.address, " is: ", ethers.utils.formatEther(balanceLp))
     depositv1Value[index] = balanceLp;
@@ -249,7 +254,13 @@ async function depositv1(account: SignerWithAddress, index: any): Promise<void> 
     await tx.wait();
 
     let balanceShare = await sCompVault.balanceOf(account.address);
-    //console.log("Share balance after deposit: ", ethers.utils.formatEther(balanceShare));
+    console.log("Share balance after deposit: ", ethers.utils.formatEther(balanceShare));
+
+    // check fee
+    let balanceWantGovernance2 = await wantContract.balanceOf(governance.address);
+    let diff = balanceWantGovernance2.sub(balanceWantGovernance1);
+    console.log("Amount fee deposit: ", ethers.utils.formatEther(diff));
+
 }
 
 async function earnv1(): Promise<void> {
@@ -348,25 +359,26 @@ async function fundAccount(account: SignerWithAddress): Promise<void> {
       await depositv1(depositAccount1, 0);
       await depositv1(depositAccount2, 1);
       await depositv1(depositAccount3, 2);
-        await earnv1();
-      await mineBlock(dayToMine);
-      await tendv1();
-      await harvestv1();
-      await earnMarkReward();
-      await mineBlock(dayToMine);
-      await tendv1();
-      await harvestv1();
-      await earnMarkReward();
-      await mineBlock(dayToMine);
-      await tendv1();
-      await harvestv1();
-        await withdraw(depositAccount1, 0);
-      await withdraw(depositAccount2, 1);
-      await withdraw(depositAccount3, 2);
-      await removeLiquidity(depositAccount1, 0);
-      await removeLiquidity(depositAccount2, 1);
-      await removeLiquidity(depositAccount3, 2);
-
+          await earnv1();
+        await mineBlock(dayToMine);
+        await tendv1();
+        await harvestv1();
+        /*
+        await earnMarkReward();
+        await mineBlock(dayToMine);
+        await tendv1();
+        await harvestv1();
+        await earnMarkReward();
+        await mineBlock(dayToMine);
+        await tendv1();
+        await harvestv1();
+          await withdraw(depositAccount1, 0);
+        await withdraw(depositAccount2, 1);
+        await withdraw(depositAccount3, 2);
+        await removeLiquidity(depositAccount1, 0);
+        await removeLiquidity(depositAccount2, 1);
+        await removeLiquidity(depositAccount3, 2);
+  */
       process.exit(0)
     })
     .catch((error: Error) => {

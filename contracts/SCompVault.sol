@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interface/IController.sol";
 import "./interface/ISettV4.sol";
+import "hardhat/console.sol";
 
 contract SCompVault is ERC20 {
     using SafeERC20 for IERC20;
@@ -25,7 +26,11 @@ contract SCompVault is ERC20 {
     address public governance;
     address public controller;
 
-    constructor(address _token, address _controller)
+    address public treasuryFee;
+    uint public depositFee; // 1500 -> 15% ; 150 -> 1.5% ; 15 -> 0.15
+    uint256 public constant MAX_FEE = 10000;
+
+    constructor(address _token, address _controller, address _treasuryFee, uint _depositFee)
     ERC20(
         string(abi.encodePacked("sComp ", ERC20(_token).name())),
         string(abi.encodePacked("s", ERC20(_token).symbol()))
@@ -34,6 +39,8 @@ contract SCompVault is ERC20 {
         token = IERC20(_token);
         governance = msg.sender;
         controller = _controller;
+        depositFee = _depositFee;
+        treasuryFee = _treasuryFee;
     }
 
     function balance() public view returns (uint256) {
@@ -41,17 +48,17 @@ contract SCompVault is ERC20 {
     }
 
     function setMin(uint256 _min) external {
-        require(msg.sender == governance, "!governance");
+        require(msg.sender == governance, "SCompVault: !governance");
         min = _min;
     }
 
     function setGovernance(address _governance) public {
-        require(msg.sender == governance, "!governance");
+        require(msg.sender == governance, "SCompVault: !governance");
         governance = _governance;
     }
 
     function setController(address _controller) public {
-        require(msg.sender == governance, "!governance");
+        require(msg.sender == governance, "SCompVault: !governance");
         controller = _controller;
     }
 
@@ -73,6 +80,17 @@ contract SCompVault is ERC20 {
 
     function deposit(uint256 _amount) public {
         uint256 _pool = balance();
+
+        // deposit fee
+        if(depositFee > 0) {
+            uint256 amountFee =
+            _amount.mul(depositFee).div(
+                MAX_FEE
+            );
+            token.safeTransferFrom(msg.sender, treasuryFee, amountFee);
+            _amount = _amount - amountFee;
+        }
+
         uint256 _before = token.balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), _amount);
         uint256 _after = token.balanceOf(address(this));
@@ -92,8 +110,8 @@ contract SCompVault is ERC20 {
 
     // Used to swap any borrowed reserve ovaer the debt limit to liquidate to 'token'
     function harvest(address reserve, uint256 amount) external {
-        require(msg.sender == controller, "!controller");
-        require(reserve != address(token), "token");
+        require(msg.sender == controller, "SCompVault: !controller");
+        require(reserve != address(token), "SCompVault: token");
         IERC20(reserve).safeTransfer(controller, amount);
     }
 
@@ -115,7 +133,6 @@ contract SCompVault is ERC20 {
         }
 
         token.safeTransfer(msg.sender, r);
-        // todo withdraw fee
     }
 
     function getPricePerFullShare() public view returns (uint256) {

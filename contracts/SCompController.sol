@@ -154,7 +154,7 @@ contract SCompController is SCompAccessControl {
 
     // ===== Permissioned Actions: Only Associated Vault =====
 
-    /// @notice Wtihdraw a given token from it's corresponding strategy
+    /// @notice Withdraw a given token from it's corresponding strategy
     /// @notice Only the associated vault can call, in response to a user withdrawal request
     function withdraw(address _token, uint256 _amount) public {
         require(msg.sender == vaults[_token], "!vault");
