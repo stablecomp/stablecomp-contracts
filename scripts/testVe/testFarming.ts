@@ -152,6 +152,12 @@ async function withdraw(account: SignerWithAddress, pid: any, amountToWithdraw: 
 
     let balanceOfAccount = await tokenLock.balanceOf(account.address);
     console.log("Token withdraw: ", ethers.utils.formatEther(balanceOfAccount.sub(balanceOfAccountBefore)))
+
+    // get info pool
+    let userInfo = await masterchefScomp.userInfo(pid, account.address);
+    console.log("Amount: ", userInfo.amount)
+    console.log("Reward debt: ", userInfo.rewardDebt)
+    console.log("Boost multiplier: ", userInfo.boostMultiplier)
 }
 
 async function createLock(account: SignerWithAddress, amountToLock: any, lockTime: any): Promise<void> {
@@ -394,7 +400,8 @@ async function readPendingToken(account: SignerWithAddress, pid: any): Promise<v
         await readPendingToken(account2, 0);
         await readPendingToken(account3, 0);
 
-        await withdraw(account1,0,amountToDeposit1)
+        await withdraw(account1,0,0)
+        //await withdraw(account1,0,amountToDeposit1)
         await withdraw(account2,0,amountToDeposit2)
         await withdraw(account3,0,amountToDeposit3)
 
