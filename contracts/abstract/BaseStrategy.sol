@@ -90,7 +90,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
 
     /// ===== View Functions =====
     function baseStrategyVersion() public pure returns (string memory) {
-        return "1.2";
+        return "1.0";
     }
 
     /// @notice Get the balance of want held idle in the Strategy
@@ -117,10 +117,10 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
         return false;
     }
 
-    /// ===== Permissioned Actions: Governance =====
+    /// ===== Permissioned Actions: TimeLockController =====
 
     function setWithdrawalFee(uint256 _withdrawalFee) external {
-        _onlyGovernance();
+        _onlyTimeLockController();
         require(_withdrawalFee <= MAX_FEE, "excessive-fee");
         withdrawalFee = _withdrawalFee;
     }
@@ -128,7 +128,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     function setPerformanceFeeStrategist(uint256 _performanceFeeStrategist)
     external
     {
-        _onlyGovernance();
+        _onlyTimeLockController();
         require(_performanceFeeStrategist <= MAX_FEE, "excessive-fee");
         performanceFeeStrategist = _performanceFeeStrategist;
     }
@@ -136,10 +136,12 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     function setPerformanceFeeGovernance(uint256 _performanceFeeGovernance)
     external
     {
-        _onlyGovernance();
+        _onlyTimeLockController();
         require(_performanceFeeGovernance <= MAX_FEE, "excessive-fee");
         performanceFeeGovernance = _performanceFeeGovernance;
     }
+
+    /// ===== Permissioned Actions: Governance =====
 
     function setController(address _controller) external {
         _onlyGovernance();

@@ -11,13 +11,18 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
     V1.0
     - Remove keeper
 */
-contract SCompAccessControl is Initializable {
+contract SCompAccessControl {
     address public governance;
     address public strategist;
+    address public timeLockController;
 
     // ===== MODIFIERS =====
     function _onlyGovernance() internal view {
         require(msg.sender == governance, "onlyGovernance");
+    }
+
+    function _onlyTimeLockController() internal view {
+        require(msg.sender == timeLockController, "onlyTimeLockController");
     }
 
     function _onlyGovernanceOrStrategist() internal view {
@@ -44,5 +49,10 @@ contract SCompAccessControl is Initializable {
         governance = _governance;
     }
 
-    uint256[50] private __gap;
+    /// @notice Change TimeLockController address
+    /// @notice Can only be changed by governance itself
+    function setTimeLockController(address _timeLockController) public {
+        _onlyGovernance();
+        timeLockController = _timeLockController;
+    }
 }

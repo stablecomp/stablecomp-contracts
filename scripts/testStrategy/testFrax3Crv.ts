@@ -8,6 +8,7 @@ const { run, ethers, upgrades } = hardhat;
 const wethABI = require('../../abi/weth.json');
 const baseRewardPoolABI = require('../../abi/baseRewardPoolAbi.json');
 const boosterABI = require('../../abi/booster.json');
+const poolCurveABI = require('../../abi/poolCurve.json');
 
 // variable json
 const curveSwapABI = require('../../abi/europoolSwap.json');
@@ -25,6 +26,7 @@ let depositAccount3 : SignerWithAddress;
 let sCompVault : Contract;
 let sCompController : Contract;
 let sCompStrategy : Contract;
+let sCompTimelockController : Contract;
 
 // variable contract
 let curveSwapWrapped : Contract;
@@ -37,6 +39,8 @@ let baseRewardPoolContract: Contract;
 let cvxContract: Contract;
 let crvContract: Contract;
 let boosterContract: Contract;
+
+let poolCurveContract: Contract;
 
 // variable address
 let wantAddress = info.wantAddress; // **name** // 18 decimals
@@ -64,6 +68,7 @@ let feeGovernance = info.feeGovernance;
 let feeStrategist = info.feeStrategist;
 let feeWithdraw = info.feeWithdraw;
 let feeDeposit = info.feeDeposit;
+let minDelay = 86400
 
 // test config
 let maxUint = ethers.constants.MaxUint256;
@@ -87,6 +92,25 @@ async function main(): Promise<void> {
 }
 
 async function setupContract(): Promise<void> {
+    await deployController();
+
+    await deployVault();
+
+    await deployStrategy();
+
+    await deployTimeLockController();
+
+    // set strategy in controller
+    await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
+    await sCompController.connect(governance).setStrategy(wantAddress, sCompStrategy.address);
+    await sCompController.connect(governance).setVault(wantAddress, sCompVault.address);
+
+    // set timelock controller in strategy
+    await sCompStrategy.connect(governance).setTimeLockController(sCompTimelockController.address);
+    console.log("Setup complete")
+}
+
+async function deployController(): Promise<void> {
   // deploy controller
   let factoryController = await ethers.getContractFactory("SCompController")
   sCompController = await factoryController.deploy(
@@ -97,40 +121,53 @@ async function setupContract(): Promise<void> {
   await sCompController.deployed();
 
   console.log("Controller deployed to: ", sCompController.address)
+}
 
-  // deploy sCompVault
-  let factoryVault = await ethers.getContractFactory("SCompVault")
-  sCompVault = await factoryVault.deploy(
-      wantAddress,
-      sCompController.address,
-      governance.address,
-      feeDeposit
-  );
-  await sCompVault.deployed();
+async function deployVault(): Promise<void> {
 
-  console.log("Vault deployed to: ", sCompVault.address)
+    // deploy sCompVault
+    let factoryVault = await ethers.getContractFactory("SCompVault")
+    sCompVault = await factoryVault.deploy(
+        wantAddress,
+        sCompController.address,
+        governance.address,
+        feeDeposit
+    );
+    await sCompVault.deployed();
 
-  // deploy strategies
-  let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
-  sCompStrategy = await factoryStrategy.deploy(
-      nameStrategy,
-      governance.address,
-      strategist.address,
-      sCompController.address,
-      wantAddress,
-      tokenCompoundAddress,
-      pidPool,
-      [feeGovernance, feeStrategist, feeWithdraw],
-      {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool}
-  );
-  await sCompStrategy.deployed();
+    console.log("Vault deployed to: ", sCompVault.address)
+}
 
-  console.log("Strategy deployed to: ", sCompStrategy.address)
-  // set strategy in controller
-  await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
-  await sCompController.connect(governance).setStrategy(wantAddress, sCompStrategy.address);
-  await sCompController.connect(governance).setVault(wantAddress, sCompVault.address);
-  console.log("Setup complete")
+async function deployStrategy(): Promise<void> {
+    // deploy strategies
+    let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
+    sCompStrategy = await factoryStrategy.deploy(
+        nameStrategy,
+        governance.address,
+        strategist.address,
+        sCompController.address,
+        wantAddress,
+        tokenCompoundAddress,
+        pidPool,
+        [feeGovernance, feeStrategist, feeWithdraw],
+        {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool}
+    );
+    await sCompStrategy.deployed();
+
+    console.log("Strategy deployed to: ", sCompStrategy.address)
+}
+
+async function deployTimeLockController(): Promise<void> {
+    // deploy timeLockController
+    let factoryTimeLock = await ethers.getContractFactory("SCompTimeLockController")
+    sCompTimelockController = await factoryTimeLock.deploy(
+        minDelay,
+        [deployer.address],
+        [deployer.address]
+    );
+    await sCompTimelockController.deployed();
+
+    console.log("Timelock controller deployed to: ", sCompStrategy.address)
 }
 
 async function setupUtilityContract(): Promise<void> {
@@ -344,22 +381,103 @@ async function fundAccount(account: SignerWithAddress): Promise<void> {
     console.log("account funded")
 }
 
+async function proposeChangeFeeStrategy(): Promise<void> {
+    let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
+    let data = factoryStrategy.interface.encodeFunctionData("setPerformanceFeeGovernance", [feeGovernance/2]);
+
+    console.log("Data: ", data);
+
+    let tx = await sCompTimelockController.schedule(
+        sCompStrategy.address,
+        0,
+        data,
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        ethers.utils.formatBytes32String("100"),
+        minDelay
+    );
+    await tx.wait();
+
+    console.log("change fee proposed")
+
+    /*
+    let tx = await sCompStrategy.setPerformanceFeeGovernance(feeGovernance / 2);
+    await tx.wait();
+
+    tx = await sCompStrategy.setPerformanceFeeStrategist(feeStrategist / 2);
+    await tx.wait();
+
+    tx = await sCompStrategy.setWithdrawalFee(feeWithdraw / 2);
+    await tx.wait();
+     */
+}
+
+async function executeChangeFeeStrategy(): Promise<void> {
+
+    let oldFeeGovernance = await sCompStrategy.performanceFeeGovernance();
+    console.log("Old fee governance: ", ethers.utils.formatUnits(oldFeeGovernance, 0));
+
+    let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
+    let data = factoryStrategy.interface.encodeFunctionData("setPerformanceFeeGovernance", [feeGovernance/2]);
+
+    let tx = await sCompTimelockController.execute(
+        sCompStrategy.address,
+        0,
+        data,
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        ethers.utils.formatBytes32String("100"),
+    );
+    await tx.wait();
+
+    console.log("Change fee executed")
+
+    let newFeeGovernance = await sCompStrategy.performanceFeeGovernance();
+    console.log("New fee governance: ", ethers.utils.formatUnits(newFeeGovernance, 0));
+
+    /*
+    let tx = await sCompStrategy.setPerformanceFeeGovernance(feeGovernance / 2);
+    await tx.wait();
+
+    tx = await sCompStrategy.setPerformanceFeeStrategist(feeStrategist / 2);
+    await tx.wait();
+
+    tx = await sCompStrategy.setWithdrawalFee(feeWithdraw / 2);
+    await tx.wait();
+     */
+}
+
+async function readCoins(): Promise<void> {
+    poolCurveContract = await new ethers.Contract("0xa5407eae9ba41422680e2e00537571bcc53efbfd", poolCurveABI, ethers.provider);
+
+    let coins = await poolCurveContract.coins();
+
+    console.log("coins: ", coins);
+
+}
+
 
 
 
   main()
     .then(async () => {
-      await setupContract();
-      await setupUtilityContract();
-      await impersonateAccount();
-      //await fundAccount(depositAccount1);
-      await addLiquidity(depositAccount1, 0);
-      await addLiquidity(depositAccount2, 1);
-      await addLiquidity(depositAccount3, 2);
-      await depositv1(depositAccount1, 0);
-      await depositv1(depositAccount2, 1);
-      await depositv1(depositAccount3, 2);
-          await earnv1();
+        await readCoins();
+        /*
+        await setupContract();
+        await setupUtilityContract();
+        await impersonateAccount();
+        //await fundAccount(depositAccount1);
+        await addLiquidity(depositAccount1, 0);
+        await addLiquidity(depositAccount2, 1);
+        await addLiquidity(depositAccount3, 2);
+
+        // change fee
+        await proposeChangeFeeStrategy();
+        await mineBlock(2);
+        await executeChangeFeeStrategy();
+
+        await depositv1(depositAccount1, 0);
+        await depositv1(depositAccount2, 1);
+        await depositv1(depositAccount3, 2);
+        await earnv1();
         await mineBlock(dayToMine);
         await tendv1();
         await harvestv1();
@@ -379,7 +497,7 @@ async function fundAccount(account: SignerWithAddress): Promise<void> {
         await removeLiquidity(depositAccount2, 1);
         await removeLiquidity(depositAccount3, 2);
   */
-      process.exit(0)
+        process.exit(0)
     })
     .catch((error: Error) => {
       console.error(error);
