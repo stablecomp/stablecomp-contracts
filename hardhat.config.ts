@@ -15,7 +15,7 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   vyper: {
-    compilers: [{ version: "0.2.15" },{ version: "0.2.4" }, { version: "0.3.0" }],
+    compilers: [{ version: "0.2.15" },{ version: "0.2.4" },{ version: "0.2.7" }, { version: "0.3.0" }],
   },
   solidity: {
     compilers: [
@@ -70,7 +70,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     eth_mainnet: {
-      url: "https://eth-mainnet.nodereal.io/v1/1659dfb40aa24bbb8153a677b98064d7",
+      url: "https://eth-mainnet.g.alchemy.com/v2/VA0iJJN6a26rGrc0GT4_qmHvuDu5_vWe",
       chainId: 1,
       accounts:
           process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
@@ -90,18 +90,32 @@ const config: HardhatUserConfig = {
     matic_testnet: {
       chainId: 80001,
       url: "https://matic-mumbai.chainstacklabs.com",
-      gasPrice: 30000000000,
       accounts:
           process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    scaling_node: {
+      chainId: 31337,
+      url: "http://104.248.142.30:8545",
+      accounts:
+          //process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
+    },
+    local_node: {
+      url: "http://127.0.0.1:8545/",
+      //accounts:
+          //process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      //["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
     },
     hardhat: {
       forking: {
         //url: "https://mainnet.infura.io/v3/899c81095bc24dc2b06d43b6c2b65b8a",
-        //url: "https://dawn-wild-log.discover.quiknode.pro/96a79c024bd930b3378f737417132b40654dd322/",
+        url: "https://eth-mainnet.g.alchemy.com/v2/VA0iJJN6a26rGrc0GT4_qmHvuDu5_vWe",
         //url: "https://eth-mainnet.nodereal.io/v1/375a16da699343ee9e7cd67d8a5690d8",
-        url: "https://red-lively-flower.quiknode.pro/d9fdbf99be306441445a56cd45479a6e5a277759/",
+        //url: "https://red-lively-flower.quiknode.pro/d9fdbf99be306441445a56cd45479a6e5a277759/",
         //url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       },
+      allowUnlimitedContractSize:true
+
     },
 
   },

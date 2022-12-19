@@ -378,6 +378,47 @@ TokenSwapPathRegistry
         uint256 wantGained;
 
         if (tokenCompoundToDeposit > 0) {
+
+            // Take performance fee
+            uint256 autoCompoundedPerformanceFeeGovernance;
+            if(performanceFeeGovernance > 0) {
+                autoCompoundedPerformanceFeeGovernance =
+                tokenCompoundToDeposit.mul(performanceFeeGovernance).div(
+                    MAX_FEE
+                );
+                IERC20(tokenCompoundAddress).transfer(
+                    governance,
+                    autoCompoundedPerformanceFeeGovernance
+                );
+                emit PerformanceFeeGovernance(
+                    governance,
+                    tokenCompoundAddress,
+                    autoCompoundedPerformanceFeeGovernance,
+                    block.number,
+                    block.timestamp
+                );
+            }
+            uint256 autoCompoundedPerformanceFeeStrategist;
+            if(performanceFeeStrategist > 0) {
+                autoCompoundedPerformanceFeeStrategist =
+                tokenCompoundToDeposit.mul(performanceFeeStrategist).div(
+                    MAX_FEE
+                );
+                IERC20(tokenCompoundAddress).transfer(
+                    strategist,
+                    autoCompoundedPerformanceFeeStrategist
+                );
+                emit PerformanceFeeStrategist(
+                    strategist,
+                    tokenCompoundAddress,
+                    autoCompoundedPerformanceFeeStrategist,
+                    block.number,
+                    block.timestamp
+                );
+            }
+            tokenCompoundToDeposit = tokenCompoundToDeposit - autoCompoundedPerformanceFeeGovernance - autoCompoundedPerformanceFeeStrategist;
+
+            // Add liquidity
             _add_liquidity_single_coin(
                 curvePool.swap,
                 want,
@@ -390,43 +431,6 @@ TokenSwapPathRegistry
             wantGained = IERC20(want).balanceOf(address(this)).sub(
                 idleWant
             );
-
-            // Take performance fee
-            if(performanceFeeGovernance > 0) {
-                uint256 autoCompoundedPerformanceFeeGovernance =
-                wantGained.mul(performanceFeeGovernance).div(
-                    MAX_FEE
-                );
-                IERC20(want).transfer(
-                    governance,
-                    autoCompoundedPerformanceFeeGovernance
-                );
-                emit PerformanceFeeGovernance(
-                    governance,
-                    want,
-                    autoCompoundedPerformanceFeeGovernance,
-                    block.number,
-                    block.timestamp
-                );
-            }
-            if(performanceFeeStrategist > 0) {
-                uint256 autoCompoundedPerformanceFeeStrategist =
-                wantGained.mul(performanceFeeStrategist).div(
-                    MAX_FEE
-                );
-                IERC20(want).transfer(
-                    strategist,
-                    autoCompoundedPerformanceFeeStrategist
-                );
-                emit PerformanceFeeStrategist(
-                    strategist,
-                    want,
-                    autoCompoundedPerformanceFeeStrategist,
-                    block.number,
-                    block.timestamp
-                );
-            }
-
         }
 
         // Deposit remaining want (including idle want) into strategy position

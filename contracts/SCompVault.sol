@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interface/IController.sol";
 import "./interface/ISettV4.sol";
-import "hardhat/console.sol";
 
 contract SCompVault is ERC20 {
     using SafeERC20 for IERC20;

@@ -1,6 +1,8 @@
 import hardhat, {network} from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {min} from "hardhat/internal/util/bigint";
+import price from "../utils/price";
 
 const { run, ethers, upgrades } = hardhat;
 
@@ -24,6 +26,7 @@ let depositAccount3 : SignerWithAddress;
 
 // contract deploy
 let sCompVault : Contract;
+let sCompTokenContract : Contract;
 let sCompController : Contract;
 let sCompStrategy : Contract;
 let sCompTimelockController : Contract;
@@ -33,12 +36,18 @@ let curveSwapWrapped : Contract;
 let curveSwap : Contract;
 let wantContract: Contract;
 let tokenDepositContract: Contract;
+let tokenCompoundContract: Contract;
+let feeContract: Contract;
 let baseRewardPoolContract: Contract;
 
 // constant contract
 let cvxContract: Contract;
 let crvContract: Contract;
 let boosterContract: Contract;
+let feeDistributionContract: Contract;
+let surplusConverterV2Contract: Contract;
+let surplusConverterV3Contract: Contract;
+let veScompContract: Contract;
 
 let poolCurveContract: Contract;
 
@@ -56,6 +65,10 @@ let baseRewardPoolAddress = info.baseRewardPoolAddress; // address of baseReward
 let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
 let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
 let boosterAddress = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31";
+let wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+let uniswapV2Address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+let uniswapV3Address = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
+let sushiswapAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F";
 
 // convex pool info
 let nameStrategy = info.nameStrategy
@@ -72,15 +85,22 @@ let minDelay = 86400
 
 // test config
 let maxUint = ethers.constants.MaxUint256;
-let blockOneDay: any = 6646;
+let blockOneDay: any = 7200;
 let blockTime: any = 13;
 let dayToMine: any = 7;
+let WEEK = 7 * 86400;
 
 let depositv1Value: any = [];
 let initialBalanceDepositPool: any = [];
 let blockFinishBaseReward: any;
 let amountToDepositLiquidity: any = ethers.utils.parseEther(info.amountToDepositLiquidity);
 let initialTimestamp: any;
+
+let name = "Voting Escrow Scomp"
+let symbol = "veScomp"
+let version = "veScomp1.0.0";
+
+let firstTokenTime : any;
 
 async function main(): Promise<void> {
   let blockNumber = await ethers.provider.getBlockNumber();
@@ -92,6 +112,16 @@ async function main(): Promise<void> {
 }
 
 async function setupContract(): Promise<void> {
+
+    await deployStableCompToken();
+
+    await deployVeScomp();
+
+    await deployFeeDistribution();
+
+    await deploySurplusConverter();
+    await setSurplusConverterV2();
+
     await deployController();
 
     await deployVault();
@@ -100,7 +130,8 @@ async function setupContract(): Promise<void> {
 
     await deployTimeLockController();
 
-    // set strategy in controller
+
+    // set strategy and vault in controller
     await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
     await sCompController.connect(governance).setStrategy(wantAddress, sCompStrategy.address);
     await sCompController.connect(governance).setVault(wantAddress, sCompVault.address);
@@ -108,6 +139,23 @@ async function setupContract(): Promise<void> {
     // set timelock controller in strategy
     await sCompStrategy.connect(governance).setTimeLockController(sCompTimelockController.address);
     console.log("Setup complete")
+}
+
+async function deployStableCompToken(): Promise<void> {
+    // deploy stableComp token
+    let tokenScompFactory = await ethers.getContractFactory("StableCompToken")
+    sCompTokenContract = await tokenScompFactory.deploy();
+    await sCompTokenContract.deployed();
+
+    console.log("SComp token deployed to: ", sCompTokenContract.address)
+
+    // todo delete
+    // fund
+
+    let balanceOf = await sCompTokenContract.balanceOf(deployer.address);
+    let tx = await sCompTokenContract.transfer(governance.address, balanceOf.div(2) );
+    await tx.wait();
+
 }
 
 async function deployController(): Promise<void> {
@@ -144,7 +192,7 @@ async function deployStrategy(): Promise<void> {
     sCompStrategy = await factoryStrategy.deploy(
         nameStrategy,
         governance.address,
-        strategist.address,
+        surplusConverterV2Contract.address,
         sCompController.address,
         wantAddress,
         tokenCompoundAddress,
@@ -170,11 +218,145 @@ async function deployTimeLockController(): Promise<void> {
     console.log("Timelock controller deployed to: ", sCompStrategy.address)
 }
 
+async function deployFeeDistribution(): Promise<void> {
+    let blockNumber = await ethers.provider.getBlockNumber();
+    let block = await ethers.provider.getBlock(blockNumber);
+
+    // todo change weth address with stable comp token in production
+
+    let feeDistributionFactory = await ethers.getContractFactory("FeeDistribution");
+    feeDistributionContract = await feeDistributionFactory.deploy(
+        veScompContract.address,
+        block.timestamp + blockTime*blockOneDay*20,
+        wethAddress,
+        deployer.address,
+        deployer.address
+    )
+
+    console.log("Fee distribution contract deploy to: ", feeDistributionContract.address);
+
+    feeDistributionContract = await ethers.getContractAt("IFeeDistributorFront", feeDistributionContract.address, deployer);
+
+}
+
+async function checkpointFeeDistribution(): Promise<void> {
+    let tx = await feeDistributionContract.checkpoint_token();
+    await tx.wait();
+    console.log("checkpoint over...")
+}
+
+async function deploySurplusConverter(): Promise<void> {
+
+    // todo change weth address with stable comp token in production
+
+    let surplusConverterFactory = await ethers.getContractFactory("SurplusConverterUniV2Sushi");
+    surplusConverterV2Contract = await surplusConverterFactory.deploy(
+        wethAddress,
+        feeDistributionContract.address,
+        uniswapV2Address,
+        sushiswapAddress,
+        deployer.address,
+        deployer.address,
+        [deployer.address, strategist.address]
+    )
+
+    console.log("Surplus converter contract deploy to: ", feeDistributionContract.address);
+}
+
+async function setSurplusConverterV2(): Promise<void> {
+    let tx = await surplusConverterV2Contract.addToken(tokenCompoundAddress, [tokenCompoundAddress, wethAddress], 1);
+    await tx.wait();
+    tx = await surplusConverterV2Contract.unpause();
+    await tx.wait();
+}
+
+async function buyBackConverter(): Promise<void> {
+    let balanceTCOfSurplus = await tokenCompoundContract.balanceOf(surplusConverterV2Contract.address);
+    console.log("Balance token compound of surplus: ", ethers.utils.formatEther(balanceTCOfSurplus));
+
+    let balanceFeeOfSurplus = await feeContract.balanceOf(surplusConverterV2Contract.address);
+    console.log("Balance fee of surplus: ", ethers.utils.formatEther(balanceFeeOfSurplus));
+
+    let balanceFeeOfFeeDistributor = await feeContract.balanceOf(feeDistributionContract.address);
+    console.log("Balance fee of distributor: ", ethers.utils.formatEther(balanceFeeOfFeeDistributor));
+
+    let slippage = balanceFeeOfSurplus.div(100).mul(5);
+    let minAmount = balanceFeeOfSurplus.sub(slippage);
+
+    if(balanceTCOfSurplus > 0 ) {
+
+        let tx = await surplusConverterV2Contract.buyback(tokenCompoundAddress, balanceTCOfSurplus, 0, true);
+        await tx.wait();
+
+    }
+    balanceTCOfSurplus = await tokenCompoundContract.balanceOf(surplusConverterV2Contract.address);
+    console.log("Balance token compound of surplus after buyback: ", ethers.utils.formatEther(balanceTCOfSurplus));
+
+    balanceFeeOfSurplus = await feeContract.balanceOf(surplusConverterV2Contract.address);
+    console.log("Balance weth of surplus after buyback: ", ethers.utils.formatEther(balanceFeeOfSurplus));
+
+    balanceFeeOfFeeDistributor = await feeContract.balanceOf(feeDistributionContract.address);
+    console.log("Balance weth of fee distributor after buyback: ", ethers.utils.formatEther(balanceFeeOfFeeDistributor));
+
+}
+
+async function getFeeToDistribute(): Promise<void> {
+    let week_cursor = firstTokenTime.sub(1).div(WEEK).mul(WEEK)
+    for(let i = 0; i < 20; i++) {
+        let feeToDistribute = await feeDistributionContract.tokens_per_week(week_cursor);
+        console.log("Fee to distribute is: ", ethers.utils.formatEther(feeToDistribute))
+        week_cursor = week_cursor.add(WEEK);
+    }
+    let balanceFeeOfFeeDistributor = await feeContract.balanceOf(feeDistributionContract.address);
+    console.log("Balance weth of fee distributor: ", ethers.utils.formatEther(balanceFeeOfFeeDistributor));
+
+    firstTokenTime = week_cursor.add(1);
+}
+
+async function claimFeeFromDistributor(account: SignerWithAddress): Promise<void> {
+    let balanceOfBefore = await feeContract.balanceOf(account.address);
+    console.log("Balance of before: ", ethers.utils.formatEther(balanceOfBefore));
+
+
+    let currentVotingPower = await veScompContract.balanceOf(account.address);
+    console.log("Current voting power: ", ethers.utils.formatEther(currentVotingPower));
+
+    let blockNumber = await ethers.provider.getBlockNumber();
+    let block = await ethers.provider.getBlock(blockNumber);
+    let currentVeForAT = await feeDistributionContract.ve_for_at(account.address, block.timestamp);
+    console.log("Current ve for at: ", ethers.utils.formatEther(currentVeForAT));
+
+    let tx = await feeDistributionContract.connect(account).claim(account.address);
+    await tx.wait();
+    console.log("claimed...")
+
+    let balanceOfAfter = await feeContract.balanceOf(account.address);
+    console.log("Balance of after: ", ethers.utils.formatEther(balanceOfAfter));
+    let diff = balanceOfAfter.sub(balanceOfBefore);
+    console.log("Amount fee claimed: ", ethers.utils.formatEther(diff))
+
+    let balanceFeeOfFeeDistributor = await feeContract.balanceOf(feeDistributionContract.address);
+    console.log("Balance weth of fee distributor after buyback: ", ethers.utils.formatEther(balanceFeeOfFeeDistributor));
+
+}
+
+async function deployVeScomp(): Promise<void> {
+    let factory = await ethers.getContractFactory("veScomp");
+    veScompContract = await factory.deploy(sCompTokenContract.address, name, symbol, version);
+    await veScompContract.deployed();
+
+    console.log("Voting escrow sComp address: ", veScompContract.address);
+
+    veScompContract = await ethers.getContractAt("IVotingEscrow", veScompContract.address, deployer);
+
+}
+
 async function setupUtilityContract(): Promise<void> {
 
     console.log("Setup utility contract...")
 
     // deploy curveSwapWrapped
+    // utility contract add liquidity in curve -- custom and wrapped
     let factoryCurveSwapWrapped = await ethers.getContractFactory("CurveSwapWrapped");
     curveSwapWrapped = await factoryCurveSwapWrapped.deploy(
         tokenDepositAddress,
@@ -188,21 +370,22 @@ async function setupUtilityContract(): Promise<void> {
     // Get curve swap contract
     curveSwap = await new ethers.Contract(curveSwapAddress, curveSwapABI, ethers.provider);
 
-    // get crv3cryptoContract
+    // get want contract
     wantContract = await new ethers.Contract(wantAddress, wethABI, ethers.provider);
 
-    // get wethContract
+    // get feeContract
     tokenDepositContract = await new ethers.Contract(tokenDepositAddress, wethABI, ethers.provider);
     crvContract = await new ethers.Contract(crvAddress, wethABI, ethers.provider);
     cvxContract = await new ethers.Contract(cvxAddress, wethABI, ethers.provider);
     baseRewardPoolContract = await new ethers.Contract(baseRewardPoolAddress, baseRewardPoolABI, ethers.provider);
     boosterContract = await new ethers.Contract(boosterAddress, boosterABI, ethers.provider);
 
+    tokenCompoundContract = await new ethers.Contract(tokenCompoundAddress, wethABI, ethers.provider);
+    feeContract = await new ethers.Contract(wethAddress, wethABI, ethers.provider);
 
 }
 
 async function impersonateAccount(): Promise<void> {
-    console.log("Impersonate account...")
     await network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [accountDepositAddress1],
@@ -224,8 +407,6 @@ async function impersonateAccount(): Promise<void> {
 }
 
 async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
-    console.log("Add liquidity with address: ", account.address);
-
     initialBalanceDepositPool[index] = await tokenDepositContract.balanceOf(account.address);
 
     //await depositToken.connect(account).transfer(curveSwapWrapped.address, amountToDepositLiquidity);
@@ -255,27 +436,37 @@ async function removeLiquidity(account: SignerWithAddress, index: any): Promise<
   console.log("Diff is: ", ethers.utils.formatEther(diff))
 }
 
+let lastBalanceOfGovernance : any = 0;
+let lastBalanceOfConverter : any = 0;
+let lastBalanceWantOfStrategy : any = 0;
+
 async function checkBalance(): Promise<void> {
-  let balanceBoosterCrv = await crvContract.balanceOf(boosterAddress);
-  console.log("Balance crv booster: ", ethers.utils.formatEther(balanceBoosterCrv))
-  let balanceCrv = await crvContract.balanceOf(baseRewardPoolAddress);
-  let balanceCvx = await cvxContract.balanceOf(baseRewardPoolAddress);
+    // check governance want balance
+    let balanceGovernance = await tokenCompoundContract.balanceOf(governance.address);
+    console.log("Balance token compound of governance: ", ethers.utils.formatEther(balanceGovernance));
+    if (lastBalanceOfGovernance != 0) {
+        let diffBalance = ethers.utils.formatEther(balanceGovernance.sub(lastBalanceOfGovernance))
+        console.log("Diff balance : ", diffBalance)
+    }
 
-  console.log("Balance crv: ", ethers.utils.formatEther(balanceCrv))
-  console.log("Balance cvx: ", ethers.utils.formatEther(balanceCvx))
+    // check converter want balance
+    let balanceConverter = await tokenCompoundContract.balanceOf(surplusConverterV2Contract.address);
+    console.log("Balance token compound of Converter: ", ethers.utils.formatEther(balanceConverter));
+    if (lastBalanceOfConverter != 0) {
+        let diffBalance = ethers.utils.formatEther(balanceConverter.sub(lastBalanceOfConverter))
+        console.log("Diff balance : ", diffBalance)
+    }
 
-  let balanceContractFrax = await tokenDepositContract.balanceOf(curveSwapWrapped.address)
-  console.log("Balance usdc Contract : ", ethers.utils.formatEther(balanceContractFrax))
-
-  let balanceContractCrvFrax = await wantContract.balanceOf(curveSwapWrapped.address)
-  console.log("Balance frax3crv_f Contract : ", ethers.utils.formatEther(balanceContractCrvFrax))
-
-  let balanceCrvInStrategy = await crvContract.balanceOf(sCompStrategy.address);
-  console.log("Balance crv strategy : ", ethers.utils.formatEther(balanceCrvInStrategy))
-
-  let balanceCvxInStrategy = await cvxContract.balanceOf(sCompStrategy.address);
-  console.log("Balance cvx strategy : ", ethers.utils.formatEther(balanceCvxInStrategy))
-
+    // check balanceOf want in strategy
+    let balanceWantStrategy = await sCompStrategy.balanceOf();
+    console.log("Balance token compound strategy. ", ethers.utils.formatEther(balanceWantStrategy))
+    if (lastBalanceWantOfStrategy != 0) {
+        let diffBalance = ethers.utils.formatEther(balanceWantStrategy.sub(lastBalanceWantOfStrategy))
+        console.log("Diff balance: ", diffBalance)
+    }
+    lastBalanceOfGovernance = balanceGovernance;
+    lastBalanceOfConverter = balanceConverter;
+    lastBalanceWantOfStrategy = balanceWantStrategy;
 }
 
 async function depositv1(account: SignerWithAddress, index: any): Promise<void> {
@@ -296,7 +487,7 @@ async function depositv1(account: SignerWithAddress, index: any): Promise<void> 
     // check fee
     let balanceWantGovernance2 = await wantContract.balanceOf(governance.address);
     let diff = balanceWantGovernance2.sub(balanceWantGovernance1);
-    console.log("Amount fee deposit: ", ethers.utils.formatEther(diff));
+    //console.log("Amount fee deposit: ", ethers.utils.formatEther(diff));
 
 }
 
@@ -325,14 +516,12 @@ async function harvestv1(): Promise<void> {
 async function mineBlock(dayToMine: any): Promise<void> {
     let blockNumber = await ethers.provider.getBlockNumber();
     let block = await ethers.provider.getBlock(blockNumber);
-    let newTimestamp = block.timestamp + blockTime
+    let newTimestamp = block.timestamp + ( blockOneDay * dayToMine * blockTime)
 
     console.log("Mine block...");
 
-    for (let i = 0; i < blockOneDay*dayToMine; i++) {
-        newTimestamp = newTimestamp + blockTime
-        await ethers.provider.send('evm_mine', [newTimestamp]);
-    }
+    await ethers.provider.send('evm_mine', [newTimestamp]);
+
 }
 
 async function withdraw(account: SignerWithAddress, index: any): Promise<void> {
@@ -358,7 +547,7 @@ async function withdraw(account: SignerWithAddress, index: any): Promise<void> {
 }
 
 async function earnMarkReward(): Promise<void> {
-
+    console.log("Earn mark reward in booster contract...");
     await boosterContract.connect(governance).earmarkRewards(pidPool);
 }
 
@@ -381,9 +570,9 @@ async function fundAccount(account: SignerWithAddress): Promise<void> {
     console.log("account funded")
 }
 
-async function proposeChangeFeeStrategy(): Promise<void> {
+async function proposeChangeFeeStrategy(newfeeGovernance:any): Promise<void> {
     let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
-    let data = factoryStrategy.interface.encodeFunctionData("setPerformanceFeeGovernance", [feeGovernance/2]);
+    let data = factoryStrategy.interface.encodeFunctionData("setPerformanceFeeGovernance", [newfeeGovernance]);
 
     console.log("Data: ", data);
 
@@ -411,13 +600,13 @@ async function proposeChangeFeeStrategy(): Promise<void> {
      */
 }
 
-async function executeChangeFeeStrategy(): Promise<void> {
+async function executeChangeFeeStrategy(newfeeGovernance:any): Promise<void> {
 
     let oldFeeGovernance = await sCompStrategy.performanceFeeGovernance();
     console.log("Old fee governance: ", ethers.utils.formatUnits(oldFeeGovernance, 0));
 
     let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
-    let data = factoryStrategy.interface.encodeFunctionData("setPerformanceFeeGovernance", [feeGovernance/2]);
+    let data = factoryStrategy.interface.encodeFunctionData("setPerformanceFeeGovernance", [newfeeGovernance]);
 
     let tx = await sCompTimelockController.execute(
         sCompStrategy.address,
@@ -454,13 +643,30 @@ async function readCoins(): Promise<void> {
 
 }
 
+async function createLock(account: SignerWithAddress): Promise<void> {
+
+    let txApprove = await sCompTokenContract.connect(account).approve(veScompContract.address, ethers.constants.MaxUint256);
+    await txApprove.wait();
+
+    const current_date: Date = new Date();
+    let timeLock: any = (((current_date.getTime() / 1000)) + (2 * 365 * 86400)).toFixed(0)
+
+    let amountToLock = ethers.utils.parseEther("1000");
+
+    let balanceOfToken = await sCompTokenContract.balanceOf(account.address);
+    console.log("Initial balance of token is: ", ethers.utils.formatEther(balanceOfToken));
+
+    let tx = await veScompContract.connect(account).create_lock(balanceOfToken, timeLock);
+    let txCompleted = await tx.wait()
+    let feeTx = await price.getFeeTx(tx, txCompleted);
+    console.log("Fee tx lock: ", ethers.utils.formatEther(feeTx));
+
+}
 
 
 
   main()
     .then(async () => {
-        await readCoins();
-        /*
         await setupContract();
         await setupUtilityContract();
         await impersonateAccount();
@@ -469,34 +675,91 @@ async function readCoins(): Promise<void> {
         await addLiquidity(depositAccount2, 1);
         await addLiquidity(depositAccount3, 2);
 
+        /*
         // change fee
-        await proposeChangeFeeStrategy();
+        await proposeChangeFeeStrategy(feeGovernance/2);
         await mineBlock(2);
-        await executeChangeFeeStrategy();
+        await executeChangeFeeStrategy(feeGovernance/2);
+
+        await proposeChangeFeeStrategy(feeGovernance);
+        await mineBlock(2);
+        await executeChangeFeeStrategy(feeGovernance);
+        */
 
         await depositv1(depositAccount1, 0);
         await depositv1(depositAccount2, 1);
         await depositv1(depositAccount3, 2);
+
         await earnv1();
         await mineBlock(dayToMine);
         await tendv1();
+        await earnMarkReward();
+        await checkBalance();
+
+
+        await createLock(deployer);
+        await createLock(governance);
+
+
         await harvestv1();
+
+        await buyBackConverter();
+        firstTokenTime = await feeDistributionContract.last_token_time();
+        await checkBalance();
+
+        await earnMarkReward();
+        await mineBlock(dayToMine);
+        await tendv1();
+
+        await checkBalance();
+        await harvestv1();
+        await buyBackConverter();
+        await checkBalance();
+
+        await earnMarkReward();
+        await mineBlock(dayToMine);
+        await tendv1();
+        await checkBalance();
+        await harvestv1();
+        await buyBackConverter();
+        await checkBalance();
+
+        //await createLock(deployer);
+        //await createLock(governance);
+
+        //await buyBackConverter();
+        await mineBlock(20);
+        await checkpointFeeDistribution();
+
+        await claimFeeFromDistributor(deployer);
+        await claimFeeFromDistributor(governance);
+
+        await mineBlock(22);
+        await checkpointFeeDistribution();
+
+        await claimFeeFromDistributor(deployer);
+        await claimFeeFromDistributor(governance);
+
+        await earnMarkReward();
+        await harvestv1();
+        await checkBalance();
+        await buyBackConverter();
+
+        await claimFeeFromDistributor(deployer);
+        await claimFeeFromDistributor(governance);
+
+
+        await getFeeToDistribute();
+
         /*
-        await earnMarkReward();
-        await mineBlock(dayToMine);
-        await tendv1();
-        await harvestv1();
-        await earnMarkReward();
-        await mineBlock(dayToMine);
-        await tendv1();
-        await harvestv1();
-          await withdraw(depositAccount1, 0);
+
+        await withdraw(depositAccount1, 0);
         await withdraw(depositAccount2, 1);
         await withdraw(depositAccount3, 2);
         await removeLiquidity(depositAccount1, 0);
         await removeLiquidity(depositAccount2, 1);
         await removeLiquidity(depositAccount3, 2);
-  */
+*/
         process.exit(0)
     })
     .catch((error: Error) => {
