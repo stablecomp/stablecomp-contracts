@@ -29,6 +29,9 @@ contract SCompVault is ERC20 {
     uint public depositFee; // 1500 -> 15% ; 150 -> 1.5% ; 15 -> 0.15
     uint256 public constant MAX_FEE = 10000;
 
+    event Deposit(address indexed _receiver, uint _amount, uint256 _timestamp);
+    event Withdraw(address indexed _receiver, uint _amount, uint256 _timestamp);
+
     constructor(address _token, address _controller, address _treasuryFee, uint _depositFee)
     ERC20(
         string(abi.encodePacked("sComp ", ERC20(_token).name())),
@@ -101,18 +104,46 @@ contract SCompVault is ERC20 {
             shares = (_amount.mul(totalSupply())).div(_pool);
         }
         _mint(msg.sender, shares);
+
+        emit Deposit(msg.sender, shares, block.timestamp);
+    }
+
+    function depositAllFor(address _receiver) external {
+        depositFor(token.balanceOf(msg.sender), _receiver);
+    }
+
+    function depositFor(uint256 _amount, address _receiver) public {
+        uint256 _pool = balance();
+
+        // deposit fee
+        if(depositFee > 0) {
+            uint256 amountFee =
+            _amount.mul(depositFee).div(
+                MAX_FEE
+            );
+            token.safeTransferFrom(msg.sender, treasuryFee, amountFee);
+            _amount = _amount - amountFee;
+        }
+
+        uint256 _before = token.balanceOf(address(this));
+        token.safeTransferFrom(msg.sender, address(this), _amount);
+        uint256 _after = token.balanceOf(address(this));
+        _amount = _after.sub(_before); // Additional check for deflationary tokens
+        uint256 shares = 0;
+        if (totalSupply() == 0) {
+            shares = _amount;
+        } else {
+            shares = (_amount.mul(totalSupply())).div(_pool);
+        }
+        _mint(_receiver, shares);
+
+        emit Deposit(_receiver, shares, block.timestamp);
     }
 
     function withdrawAll() external {
         withdraw(balanceOf(msg.sender));
     }
 
-    // Used to swap any borrowed reserve ovaer the debt limit to liquidate to 'token'
-    function harvest(address reserve, uint256 amount) external {
-        require(msg.sender == controller, "SCompVault: !controller");
-        require(reserve != address(token), "SCompVault: token");
-        IERC20(reserve).safeTransfer(controller, amount);
-    }
 
     // No rebalance implementation for lower fees and faster swaps
     function withdraw(uint256 _shares) public {
@@ -132,6 +163,40 @@ contract SCompVault is ERC20 {
         }
 
         token.safeTransfer(msg.sender, r);
+        emit Withdraw(msg.sender, r, block.timestamp);
+    }
+
+    function withdrawAllFor(address _receiver) external {
+        withdrawFor(balanceOf(msg.sender), _receiver);
+    }
+
+
+    // No rebalance implementation for lower fees and faster swaps
+    function withdrawFor(uint256 _shares, address _receiver) public {
+        uint256 r = (balance().mul(_shares)).div(totalSupply());
+        _burn(msg.sender, _shares);
+
+        // Check balance
+        uint256 b = token.balanceOf(address(this));
+        if (b < r) {
+            uint256 _withdraw = r.sub(b);
+            IController(controller).withdraw(address(token), _withdraw);
+            uint256 _after = token.balanceOf(address(this));
+            uint256 _diff = _after.sub(b);
+            if (_diff < _withdraw) {
+                r = b.add(_diff);
+            }
+        }
+
+        token.safeTransfer(_receiver, r);
+        emit Withdraw(_receiver, r, block.timestamp);
+    }
+
+    // Used to swap any borrowed reserve ovaer the debt limit to liquidate to 'token'
+    function harvest(address reserve, uint256 amount) external {
+        require(msg.sender == controller, "SCompVault: !controller");
+        require(reserve != address(token), "SCompVault: token");
+        IERC20(reserve).safeTransfer(controller, amount);
     }
 
     function getPricePerFullShare() public view returns (uint256) {

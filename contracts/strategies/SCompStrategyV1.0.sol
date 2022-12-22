@@ -17,6 +17,7 @@ import "../interface/IBooster.sol";
 import "../interface/IBaseRewardsPool.sol";
 import "../interface/ICvxRewardsPool.sol";
 
+import "hardhat/console.sol";
 
 pragma experimental ABIEncoderV2;
 
@@ -323,8 +324,6 @@ TokenSwapPathRegistry
 
     /// @notice The more frequent the tend, the higher returns will beautoCompoundedPerformanceFeeGovernance
     function tend() external whenNotPaused returns (TendData memory) {
-        _onlyAuthorizedActors();
-
         TendData memory tendData;
 
         // 1. Harvest gains from positions
@@ -344,17 +343,19 @@ TokenSwapPathRegistry
 
     // No-op until we optimize harvesting strategy. Auto-compouding is key.
     function harvest() external whenNotPaused returns (uint256) {
-        _onlyAuthorizedActors();
-
         uint256 idleWant = IERC20(want).balanceOf(address(this));
         uint256 totalWantBefore = balanceOf();
 
         // 1. Withdraw accrued rewards from staking positions (claim unclaimed positions as well)
         baseRewardsPool.getReward(address(this), true);
 
+
         // 3. Sell 100% of accured rewards for underlying
         uint crvToSell = crvToken.balanceOf(address(this));
         if(crvToSell > 0)  {
+            uint fee = takeFee(crv, crvToSell);
+            crvToSell = crvToSell.sub(fee);
+
             _swapExactTokensForTokens(
                 sushiswap,
                 crv,
@@ -365,6 +366,9 @@ TokenSwapPathRegistry
 
         uint cvxToSell = cvxToken.balanceOf(address(this));
         if(cvxToSell > 0)  {
+            uint fee = takeFee(cvx, cvxToSell);
+            cvxToSell = cvxToSell.sub(fee);
+
             _swapExactTokensForTokens(
                 sushiswap,
                 cvx,
@@ -378,46 +382,6 @@ TokenSwapPathRegistry
         uint256 wantGained;
 
         if (tokenCompoundToDeposit > 0) {
-
-            // Take performance fee
-            uint256 autoCompoundedPerformanceFeeGovernance;
-            if(performanceFeeGovernance > 0) {
-                autoCompoundedPerformanceFeeGovernance =
-                tokenCompoundToDeposit.mul(performanceFeeGovernance).div(
-                    MAX_FEE
-                );
-                IERC20(tokenCompoundAddress).transfer(
-                    governance,
-                    autoCompoundedPerformanceFeeGovernance
-                );
-                emit PerformanceFeeGovernance(
-                    governance,
-                    tokenCompoundAddress,
-                    autoCompoundedPerformanceFeeGovernance,
-                    block.number,
-                    block.timestamp
-                );
-            }
-            uint256 autoCompoundedPerformanceFeeStrategist;
-            if(performanceFeeStrategist > 0) {
-                autoCompoundedPerformanceFeeStrategist =
-                tokenCompoundToDeposit.mul(performanceFeeStrategist).div(
-                    MAX_FEE
-                );
-                IERC20(tokenCompoundAddress).transfer(
-                    strategist,
-                    autoCompoundedPerformanceFeeStrategist
-                );
-                emit PerformanceFeeStrategist(
-                    strategist,
-                    tokenCompoundAddress,
-                    autoCompoundedPerformanceFeeStrategist,
-                    block.number,
-                    block.timestamp
-                );
-            }
-            tokenCompoundToDeposit = tokenCompoundToDeposit - autoCompoundedPerformanceFeeGovernance - autoCompoundedPerformanceFeeStrategist;
-
             // Add liquidity
             _add_liquidity_single_coin(
                 curvePool.swap,
@@ -446,5 +410,48 @@ TokenSwapPathRegistry
 
         emit Harvest(wantGained, block.number);
         return wantGained;
+    }
+
+    function takeFee(address _tokenAddress, uint _amount) internal returns(uint) {
+        // take fee
+        uint256 autoCompoundedPerformanceFeeGovernance;
+        if(performanceFeeGovernance > 0) {
+            autoCompoundedPerformanceFeeGovernance =
+            _amount.mul(performanceFeeGovernance).div(
+                MAX_FEE
+            );
+            IERC20(_tokenAddress).transfer(
+                governance,
+                autoCompoundedPerformanceFeeGovernance
+            );
+            emit PerformanceFeeGovernance(
+                governance,
+                _tokenAddress,
+                autoCompoundedPerformanceFeeGovernance,
+                block.number,
+                block.timestamp
+            );
+        }
+        uint256 autoCompoundedPerformanceFeeStrategist;
+        if(performanceFeeStrategist > 0) {
+            autoCompoundedPerformanceFeeStrategist =
+            _amount.mul(performanceFeeStrategist).div(
+                MAX_FEE
+            );
+            IERC20(_tokenAddress).transfer(
+                strategist,
+                autoCompoundedPerformanceFeeStrategist
+            );
+            emit PerformanceFeeStrategist(
+                strategist,
+                _tokenAddress,
+                autoCompoundedPerformanceFeeStrategist,
+                block.number,
+                block.timestamp
+            );
+        }
+
+        return autoCompoundedPerformanceFeeStrategist + autoCompoundedPerformanceFeeGovernance;
+
     }
 }

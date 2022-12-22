@@ -6,6 +6,7 @@
   "scripts": {
     "readParam-scaling_node": "npx hardhat run scripts/deploy/readParam.ts --network scaling_node",
     "depositFarming-scaling_node": "npx hardhat run scripts/deploy/depositFarming.ts --network scaling_node",
+    "deploy-hardhat": "npx hardhat run scripts/deploy/deploy_local.ts --network hardhat",
     "deploy-local_node": "npx hardhat run scripts/deploy/deploy.ts --network local_node",
     "deploy-scaling_node": "npx hardhat run scripts/deploy/deploy.ts --network scaling_node",
     "impersonate-scaling_node": "npx hardhat run scripts/deploy/impersonateAccount.ts --network scaling_node",
