@@ -219,6 +219,15 @@ async function depositVault(): Promise<void> {
 
 }
 
+async function withdrawVault(): Promise<void> {
+
+    let tx = await sCompVault.connect(deployer).withdrawAll();
+    await tx.wait();
+
+    let balanceShare = await sCompVault.balanceOf(deployer.address);
+    console.log("Share balance after deposit: ", ethers.utils.formatEther(balanceShare));
+
+}
 
 async function depositFarming(pid: any): Promise<void> {
 
@@ -230,6 +239,13 @@ async function depositFarming(pid: any): Promise<void> {
     let tx = await masterchefScomp.connect(deployer).deposit(pid, balanceShare);
     await tx.wait();
     console.log("Deposit farming ok...")
+}
+
+async function withdrawFarming(pid: any): Promise<void> {
+
+    let tx = await masterchefScomp.connect(deployer).withdraw(pid, ethers.utils.parseEther("260"));
+    await tx.wait();
+    console.log("Withdraw farming ok...")
 }
 
 async function verify(): Promise<void> {
@@ -310,6 +326,10 @@ async function verify(): Promise<void> {
         await setupContractMasterchef();
         await fundContract();
         await addPool(sCompVault.address);
+        await depositVault();
+        await depositFarming(0);
+        await withdrawFarming(0)
+        await withdrawVault();
         await depositVault();
         await depositFarming(0);
         //await verify();

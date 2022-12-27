@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interface/IStrategy.sol";
-import "./interface/IOneSplitAudit.sol";
 import "./interface/IConverter.sol";
 import "./utility/SCompAccessControl.sol";
 

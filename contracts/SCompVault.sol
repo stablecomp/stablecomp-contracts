@@ -7,10 +7,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interface/IController.sol";
-import "./interface/ISettV4.sol";
 
 contract SCompVault is ERC20 {
     using SafeERC20 for IERC20;
@@ -76,11 +74,11 @@ contract SCompVault is ERC20 {
         IController(controller).earn(address(token), _bal);
     }
 
-    function depositAll() external {
-        deposit(token.balanceOf(msg.sender));
+    function depositAll() external returns(uint){
+        return deposit(token.balanceOf(msg.sender));
     }
 
-    function deposit(uint256 _amount) public {
+    function deposit(uint256 _amount) public returns(uint) {
         uint256 _pool = balance();
 
         // deposit fee
@@ -106,13 +104,15 @@ contract SCompVault is ERC20 {
         _mint(msg.sender, shares);
 
         emit Deposit(msg.sender, shares, block.timestamp);
+
+        return shares;
     }
 
-    function depositAllFor(address _receiver) external {
-        depositFor(token.balanceOf(msg.sender), _receiver);
+    function depositAllFor(address _receiver) external returns(uint){
+        return depositFor(token.balanceOf(msg.sender), _receiver);
     }
 
-    function depositFor(uint256 _amount, address _receiver) public {
+    function depositFor(uint256 _amount, address _receiver) public returns(uint) {
         uint256 _pool = balance();
 
         // deposit fee
@@ -138,15 +138,17 @@ contract SCompVault is ERC20 {
         _mint(_receiver, shares);
 
         emit Deposit(_receiver, shares, block.timestamp);
+
+        return shares;
     }
 
-    function withdrawAll() external {
-        withdraw(balanceOf(msg.sender));
+    function withdrawAll() external returns(uint) {
+        return withdraw(balanceOf(msg.sender));
     }
 
 
     // No rebalance implementation for lower fees and faster swaps
-    function withdraw(uint256 _shares) public {
+    function withdraw(uint256 _shares) public returns(uint) {
         uint256 r = (balance().mul(_shares)).div(totalSupply());
         _burn(msg.sender, _shares);
 
@@ -164,15 +166,17 @@ contract SCompVault is ERC20 {
 
         token.safeTransfer(msg.sender, r);
         emit Withdraw(msg.sender, r, block.timestamp);
+
+        return r;
     }
 
-    function withdrawAllFor(address _receiver) external {
-        withdrawFor(balanceOf(msg.sender), _receiver);
+    function withdrawAllFor(address _receiver) external returns(uint) {
+        return withdrawFor(balanceOf(msg.sender), _receiver);
     }
 
 
     // No rebalance implementation for lower fees and faster swaps
-    function withdrawFor(uint256 _shares, address _receiver) public {
+    function withdrawFor(uint256 _shares, address _receiver) public returns(uint) {
         uint256 r = (balance().mul(_shares)).div(totalSupply());
         _burn(msg.sender, _shares);
 
@@ -190,6 +194,31 @@ contract SCompVault is ERC20 {
 
         token.safeTransfer(_receiver, r);
         emit Withdraw(_receiver, r, block.timestamp);
+
+        return r;
+    }
+
+    // this function is supposed to use only for the zapper contract
+    function withdrawOneClick(uint256 _shares, address _receiver) public returns(uint) {
+        uint256 r = (balance().mul(_shares)).div(totalSupply());
+        _burn(msg.sender, _shares);
+
+        // Check balance
+        uint256 b = token.balanceOf(address(this));
+        if (b < r) {
+            uint256 _withdraw = r.sub(b);
+            IController(controller).withdraw(address(token), _withdraw);
+            uint256 _after = token.balanceOf(address(this));
+            uint256 _diff = _after.sub(b);
+            if (_diff < _withdraw) {
+                r = b.add(_diff);
+            }
+        }
+
+        token.safeTransfer(msg.sender, r);
+        emit Withdraw(_receiver, r, block.timestamp);
+
+        return r;
     }
 
     // Used to swap any borrowed reserve ovaer the debt limit to liquidate to 'token'

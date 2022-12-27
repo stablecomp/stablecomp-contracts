@@ -69,11 +69,11 @@ async function test(): Promise<void> {
     ];
 
     let contract = new Contract(tokenAddress, abi, ethers.provider);
-    let response = await contract.filters.Transfer(vault, "account") //withdraw
-    let response = await contract.filters.Transfer("account", "vault") // deposit
+    let response = await contract.filters.Transfer("vault", "account") //withdraw
+    response = await contract.filters.Transfer("account", "vault") // deposit
 
-    let response = await contract.filters.Transfer("zapper", "account") // withdraw
-    let response = await contract.filters.Transfer("accout", "zapper") // deposit
+    response = await contract.filters.Transfer("zapper", "account") // withdraw
+    response = await contract.filters.Transfer("accout", "zapper") // deposit
 
     let listTransfer = await contract.queryFilter(response)
     console.log("Event transfer in contract: ", listTransfer.length);

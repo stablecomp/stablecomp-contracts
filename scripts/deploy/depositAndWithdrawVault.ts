@@ -65,20 +65,24 @@ async function setupContractMasterchef(): Promise<void> {
     initialBlock = blockNumber + 50;
 
     let factoryMasterchef = await ethers.getContractFactory("MasterChefScomp");
-    masterchefScomp = await factoryMasterchef.attach("0xC0BF43A4Ca27e0976195E6661b099742f10507e5");
+    masterchefScomp = await factoryMasterchef.attach(" 0xC0BF43A4Ca27e0976195E6661b099742f10507e5");
+    //masterchefScomp = await factoryMasterchef.attach("0x746a48E39dC57Ff14B872B8979E20efE5E5100B1");
 
     console.log("Masterchef contract deployed to address: ", masterchefScomp.address);
 
 }
 async function setupContractVault(): Promise<void> {
     let factoryScompVault = await ethers.getContractFactory("SCompVault");
-    sCompVault = await factoryScompVault.attach("0x6212cb549De37c25071cF506aB7E115D140D9e42");
+    sCompVault = await factoryScompVault.attach(" 0x6212cb549De37c25071cF506aB7E115D140D9e42");
+    //sCompVault = await factoryScompVault.attach("0xd9abC93F81394Bd161a1b24B03518e0a570bDEAd");
 
+    console.log("SComp vault deployed to: ", sCompVault.address);
 }
 async function setupContractWant(): Promise<void> {
     let factoryWant = await ethers.getContractFactory("GenericERC20");
     wantContract = await factoryWant.attach("0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC");
 
+    console.log("Want contract deployed to: ", wantContract.address);
 }
 
 async function fundContract(): Promise<void> {
@@ -136,7 +140,8 @@ async function depositFarming(pid: any): Promise<void> {
 
 async function withdrawFarming(pid: any): Promise<void> {
 
-    let tx = await masterchefScomp.connect(deployer).withdraw(pid, ethers.utils.parseEther("260"));
+    console.log("Withdraw...")
+    let tx = await masterchefScomp.connect(deployer).withdraw(pid, ethers.utils.parseEther("1"));
     await tx.wait();
     console.log("Withdraw farming ok...")
 }
@@ -214,10 +219,10 @@ async function verify(): Promise<void> {
         await setupContractMasterchef();
         await setupContractVault();
         await setupContractWant();
-        //await withdrawFarming(0);
-        //await withdrawVault();
-        await depositVault();
-        await depositFarming(0);
+        await withdrawFarming(0);
+        await withdrawVault();
+        //await depositVault();
+        //await depositFarming(0);
         //await verify();
         let finalBalance:any = await deployer.getBalance();
         let totalFee = initialBalance.sub(finalBalance);
