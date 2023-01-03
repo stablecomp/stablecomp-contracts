@@ -470,6 +470,8 @@ async function deposit(account: SignerWithAddress, index: any): Promise<void> {
     let balanceLp = await wantContract.balanceOf(account.address);
     depositv1Value[index] = balanceLp;
 
+    console.log("deposit of account is : ", ethers.utils.formatEther(balanceLp))
+
     await wantContract.connect(account).approve(sCompVault.address, maxUint)
     let tx = await sCompVault.connect(account).depositAll();
     let txCompleted = await tx.wait();

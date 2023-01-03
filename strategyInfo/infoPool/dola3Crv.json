@@ -1,0 +1,20 @@
+{
+  "nameStrategy": "DOLA3CRV",
+  "wantAddress": "0xAA5A67c256e27A5d80712c51971408db3370927D",
+  "tokenCompoundAddress": "0x865377367054516e17014CcdED1e7d814EDC9ce4",
+  "curveSwapAddress": "0xAA5A67c256e27A5d80712c51971408db3370927D",
+  "tokenDepositAddress": "0x865377367054516e17014CcdED1e7d814EDC9ce4",
+  "accountDepositAddress1": "0x16ec2aea80863c1fb4e13440778d0c9967fc51cb",
+  "accountDepositAddress2": "0x9f3614afb3df9f899cadbffaa05c6c908059f726",
+  "accountDepositAddress3": "0x1ef6d167a6c03cad53a3451fd526a5f434e70b91",
+  "baseRewardPoolAddress": "0x835f69e58087E5B6bffEf182fe2bf959Fe253c3c",
+  "pidPool": 62,
+  "nElementPool": 2,
+  "tokenCompoundPosition": 0,
+  "feeGovernance": 500,
+  "feeStrategist": 500,
+  "feeWithdraw": 20,
+  "feeDeposit": 0,
+  "amountToDepositLiquidity": "10000",
+  "routerIndex": 5
+}
