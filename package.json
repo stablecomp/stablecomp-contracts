@@ -25,6 +25,8 @@
     "test-fraxusdc": "npx hardhat run scripts/testStrategy/testFraxUsdc.ts --network hardhat",
     "test-frax3crv": "npx hardhat run scripts/testStrategy/testFrax3Crv.ts --network hardhat",
 
+    "test-OneClick_mim3crv": "npx hardhat run scripts/testOneClick/testOneClickMim3Crv.ts --network hardhat",
+
     "test-checkpoint": "npx hardhat run scripts/testVe/testCheckpoint.ts --network hardhat",
     "test-veScomp": "npx hardhat run scripts/testVe/testVeScomp.ts --network hardhat",
     "test-farming": "npx hardhat run scripts/testVe/testFarming.ts --network hardhat",
@@ -61,6 +63,7 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@uniswap/sdk-core": "^3.1.0",
     "chai": "^4.3.6",
     "dotenv": "^16.0.1",
     "eslint": "^7.32.0",
