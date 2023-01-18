@@ -217,7 +217,7 @@ async function deployTimeLockController(): Promise<void> {
     );
     await sCompTimelockController.deployed();
 
-    console.log("Timelock controller deployed to: ", sCompStrategy.address)
+    console.log("Timelock controller deployed to: ", sCompTimelockController.address)
 }
 
 async function deployFeeDistribution(): Promise<void> {

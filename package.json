@@ -4,15 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "readParam-scaling_node": "npx hardhat run scripts/deploy/readParam.ts --network scaling_node",
-    "depositFarming-scaling_node": "npx hardhat run scripts/deploy/depositFarming.ts --network scaling_node",
+    "readParam-scaling_node": "npx hardhat run scripts/utils/readParam.ts --network scaling_node",
+    "depositFarming-scaling_node": "npx hardhat run scripts/utils/depositFarming.ts --network scaling_node",
     "deploy-hardhat": "npx hardhat run scripts/deploy/deploy_local.ts --network hardhat",
     "deploy-local_node": "npx hardhat run scripts/deploy/deploy.ts --network local_node",
     "deploy-scaling_node": "npx hardhat run scripts/deploy/deploy.ts --network scaling_node",
     "impersonate-scaling_node": "npx hardhat run scripts/deploy/impersonateAccount.ts --network scaling_node",
     "deposit-scaling_node": "npx hardhat run scripts/deploy/test_deploy.ts --network scaling_node",
     "deploy-hardhat_node": "npx hardhat run scripts/deploy/deploy.ts --network hardhat",
-    "deploy-fraxusdc": "npx hardhat run scripts/deploy/deployFraxUsdc.ts --network mainnet_eth",
+    "deploy-fraxusdc": "npx hardhat run scripts/deploy/strategies/fraxUsdc/deployFraxUsdc.ts --network mainnet_eth",
 
     "test-euroc3crv": "npx hardhat run scripts/testStrategy/testEuroc3Crv.ts --network hardhat",
     "test-ibEURsEUR": "npx hardhat run scripts/testStrategy/testibEURsEUR.ts --network hardhat",

@@ -1,5 +1,5 @@
 {
-  "nameStrategy": "MIM-3LP3CRV-f",
+  "nameStrategy": "Mim3crv",
   "wantAddress": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
   "tokenCompoundAddress": "0x99d8a9c45b2eca8864373a26d1459e3dff1e17f3",
   "curveSwapAddress": "0x5a6a4d54456819380173272a5e8e9b9904bdf41b",
