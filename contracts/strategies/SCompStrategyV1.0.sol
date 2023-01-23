@@ -156,7 +156,7 @@ TokenSwapPathRegistry
     event TendState(uint crvTended, uint cvxTended);
 
     constructor(
-        string memory nameStrategy,
+        string memory _nameStrategy,
         address _governance,
         address _strategist,
         address _controller,
@@ -166,6 +166,8 @@ TokenSwapPathRegistry
         uint256[3] memory _feeConfig,
         CurvePoolConfig memory _curvePool
     ) BaseStrategy(_governance, _strategist, _controller) {
+
+        nameStrategy = _nameStrategy;
 
         want = _want;
 

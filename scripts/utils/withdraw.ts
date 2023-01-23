@@ -52,31 +52,12 @@ async function main(): Promise<void> {
   wantContract = await new ethers.Contract(wantAddress, wethABI, ethers.provider);
 }
 
-async function impersonateAccount(): Promise<void> {
-  console.log("Impersonate account...")
-  await network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [addressGovernance],
-  });
-  governance = await ethers.getSigner(addressGovernance);
+async function withdraw(): Promise<void> {
 
-}
-
-async function harvest(): Promise<void> {
-
-  let tx = await sCompStrategy.connect(deployer).harvest();
+  let tx = await sCompVault.connect(deployer).withdrawAll();
   await tx.wait();
 
-  console.log("Harvest executed")
-
-}
-
-async function tend(): Promise<void> {
-
-  let tx = await sCompStrategy.connect(deployer).tend();
-  await tx.wait();
-
-  console.log("Tend executed")
+  console.log("withdraw executed")
 
 }
 
@@ -89,10 +70,8 @@ async function read(): Promise<void> {
 
   main()
     .then(async () => {
-      //await impersonateAccount()
       await read()
-      await tend();
-      await harvest();
+      await withdraw();
       process.exit(0)
     })
     .catch((error: Error) => {

@@ -44,7 +44,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     event Harvest(uint256 harvested, uint256 indexed blockNumber);
     event Tend(uint256 tended);
 
-    address public want; // Want: Curve.fi renBTC/wBTC (crvRenWBTC) LP token
+    address public want;
 
     uint256 public performanceFeeGovernance;
     uint256 public performanceFeeStrategist;

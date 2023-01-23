@@ -5,8 +5,8 @@ const fs = require('fs');
 
 const { run, ethers } = hardhat;
 
-const info = require('../../../../strategyInfo/infoPool/tusd3Crv.json');
-const mainnetAddress = require('../../../../address/address_scaling_node/mainAddress.json');
+const info = require('../../../strategyInfo/infoPool/fraxUsdc.json');
+const mainnetAddress = require('../../../address/address_scaling_node/mainAddress.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -155,7 +155,9 @@ async function verify(): Promise<void> {
     // Verifying contracts
     if (
         hardhat.network.name !== "hardhat" &&
-        hardhat.network.name !== "localhost"
+        hardhat.network.name !== "localhost" &&
+        hardhat.network.name !== "scaling_node" &&
+        hardhat.network.name !== "local_node"
     ) {
 
         // Wait 30 seconds

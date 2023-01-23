@@ -12,7 +12,7 @@
     "impersonate-scaling_node": "npx hardhat run scripts/deploy/impersonateAccount.ts --network scaling_node",
     "deposit-scaling_node": "npx hardhat run scripts/deploy/test_deploy.ts --network scaling_node",
     "deploy-hardhat_node": "npx hardhat run scripts/deploy/deploy.ts --network hardhat",
-    "deploy-fraxusdc": "npx hardhat run scripts/deploy/strategies/fraxUsdc/deployFraxUsdc.ts --network mainnet_eth",
+    "deploy-fraxusdc": "npx hardhat run scripts/deploy/strategies/deployFraxUsdc.ts --network mainnet_eth",
 
     "test-euroc3crv": "npx hardhat run scripts/testStrategy/testEuroc3Crv.ts --network hardhat",
     "test-ibEURsEUR": "npx hardhat run scripts/testStrategy/testibEURsEUR.ts --network hardhat",

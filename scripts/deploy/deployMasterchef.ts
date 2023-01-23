@@ -1,6 +1,7 @@
 import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import fs from "fs";
 
 const { run, ethers } = hardhat;
 
@@ -8,23 +9,24 @@ let deployer : SignerWithAddress;
 
 // contract deploy
 let masterchefScomp : Contract;
-let tokenLockAddress = ""
-let veCrvAddress = ""
+let sCompTokenContractAddress = "0x05F6847ab9273366Ca4f18294efba0503513aFB7"
+let veCrvAddress = "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636"
 
 let tokenPerBlock = 9;
 let initialBlock : any;
+
 async function main(): Promise<void> {
   await run('compile');
   [deployer] = await ethers.getSigners();
 }
 
-async function setupContract(): Promise<void> {
+async function deployMasterchef(): Promise<void> {
     let blockNumber = await ethers.provider.getBlockNumber();
-    initialBlock = blockNumber + 50;
+    initialBlock = blockNumber + 1800;
 
     let factoryMasterchef = await ethers.getContractFactory("MasterChefScomp");
     masterchefScomp = await factoryMasterchef.deploy(
-        tokenLockAddress,
+        sCompTokenContractAddress,
         veCrvAddress,
         tokenPerBlock,
         initialBlock
@@ -34,11 +36,33 @@ async function setupContract(): Promise<void> {
 
 }
 
+async function writeAddressInJson(): Promise<void> {
+
+    let address = {
+        masterchefScomp: {
+            address: masterchefScomp.address,
+            args: {
+                sCompTokenAddress: sCompTokenContractAddress,
+                veScompAddress: veCrvAddress,
+                tokenPerBlock: tokenPerBlock,
+                initialBlock: initialBlock
+            }
+        },
+    };
+
+    console.log("address")
+    console.log(address)
+
+}
+
+
 async function verify(): Promise<void> {
     // Verifying contracts
     if (
         hardhat.network.name !== "hardhat" &&
-        hardhat.network.name !== "localhost"
+        hardhat.network.name !== "localhost" &&
+        hardhat.network.name !== "scaling_node" &&
+        hardhat.network.name !== "local_node"
     ) {
 
         // Wait 30 seconds
@@ -47,7 +71,7 @@ async function verify(): Promise<void> {
         await run("verify:verify", {
             address: masterchefScomp.address,
             constructorArguments: [
-                tokenLockAddress,
+                sCompTokenContractAddress,
                 veCrvAddress,
                 tokenPerBlock,
                 initialBlock
@@ -59,7 +83,8 @@ async function verify(): Promise<void> {
 
 main()
     .then(async () => {
-        await setupContract();
+        await deployMasterchef();
+        await writeAddressInJson();
         await verify();
         process.exit(0)
     })

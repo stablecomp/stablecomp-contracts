@@ -9,23 +9,31 @@ const { run, ethers, upgrades } = hardhat;
 const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
 
 let deployer : SignerWithAddress;
+let account1 : SignerWithAddress;
 
 const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
+let accountToFound = "0x8E3cB7784176379C7591cACd71E867b887FdB815"
 async function main(): Promise<void> {
 
     await run('compile');
-    [deployer] = await ethers.getSigners();
-    console.log("Deployer addresss: ", deployer.address)
+    [deployer, account1] = await ethers.getSigners();
+    console.log("Deployer addresss: ", deployer.address, " with balance: ", ethers.utils.formatEther(await deployer.getBalance()))
 }
 
   main()
     .then(async () => {
 
-        await deployer.sendTransaction({
-            to: "0x2060266bA136DC0b2f4D5Cebd147209F0954C756",
-            value: ethers.utils.parseEther("2.0"), // Sends exactly 1.0 ether
+
+        let tx = await account1.sendTransaction({
+            to: accountToFound,
+            value: ethers.utils.parseEther("15.0"), // Sends exactly 1.0 ether
         });
+        await tx.wait();
+        console.log("Send eth completed")
+
+        let balance = await ethers.provider.getBalance(accountToFound)
+        console.log("balance of: ", ethers.utils.formatEther(balance))
     })
     .catch((error: Error) => {
       console.error(error);
