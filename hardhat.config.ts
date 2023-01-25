@@ -15,7 +15,12 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   vyper: {
-    compilers: [{ version: "0.2.15" },{ version: "0.2.4" },{ version: "0.2.7" }, { version: "0.3.0" }],
+    compilers: [
+      { version: "0.2.15" },
+      { version: "0.2.4" },
+      { version: "0.2.7" },
+      { version: "0.3.0" },
+    ],
   },
   solidity: {
     compilers: [
@@ -26,8 +31,8 @@ const config: HardhatUserConfig = {
             runs: 200,
             enabled: true,
             details: {
-              yul: false
-            }
+              yul: false,
+            },
           },
         },
       },
@@ -38,8 +43,20 @@ const config: HardhatUserConfig = {
             runs: 200,
             enabled: true,
             details: {
-              yul: false
-            }
+              yul: false,
+            },
+          },
+        },
+      },
+      {
+        version: "0.7.6",
+        settings: {
+          optimizer: {
+            runs: 200,
+            enabled: true,
+            details: {
+              yul: false,
+            },
           },
         },
       },
@@ -50,19 +67,20 @@ const config: HardhatUserConfig = {
             runs: 200,
             enabled: true,
             details: {
-              yul: false
-            }
+              yul: false,
+            },
           },
         },
-      },{
+      },
+      {
         version: "0.5.5",
         settings: {
           optimizer: {
             runs: 200,
             enabled: true,
             details: {
-              yul: false
-            }
+              yul: false,
+            },
           },
         },
       },
@@ -73,37 +91,37 @@ const config: HardhatUserConfig = {
       url: "https://eth-mainnet.g.alchemy.com/v2/VA0iJJN6a26rGrc0GT4_qmHvuDu5_vWe",
       chainId: 1,
       accounts:
-          process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     bsc_mainnet: {
       url: "https://bsc-dataseed.binance.org/",
       chainId: 56,
       accounts:
-          process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     bsc_testnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
       accounts:
-          process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     matic_testnet: {
       chainId: 80001,
       url: "https://matic-mumbai.chainstacklabs.com",
       accounts:
-          process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     scaling_node: {
       chainId: 31337,
       url: "http://104.248.142.30:8545",
       accounts:
-          //process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-      ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
+        //process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
     },
     local_node: {
       url: "http://127.0.0.1:8545/",
       //accounts:
-          //process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      //process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
       //["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
     },
     hardhat: {
@@ -114,10 +132,8 @@ const config: HardhatUserConfig = {
         //url: "https://red-lively-flower.quiknode.pro/d9fdbf99be306441445a56cd45479a6e5a277759/",
         //url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       },
-      allowUnlimitedContractSize:true
-
+      allowUnlimitedContractSize: true,
     },
-
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
@@ -132,9 +148,6 @@ const config: HardhatUserConfig = {
     runOnCompile: true,
     strict: true,
   },
-
 };
-
-
 
 export default config;
