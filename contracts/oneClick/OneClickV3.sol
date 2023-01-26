@@ -8,9 +8,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 
 import "../interface/ICurvePool.sol";
 import "../interface/ISCompVault.sol";
@@ -24,13 +25,16 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     ISwapRouter public immutable swapRouter;
     address private routerAddress03;
 
+    IQuoter public immutable quoter;
+    address private quoterAddress;
+
     IWETH public immutable wTokenInterface;
     address private wToken;
 
     uint256 private constant minAmount = 1000;
     uint256 public constant maxInt = 2 ** 256 - 1;
 
-    uint256 public constant oneClickMax = 10000; // 100%
+    uint256 public constant oneClickFeeMax = 10000; // 100%
     uint256 public oneClickFee; // 1 = 0.01% ; 10 = 0.1% ; 100 = 1% ; 1000 = 10% ; 10000 = 100%
     address public oneClickFeeAddress;
     address public timeLockController;
@@ -72,6 +76,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     constructor(
         address _router,
         address _swapRouter,
+        address _quoter,
         address _wToken,
         uint256 _oneClickFee,
         address _oneClickFeeAddress
@@ -82,6 +87,9 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         //Uniswap V3 Router
         routerAddress03 = _swapRouter;
         swapRouter = ISwapRouter(_swapRouter);
+        //Uniswap V3 Quoter
+        quoterAddress = _quoter;
+        quoter = IQuoter(_quoter);
         //wToken
         wToken = _wToken;
         wTokenInterface = IWETH(_wToken);
@@ -361,11 +369,186 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         }
     }
 
-    function estimateOneClickIn()
-        external
-        view
-        returns (uint256 amountTokenOut)
-    {}
+    /**
+     * @notice Estimate the amount of token out
+     * @param _tokenIn: token to deposit
+     * @param _poolAddress: Curve pool address
+     * @param _poolTokens: Curve tokens in the pool
+     * @param _priceTokens: Curve tokens price vs _tokenIn
+     * @param _vault: StablecompVault address
+     * @param _amountIn: amount of token to deposit
+     * @param _crvSlippage: slippage for deposit
+     * @param _oneToken: if you want to deposit only one token
+     * @param _indexIn: index of the token to deposit
+     */
+    function estimateOneClickIn(
+        address _tokenIn,
+        address _poolAddress,
+        address[] memory _poolTokens,
+        uint256[] memory _priceTokens,
+        address _vault,
+        uint256 _amountIn,
+        uint256 _crvSlippage,
+        bool _oneToken,
+        uint256 _indexIn
+    ) external view returns (uint256 amountTokenOut) {
+        require(_amountIn >= minAmount, "OneClick: too small input amount");
+        require(
+            _poolTokens.length <= 4 && _poolTokens.length >= 2,
+            "OneClick: pool size range is: min 2, max 4"
+        );
+
+        ICurvePool pool = ICurvePool(_poolAddress);
+
+        // If you intend to deposit only one token
+        if (_oneToken) {
+            require(
+                _indexIn <= _poolTokens.length,
+                "OneClick: index out of range"
+            );
+
+            // If the input token is directly the one to be deposited --> deposit
+            if (_tokenIn == _poolTokens[_indexIn]) {
+                if (_poolTokens.length == 2) {
+                    uint256[2] memory amounts;
+                    amounts[_indexIn] = _amountIn;
+
+                    uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                        _crvSlippage) / oneClickFeeMax;
+
+                    uint256 amountCurveOut = pool.calc_token_amount(
+                        amounts,
+                        true
+                    ) - slippage;
+                    amountTokenOut =
+                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
+                } else if (_poolTokens.length == 3) {
+                    uint256[3] memory amounts;
+                    amounts[_indexIn] = _amountIn;
+
+                    uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                        _crvSlippage) / oneClickFeeMax;
+
+                    uint256 amountCurveOut = pool.calc_token_amount(
+                        amounts,
+                        true
+                    ) - slippage;
+                    amountTokenOut =
+                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
+                } else if (_poolTokens.length == 4) {
+                    uint256[4] memory amounts;
+                    amounts[_indexIn] = _amountIn;
+
+                    uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                        _crvSlippage) / oneClickFeeMax;
+
+                    uint256 amountCurveOut = pool.calc_token_amount(
+                        amounts,
+                        true
+                    ) - slippage;
+                    amountTokenOut =
+                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
+                }
+            }
+            // If the input token does not match the one you want to deposit --> Swap --> Deposit
+            else {
+                if (_poolTokens.length == 2) {
+                    uint256[2] memory amounts;
+                    amounts[_indexIn] = _priceTokens[_indexIn];
+
+                    uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                        _crvSlippage) / oneClickFeeMax;
+
+                    uint256 amountCurveOut = pool.calc_token_amount(
+                        amounts,
+                        true
+                    ) - slippage;
+                    amountTokenOut =
+                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
+                } else if (_poolTokens.length == 3) {
+                    uint256[3] memory amounts;
+                    amounts[_indexIn] = _priceTokens[_indexIn];
+
+                    uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                        _crvSlippage) / oneClickFeeMax;
+
+                    uint256 amountCurveOut = pool.calc_token_amount(
+                        amounts,
+                        true
+                    ) - slippage;
+                    amountTokenOut =
+                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
+                } else if (_poolTokens.length == 4) {
+                    uint256[4] memory amounts;
+                    amounts[_indexIn] = _priceTokens[_indexIn];
+
+                    uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                        _crvSlippage) / oneClickFeeMax;
+
+                    uint256 amountCurveOut = pool.calc_token_amount(
+                        amounts,
+                        true
+                    ) - slippage;
+                    amountTokenOut =
+                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
+                }
+            }
+        }
+        // If the input token deposit in equal parts to the pool
+        else {
+            uint256 swapAmount = _amountIn / _poolTokens.length;
+
+            if (_poolTokens.length == 2) {
+                uint256[2] memory amounts;
+                amounts[0] = _priceTokens[0];
+                amounts[1] = _priceTokens[1];
+
+                uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                    _crvSlippage) / oneClickFeeMax;
+
+                uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
+                    slippage;
+                amountTokenOut =
+                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                    ISCompVault(_vault).balance();
+            } else if (_poolTokens.length == 3) {
+                uint256[3] memory amounts;
+                amounts[0] = _priceTokens[0];
+                amounts[1] = _priceTokens[1];
+                amounts[2] = _priceTokens[2];
+
+                uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                    _crvSlippage) / oneClickFeeMax;
+
+                uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
+                    slippage;
+                amountTokenOut =
+                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                    ISCompVault(_vault).balance();
+            } else if (_poolTokens.length == 4) {
+                uint256[4] memory amounts;
+                amounts[0] = _priceTokens[0];
+                amounts[1] = _priceTokens[1];
+                amounts[2] = _priceTokens[2];
+                amounts[3] = _priceTokens[3];
+
+                uint256 slippage = (pool.calc_token_amount(amounts, true) *
+                    _crvSlippage) / oneClickFeeMax;
+
+                uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
+                    slippage;
+                amountTokenOut =
+                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                    ISCompVault(_vault).balance();
+            }
+        }
+    }
 
     function estimateOneClickOut()
         external
@@ -388,8 +571,29 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
         uint256[] memory amountsOut = router.getAmountsOut(_swapAmount, _path);
         uint256 slippage = (amountsOut[amountsOut.length - 1] * _slippage) /
-            oneClickMax;
+            oneClickFeeMax;
         amountOut = amountsOut[amountsOut.length - 1] - slippage;
+    }
+
+    /**
+     * @notice Estimate the price of a token in using the UniswapV3 router
+     * @param _path: The token in and routing for swap
+     * @param _swapAmount: amount of token to swap
+     * @param _slippage: slippage percentage
+     */
+    function estimatePriceV3(
+        address[] memory _path,
+        uint256 _swapAmount,
+        uint256 _slippage
+    ) public returns (uint256 amountOut) {
+        require(_path.length >= 2, "Estimate Price: path size is: min 2");
+
+        uint256 amountsOut = quoter.quoteExactInput(
+            abi.encodePacked(_path),
+            _swapAmount
+        );
+        uint256 slippage = (amountsOut * _slippage) / oneClickFeeMax;
+        amountOut = amountsOut - slippage;
     }
 
     /**
@@ -409,7 +613,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             "OneClick: Fee Address not allowed"
         );
         require(
-            _newVauleFee >= 0 && _newVauleFee <= oneClickMax,
+            _newVauleFee >= 0 && _newVauleFee <= oneClickFeeMax,
             "OneClick: Fee Value not allowed"
         );
         oneClickFeeAddress = _newAddressFee;
@@ -900,7 +1104,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
-        ) * _slippage) / oneClickMax;
+        ) * _slippage) / oneClickFeeMax;
         uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
@@ -932,7 +1136,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
-        ) * _slippage) / oneClickMax;
+        ) * _slippage) / oneClickFeeMax;
         uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
@@ -964,7 +1168,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
-        ) * _slippage) / oneClickMax;
+        ) * _slippage) / oneClickFeeMax;
         uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
@@ -1157,77 +1361,11 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         return amount;
     }
 
-    function _getEstimate(
-        address[][] memory _route,
-        address[] memory _poolTokens,
-        uint256 _swapAmount,
-        uint256[2] memory _amounts,
-        uint256 _slippage
-    ) internal view returns (uint256[2] memory) {
-        for (uint256 i = 0; i < _route.length; i++) {
-            // If token in does not match token[i] of pool
-            if (_route[0][0] != _poolTokens[i]) {
-                address[] memory path = _route[i];
-
-                _amounts[i] = estimatePriceV2(path, _swapAmount, _slippage);
-            }
-            // If the token in matches the token[i] of the pool
-            else {
-                _amounts[i] = _swapAmount;
-            }
-        }
-        return _amounts;
-    }
-
-    function _getEstimate(
-        address[][] memory _route,
-        address[] memory _poolTokens,
-        uint256 _swapAmount,
-        uint256[3] memory _amounts,
-        uint256 _slippage
-    ) internal view returns (uint256[3] memory) {
-        for (uint256 i = 0; i < _route.length; i++) {
-            // If token in does not match token[i] of pool
-            if (_route[0][0] != _poolTokens[i]) {
-                address[] memory path = _route[i];
-
-                _amounts[i] = estimatePriceV2(path, _swapAmount, _slippage);
-            }
-            // If the token in matches the token[i] of the pool
-            else {
-                _amounts[i] = _swapAmount;
-            }
-        }
-        return _amounts;
-    }
-
-    function _getEstimate(
-        address[][] memory _route,
-        address[] memory _poolTokens,
-        uint256 _swapAmount,
-        uint256[4] memory _amounts,
-        uint256 _slippage
-    ) internal view returns (uint256[4] memory) {
-        for (uint256 i = 0; i < _route.length; i++) {
-            // If token in does not match token[i] of pool
-            if (_route[0][0] != _poolTokens[i]) {
-                address[] memory path = _route[i];
-
-                _amounts[i] = estimatePriceV2(path, _swapAmount, _slippage);
-            }
-            // If the token in matches the token[i] of the pool
-            else {
-                _amounts[i] = _swapAmount;
-            }
-        }
-        return _amounts;
-    }
-
     function _fee(
         address _tokenAddress,
         uint256 _amountIn
     ) internal returns (uint256) {
-        uint256 fee = (_amountIn * oneClickFee) / oneClickMax;
+        uint256 fee = (_amountIn * oneClickFee) / oneClickFeeMax;
         IERC20(_tokenAddress).safeTransfer(oneClickFeeAddress, fee);
         return _amountIn - fee;
     }
