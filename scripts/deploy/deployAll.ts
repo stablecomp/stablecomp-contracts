@@ -81,7 +81,7 @@ async function deployVeScomp(): Promise<void> {
 
 async function deployMasterchef(): Promise<void> {
     let blockNumber = await ethers.provider.getBlockNumber();
-    initialBlock = blockNumber + 50;
+    initialBlock = blockNumber + 1800;
 
     let factoryMasterchef = await ethers.getContractFactory("MasterChefScomp");
     masterchefScomp = await factoryMasterchef.deploy(

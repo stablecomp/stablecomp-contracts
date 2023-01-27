@@ -8,9 +8,9 @@ let deployer : SignerWithAddress;
 
 // contract deploy
 let masterchefScomp : Contract;
-let masterchefScompAddress = "0xE3a7282c422f61d96c99F39a8EBFD03161F83D76"
+let masterchefScompAddress = "0xC48528F72A23525dBC77A3C2D85B7Aea4d2F7205"
 let sCompTokenContract : Contract;
-let sCompAddress = "0x05F6847ab9273366Ca4f18294efba0503513aFB7";
+let sCompAddress = "0x565328F2B262F1182df8b58e5FFD3bAa570C8498";
 
 const infoBusd3Crv = require('../../strategyInfo/infoPool/busd3Crv.json');
 const infoDola3Crv = require('../../strategyInfo/infoPool/dola3Crv.json');
@@ -19,7 +19,6 @@ const infoFraxUsdc = require('../../strategyInfo/infoPool/fraxUsdc.json');
 const infoibEursEur = require('../../strategyInfo/infoPool/ibEURsEUR.json');
 const infoMim3Crv = require('../../strategyInfo/infoPool/mim3Crv.json');
 const infoTusd3Crv = require('../../strategyInfo/infoPool/tusd3Crv.json');
-
 const mainAddress = require('../../address/address_scaling_node/mainAddress.json')
 const busd3Crv = require('../../address/address_scaling_node/strategies/Busd3crv/Busd3crv.json')
 const dola3crv = require('../../address/address_scaling_node/strategies/Dola3crv/Dola3crv.json')
@@ -65,13 +64,13 @@ main()
     .then(async () => {
         await setupContract();
         await fundContract();
-        await addPool(busd3Crv.sCompVault.address)
-        await addPool(dola3crv.sCompVault.address)
-        await addPool(frax3crv.sCompVault.address)
+        //await addPool(busd3Crv.sCompVault.address)
+        //await addPool(dola3crv.sCompVault.address)
+        //await addPool(frax3crv.sCompVault.address)
         await addPool(fraxusdc.sCompVault.address)
-        await addPool(ibEursEur.sCompVault.address)
-        await addPool(mim3crv.sCompVault.address)
-        await addPool(tusd3crv.sCompVault.address)
+        //await addPool(ibEursEur.sCompVault.address)
+        //await addPool(mim3crv.sCompVault.address)
+        //await addPool(tusd3crv.sCompVault.address)
 
         process.exit(0)
     })

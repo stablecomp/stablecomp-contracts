@@ -1,41 +1,41 @@
 {
   "sCompTokenContract": {
-    "address": "0x565328F2B262F1182df8b58e5FFD3bAa570C8498",
+    "address": "0x05F6847ab9273366Ca4f18294efba0503513aFB7",
     "args": {}
   },
   "veScompContract": {
-    "address": "0xfa3315912FcD8ee6E8Feda78853d517b7bbeEDcc",
+    "address": "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636",
     "args": {
-      "sCompTokenAddress": "0x565328F2B262F1182df8b58e5FFD3bAa570C8498",
+      "sCompTokenAddress": "0x05F6847ab9273366Ca4f18294efba0503513aFB7",
       "nameVe": "Voting Escrow Scomp",
       "symbolVe": "veScomp",
       "versionVe": "veScomp1.0.0"
     }
   },
   "masterchefScomp": {
-    "address": "0xC48528F72A23525dBC77A3C2D85B7Aea4d2F7205",
+    "address": "0xE3a7282c422f61d96c99F39a8EBFD03161F83D76",
     "args": {
-      "sCompTokenAddress": "0x565328F2B262F1182df8b58e5FFD3bAa570C8498",
-      "veScompAddress": "0xfa3315912FcD8ee6E8Feda78853d517b7bbeEDcc",
+      "sCompTokenAddress": "0x05F6847ab9273366Ca4f18294efba0503513aFB7",
+      "veScompAddress": "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636",
       "tokenPerBlock": 9,
-      "initialBlock": 16471055
+      "initialBlock": 16471022
     }
   },
   "feeDistributionContract": {
-    "address": "0x471f0A41D667C6d3f188CF09Bcbeb32431875fCa",
+    "address": "0x753fB727B2487fd22c8860167aCf01E20B69FbeA",
     "args": {
-      "veScompAddress": "0xfa3315912FcD8ee6E8Feda78853d517b7bbeEDcc",
-      "startTimestamp": 1674477684,
+      "veScompAddress": "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636",
+      "startTimestamp": 1674472885,
       "tokenAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
       "admin": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
       "emergencyReturn": "0x2b276218D962dEEbF96C749ffB228601b2C7a587"
     }
   },
   "surplusConverterV2Contract": {
-    "address": "0xfAD2dAd06A16FBA763E215343A8741F0D7d7F5a5",
+    "address": "0x4CD5ecD5E0Dabb0b933657F4162dE4376326A536",
     "args": {
       "rewardToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      "feeDistributor": "0x471f0A41D667C6d3f188CF09Bcbeb32431875fCa",
+      "feeDistributor": "0x753fB727B2487fd22c8860167aCf01E20B69FbeA",
       "uniswapV2Address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
       "sushiswapAddress": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
       "whitelisted": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
@@ -47,7 +47,7 @@
     }
   },
   "sCompController": {
-    "address": "0x2149Fac3fb1a69917266dD5b15121747D4365f58",
+    "address": "0x23a4E57e64BD7dD71d7DbBB1628D40A36cdC0b56",
     "args": {
       "governance": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
       "strategist": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
@@ -55,7 +55,7 @@
     }
   },
   "sCompTimelockController": {
-    "address": "0xAC0cF0ED25DC53eD1d095335cCAAfc11A21d46C8",
+    "address": "0x2d7077DD7686AabEa1700Ae2983eE47dbA0Fa136",
     "args": {
       "minDelay": 86400,
       "proposer": [
