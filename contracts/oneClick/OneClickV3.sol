@@ -119,7 +119,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address[] memory _poolTokens,
         address _vault,
         uint256 _crvSlippage,
-        bool _protocol,
+        bool[] memory _protocol,
         bool _oneToken,
         uint256 _indexIn
     ) external payable nonReentrant {
@@ -174,7 +174,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _vault,
         uint256 _amountIn,
         uint256 _crvSlippage,
-        bool _protocol,
+        bool[] memory _protocol,
         bool _oneToken,
         uint256 _indexIn
     ) external nonReentrant {
@@ -235,7 +235,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address[] memory _poolTokens,
         address _vault,
         uint256 _amountOut,
-        bool _protocol
+        bool[] memory _protocol
     ) external nonReentrant {
         require(_amountOut >= minAmount, "OneClick: too small input amount");
         require(
@@ -295,7 +295,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _vault,
         address _tokenOut,
         uint256 _amountOut,
-        bool _protocol
+        bool[] memory _protocol
     ) external nonReentrant {
         require(_amountOut >= minAmount, "OneClick: too small input amount");
         require(
@@ -653,7 +653,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _vault,
         uint256 _amountIn,
         uint256 _crvSlippage,
-        bool _protocol,
+        bool[] memory _protocol,
         bool _oneToken,
         uint256 _indexIn
     ) internal returns (uint256) {
@@ -711,7 +711,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 // If the input token does not match the one you want to deposit --> Swap --> Deposit
                 address[] memory path = _route[0];
                 uint256[] memory swapedAmounts;
-                if (_protocol) {
+                if (_protocol[_indexIn]) {
                     _approveToken(path[0], routerAddress03, amountIn);
 
                     ISwapRouter.ExactInputParams memory params = ISwapRouter
@@ -790,7 +790,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             uint256 swapAmount = amountIn / _poolTokens.length;
             uint256 crvSlippage = _crvSlippage;
 
-            bool protocol = _protocol;
+            bool[] memory protocol = _protocol;
 
             if (poolToken.length == 2) {
                 uint256[2] memory amounts;
@@ -844,7 +844,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _vault,
         address _tokenOut,
         uint256 _amountOut,
-        bool _protocol
+        bool[] memory _protocol
     ) internal returns (uint256 tokeOutAmount) {
         uint256 lpAmount = ISCompVault(_vault).withdrawOneClick(
             _amountOut,
@@ -919,7 +919,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         uint256 _swapAmount,
         uint256[2] memory _amounts,
         uint256 _slippage,
-        bool _protocol
+        bool[] memory _protocol
     ) internal returns (uint256) {
         for (uint256 i = 0; i < _route.length; i++) {
             // If token in does not match token[i] of pool
@@ -927,7 +927,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 uint256[] memory swapedAmounts;
                 address[] memory path = _route[i];
 
-                if (_protocol) {
+                if (_protocol[i]) {
                     _approveToken(path[0], routerAddress03, _swapAmount);
 
                     ISwapRouter.ExactInputParams memory params = ISwapRouter
@@ -979,7 +979,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         uint256 _swapAmount,
         uint256[3] memory _amounts,
         uint256 _slippage,
-        bool _protocol
+        bool[] memory _protocol
     ) internal returns (uint256) {
         for (uint256 i = 0; i < _route.length; i++) {
             // If token in does not match token[i] of pool
@@ -987,7 +987,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 uint256[] memory swapedAmounts;
                 address[] memory path = _route[i];
 
-                if (_protocol) {
+                if (_protocol[i]) {
                     _approveToken(path[0], routerAddress03, _swapAmount);
 
                     ISwapRouter.ExactInputParams memory params = ISwapRouter
@@ -1039,7 +1039,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         uint256 _swapAmount,
         uint256[4] memory _amounts,
         uint256 _slippage,
-        bool _protocol
+        bool[] memory _protocol
     ) internal returns (uint256) {
         for (uint256 i = 0; i < _route.length; i++) {
             // If token in does not match token[i] of pool
@@ -1047,7 +1047,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 uint256[] memory swapedAmounts;
                 address[] memory path = _route[i];
 
-                if (_protocol) {
+                if (_protocol[i]) {
                     _approveToken(path[0], routerAddress03, _swapAmount);
 
                     ISwapRouter.ExactInputParams memory params = ISwapRouter
@@ -1191,14 +1191,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _tokenOut,
         uint256 _amountOut,
         uint256[2] memory _amountOutMin,
-        bool _protocol
+        bool[] memory _protocol
     ) internal returns (uint256) {
         ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
 
         uint256 amount;
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             if (_tokenOut != _poolTokens[i]) {
-                if (_protocol) {
+                if (_protocol[i]) {
                     _approveToken(
                         _route[i][0],
                         routerAddress03,
@@ -1250,14 +1250,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _tokenOut,
         uint256 _amountOut,
         uint256[3] memory _amountOutMin,
-        bool _protocol
+        bool[] memory _protocol
     ) internal returns (uint256) {
         ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
 
         uint256 amount;
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             if (_tokenOut != _poolTokens[i]) {
-                if (_protocol) {
+                if (_protocol[i]) {
                     _approveToken(
                         _route[i][0],
                         routerAddress03,
@@ -1309,14 +1309,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _tokenOut,
         uint256 _amountOut,
         uint256[4] memory _amountOutMin,
-        bool _protocol
+        bool[] memory _protocol
     ) internal returns (uint256) {
         ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
 
         uint256 amount;
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             if (_tokenOut != _poolTokens[i]) {
-                if (_protocol) {
+                if (_protocol[i]) {
                     _approveToken(
                         _route[i][0],
                         routerAddress03,
