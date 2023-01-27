@@ -374,7 +374,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
      * @param _tokenIn: token to deposit
      * @param _poolAddress: Curve pool address
      * @param _poolTokens: Curve tokens in the pool
-     * @param _priceTokens: Curve tokens price vs _tokenIn
+     * @param _priceTokensIn: Curve tokens price vs _tokenIn
      * @param _vault: StablecompVault address
      * @param _amountIn: amount of token to deposit
      * @param _crvSlippage: slippage for deposit
@@ -385,7 +385,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _tokenIn,
         address _poolAddress,
         address[] memory _poolTokens,
-        uint256[] memory _priceTokens,
+        uint256[] memory _priceTokensIn,
         address _vault,
         uint256 _amountIn,
         uint256 _crvSlippage,
@@ -457,7 +457,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             else {
                 if (_poolTokens.length == 2) {
                     uint256[2] memory amounts;
-                    amounts[_indexIn] = _priceTokens[_indexIn];
+                    amounts[_indexIn] = _priceTokensIn[_indexIn];
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
                         _crvSlippage) / oneClickFeeMax;
@@ -471,7 +471,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 3) {
                     uint256[3] memory amounts;
-                    amounts[_indexIn] = _priceTokens[_indexIn];
+                    amounts[_indexIn] = _priceTokensIn[_indexIn];
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
                         _crvSlippage) / oneClickFeeMax;
@@ -485,7 +485,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 4) {
                     uint256[4] memory amounts;
-                    amounts[_indexIn] = _priceTokens[_indexIn];
+                    amounts[_indexIn] = _priceTokensIn[_indexIn];
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
                         _crvSlippage) / oneClickFeeMax;
@@ -506,8 +506,8 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
             if (_poolTokens.length == 2) {
                 uint256[2] memory amounts;
-                amounts[0] = _priceTokens[0];
-                amounts[1] = _priceTokens[1];
+                amounts[0] = _priceTokensIn[0];
+                amounts[1] = _priceTokensIn[1];
 
                 uint256 slippage = (pool.calc_token_amount(amounts, true) *
                     _crvSlippage) / oneClickFeeMax;
@@ -519,9 +519,9 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     ISCompVault(_vault).balance();
             } else if (_poolTokens.length == 3) {
                 uint256[3] memory amounts;
-                amounts[0] = _priceTokens[0];
-                amounts[1] = _priceTokens[1];
-                amounts[2] = _priceTokens[2];
+                amounts[0] = _priceTokensIn[0];
+                amounts[1] = _priceTokensIn[1];
+                amounts[2] = _priceTokensIn[2];
 
                 uint256 slippage = (pool.calc_token_amount(amounts, true) *
                     _crvSlippage) / oneClickFeeMax;
@@ -533,10 +533,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     ISCompVault(_vault).balance();
             } else if (_poolTokens.length == 4) {
                 uint256[4] memory amounts;
-                amounts[0] = _priceTokens[0];
-                amounts[1] = _priceTokens[1];
-                amounts[2] = _priceTokens[2];
-                amounts[3] = _priceTokens[3];
+                amounts[0] = _priceTokensIn[0];
+                amounts[1] = _priceTokensIn[1];
+                amounts[2] = _priceTokensIn[2];
+                amounts[3] = _priceTokensIn[3];
 
                 uint256 slippage = (pool.calc_token_amount(amounts, true) *
                     _crvSlippage) / oneClickFeeMax;
