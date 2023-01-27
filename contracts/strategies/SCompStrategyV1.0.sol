@@ -343,7 +343,6 @@ TokenSwapPathRegistry
         return tendData;
     }
 
-    // No-op until we optimize harvesting strategy. Auto-compouding is key.
     function harvest() external whenNotPaused returns (uint256) {
         uint256 idleWant = IERC20(want).balanceOf(address(this));
         uint256 totalWantBefore = balanceOf();
