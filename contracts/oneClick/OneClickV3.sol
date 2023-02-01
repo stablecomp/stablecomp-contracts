@@ -420,9 +420,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 3) {
                     uint256[3] memory amounts;
                     amounts[_indexIn] = _amountIn;
@@ -434,9 +435,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 4) {
                     uint256[4] memory amounts;
                     amounts[_indexIn] = _amountIn;
@@ -448,9 +450,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 }
             }
             // If the input token does not match the one you want to deposit --> Swap --> Deposit
@@ -466,9 +469,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 3) {
                     uint256[3] memory amounts;
                     amounts[_indexIn] = _priceTokensIn[_indexIn];
@@ -480,9 +484,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 4) {
                     uint256[4] memory amounts;
                     amounts[_indexIn] = _priceTokensIn[_indexIn];
@@ -494,16 +499,15 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 }
             }
         }
         // If the input token deposit in equal parts to the pool
         else {
-            uint256 swapAmount = _amountIn / _poolTokens.length;
-
             if (_poolTokens.length == 2) {
                 uint256[2] memory amounts;
                 amounts[0] = _priceTokensIn[0];
@@ -514,9 +518,11 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
-                amountTokenOut =
-                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                    ISCompVault(_vault).balance();
+
+                amountTokenOut = ISCompVault(_vault).balance() == 0
+                    ? amountCurveOut
+                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
             } else if (_poolTokens.length == 3) {
                 uint256[3] memory amounts;
                 amounts[0] = _priceTokensIn[0];
@@ -528,9 +534,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
-                amountTokenOut =
-                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                    ISCompVault(_vault).balance();
+                amountTokenOut = ISCompVault(_vault).balance() == 0
+                    ? amountCurveOut
+                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
             } else if (_poolTokens.length == 4) {
                 uint256[4] memory amounts;
                 amounts[0] = _priceTokensIn[0];
@@ -543,9 +550,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
-                amountTokenOut =
-                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                    ISCompVault(_vault).balance();
+                amountTokenOut = ISCompVault(_vault).balance() == 0
+                    ? amountCurveOut
+                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
             }
         }
     }
