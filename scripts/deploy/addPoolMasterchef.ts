@@ -64,10 +64,10 @@ main()
     .then(async () => {
         await setupContract();
         await fundContract();
-        //await addPool(busd3Crv.sCompVault.address)
-        //await addPool(dola3crv.sCompVault.address)
+        await addPool(busd3Crv.sCompVault.address)
+        await addPool(dola3crv.sCompVault.address)
         //await addPool(frax3crv.sCompVault.address)
-        await addPool(fraxusdc.sCompVault.address)
+        //await addPool(fraxusdc.sCompVault.address)
         //await addPool(ibEursEur.sCompVault.address)
         //await addPool(mim3crv.sCompVault.address)
         //await addPool(tusd3crv.sCompVault.address)

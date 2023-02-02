@@ -14,6 +14,9 @@
     "deploy-hardhat_node": "npx hardhat run scripts/deploy/deploy.ts --network hardhat",
     "deploy-fraxusdc": "npx hardhat run scripts/deploy/strategies/deployFraxUsdc.ts --network mainnet_eth",
 
+    "sendLP": "npx hardhat run scripts/utils/sendLP.ts --network scaling_node",
+    "testSandwitchAttack": "npx hardhat run scripts/utils/testSandwitchAttack.ts --network hardhat",
+
     "test-euroc3crv": "npx hardhat run scripts/testStrategy/testEuroc3Crv.ts --network hardhat",
     "test-ibEURsEUR": "npx hardhat run scripts/testStrategy/testibEURsEUR.ts --network hardhat",
     "test-3eur": "npx hardhat run scripts/testStrategy/test3eur.ts --network hardhat",

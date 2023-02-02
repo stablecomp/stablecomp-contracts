@@ -13,12 +13,12 @@ let account1 : SignerWithAddress;
 
 const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
-let accountToFound = "0x8E3cB7784176379C7591cACd71E867b887FdB815"
+let accountToFound = "0x277055A24952B1D9feCE9Af63252747FC109b2F7"
 async function main(): Promise<void> {
 
     await run('compile');
     [deployer, account1] = await ethers.getSigners();
-    console.log("Deployer addresss: ", deployer.address, " with balance: ", ethers.utils.formatEther(await deployer.getBalance()))
+    console.log("Account 1 addresss: ", account1.address, " with balance: ", ethers.utils.formatEther(await account1.getBalance()))
 }
 
   main()
