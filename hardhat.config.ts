@@ -113,7 +113,7 @@ const config: HardhatUserConfig = {
     },
     scaling_node: {
       chainId: 31337,
-      url: "http://104.248.142.30:8545",
+      url: "https://johnchain.org",
       accounts:
         //process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
         ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],

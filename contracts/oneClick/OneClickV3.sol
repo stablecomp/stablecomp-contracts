@@ -102,24 +102,24 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
     /**
      * @notice OneClick a token in (e.g. token/other token)
-     * @param _route: The token in and routing for swap (if needed)
+     * @param _routev2: The routing of UniswapV2 for the swap
+     * @param _routev3: The routing of UniswapV3 for the swap
      * @param _poolAddress: Curve pool address
      * @param _tokenAddress: Curve token address
      * @param _poolTokens: Curve tokens in the pool
      * @param _vault: StablecompVault address
      * @param _crvSlippage: slippage for the deposit
-     * @param _protocol: Uniswap V2 or V3 protocol. True = V3, False = V2
      * @param _oneToken: invest in all tokens or in a one of specified index
      * @param _indexIn: index of the specified to invest
      */
     function OneClickInETH(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
         address _poolAddress,
         address _tokenAddress,
         address[] memory _poolTokens,
         address _vault,
         uint256 _crvSlippage,
-        bool[] memory _protocol,
         bool _oneToken,
         uint256 _indexIn
     ) external payable nonReentrant {
@@ -132,20 +132,21 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         wTokenInterface.deposit{value: msg.value}();
 
         uint256 lpAmount = _OneClickIn(
-            _route,
+            _routev2,
+            _routev3,
+            wToken,
             _poolAddress,
             _tokenAddress,
             _poolTokens,
             _vault,
             msg.value,
             _crvSlippage,
-            _protocol,
             _oneToken,
             _indexIn
         );
 
         emit NewOneClickIn(
-            address(0x0000000000000000000000000000000000000000),
+            address(0),
             _poolAddress,
             msg.value,
             lpAmount,
@@ -155,26 +156,28 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
     /**
      * @notice OneClick a token in (e.g. token/other token)
-     * @param _route: The token in and routing for swap (if needed)
+     * @param _routev2: The routing of UniswapV2 for the swap
+     * @param _routev3: The routing of UniswapV3 for the swap
+     * @param _tokenIn: the token to swap or deposit
      * @param _poolAddress: Curve pool address
      * @param _tokenAddress: Curve token address
      * @param _poolTokens: Curve tokens in the pool
      * @param _vault: StablecompVault address
      * @param _amountIn: amount of token to swap or deposit
      * @param _crvSlippage: slippage for the deposit
-     * @param _protocol: Uniswap V2 or V3 protocol. True = V3, False = V2
      * @param _oneToken: invest in all tokens or in a one of specified index
      * @param _indexIn: index of the specified to invest
      */
     function OneClickIn(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
+        address _tokenIn,
         address _poolAddress,
         address _tokenAddress,
         address[] memory _poolTokens,
         address _vault,
         uint256 _amountIn,
         uint256 _crvSlippage,
-        bool[] memory _protocol,
         bool _oneToken,
         uint256 _indexIn
     ) external nonReentrant {
@@ -185,32 +188,28 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         );
 
         require(
-            IERC20(_route[0][0]).allowance(msg.sender, address(this)) >=
-                _amountIn,
+            IERC20(_tokenIn).allowance(msg.sender, address(this)) >= _amountIn,
             "OneClick: Input token is not approved"
         );
 
-        IERC20(_route[0][0]).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amountIn
-        );
+        IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _amountIn);
 
         uint256 lpAmount = _OneClickIn(
-            _route,
+            _routev2,
+            _routev3,
+            _tokenIn,
             _poolAddress,
             _tokenAddress,
             _poolTokens,
             _vault,
             _amountIn,
             _crvSlippage,
-            _protocol,
             _oneToken,
             _indexIn
         );
 
         emit NewOneClickIn(
-            _route[0][0],
+            _tokenIn,
             _poolAddress,
             _amountIn,
             lpAmount,
@@ -220,22 +219,22 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
     /**
      * @notice OneClick a token out
-     * @param _route: The token out and routing for swap
+     * @param _routev2: The routing of UniswapV2 for the swap
+     * @param _routev3: The routing of UniswapV3 for the swap
      * @param _poolAddress: Curve pool address
      * @param _tokenAddress: Curve token address
      * @param _poolTokens: Curve tokens in the pool
      * @param _vault: StablecompVault address
      * @param _amountOut: amount of token to remove
-     * @param _protocol: Uniswap V2 or V3 protocol. True = V3, False = V2
      */
     function OneClickOutETH(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
         address _poolAddress,
         address _tokenAddress,
         address[] memory _poolTokens,
         address _vault,
-        uint256 _amountOut,
-        bool[] memory _protocol
+        uint256 _amountOut
     ) external nonReentrant {
         require(_amountOut >= minAmount, "OneClick: too small input amount");
         require(
@@ -251,14 +250,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         IERC20(_vault).safeTransferFrom(msg.sender, address(this), _amountOut);
 
         uint256 tokenOutAmount = _OneClickOut(
-            _route,
+            _routev2,
+            _routev3,
             _poolAddress,
             _tokenAddress,
             _poolTokens,
             _vault,
             wToken,
-            _amountOut,
-            _protocol
+            _amountOut
         );
 
         wTokenInterface.withdraw(tokenOutAmount);
@@ -278,24 +277,24 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
     /**
      * @notice OneClick a token out
-     * @param _route: The token out and routing for swap
+     * @param _routev2: The routing of UniswapV2 for the swap
+     * @param _routev3: The routing of UniswapV3 for the swap
      * @param _poolAddress: Curve pool address
      * @param _tokenAddress: Curve token address
      * @param _poolTokens: Curve tokens in the pool
      * @param _vault: StablecompVault address
      * @param _tokenOut: token we want to get out
      * @param _amountOut: amount of token to remove
-     * @param _protocol: Uniswap V2 or V3 protocol. True = V3, False = V2
      */
     function OneClickOut(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
         address _poolAddress,
         address _tokenAddress,
         address[] memory _poolTokens,
         address _vault,
         address _tokenOut,
-        uint256 _amountOut,
-        bool[] memory _protocol
+        uint256 _amountOut
     ) external nonReentrant {
         require(_amountOut >= minAmount, "OneClick: too small input amount");
         require(
@@ -311,14 +310,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         IERC20(_vault).safeTransferFrom(msg.sender, address(this), _amountOut);
 
         uint256 tokenOutAmount = _OneClickOut(
-            _route,
+            _routev2,
+            _routev3,
             _poolAddress,
             _tokenAddress,
             _poolTokens,
             _vault,
             _tokenOut,
-            _amountOut,
-            _protocol
+            _amountOut
         );
 
         if (_tokenOut == _tokenAddress) {
@@ -654,18 +653,19 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     /* --------------------------- Internal functions --------------------------- */
 
     function _OneClickIn(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
+        address _tokenIn,
         address _poolAddress,
         address _tokenAddress,
         address[] memory _poolTokens,
         address _vault,
         uint256 _amountIn,
         uint256 _crvSlippage,
-        bool[] memory _protocol,
         bool _oneToken,
         uint256 _indexIn
     ) internal returns (uint256) {
-        uint256 amountIn = _fee(_route[0][0], _amountIn);
+        uint256 amountIn = _fee(_tokenIn, _amountIn);
 
         uint256 lpAmount;
 
@@ -677,7 +677,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             );
 
             // If the input token is directly the one to be deposited --> deposit
-            if (_route[0][0] == _poolTokens[_indexIn]) {
+            if (_tokenIn == _poolTokens[_indexIn]) {
                 if (_poolTokens.length == 2) {
                     uint256[2] memory amounts;
                     amounts[_indexIn] = amountIn;
@@ -716,37 +716,21 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     );
                 }
             } else {
+                address[][] memory ruotev2 = _routev2;
+                bytes[] memory ruotev3 = _routev3;
                 // If the input token does not match the one you want to deposit --> Swap --> Deposit
-                address[] memory path = _route[0];
-                uint256[] memory swapedAmounts;
-                if (_protocol[_indexIn]) {
-                    _approveToken(path[0], routerAddress03, amountIn);
-
-                    ISwapRouter.ExactInputParams memory params = ISwapRouter
-                        .ExactInputParams({
-                            path: abi.encodePacked(path[0]),
-                            recipient: address(this),
-                            deadline: block.timestamp,
-                            amountIn: amountIn,
-                            amountOutMinimum: 0
-                        });
-
-                    swapedAmounts[0] = swapRouter.exactInput(params);
+                uint256 swapedAmounts;
+                if (ruotev3[0].length > 0) {
+                    swapedAmounts = _swapV3(_tokenIn, ruotev3[0], amountIn, 1);
                 } else {
-                    _approveToken(path[0], routerAddress02, amountIn);
+                    _approveToken(_tokenIn, routerAddress02, amountIn);
 
-                    swapedAmounts = router.swapExactTokensForTokens(
-                        amountIn,
-                        1,
-                        path,
-                        address(this),
-                        block.timestamp
-                    );
+                    swapedAmounts = _swapV2(_tokenIn, ruotev2[0], amountIn, 1);
                 }
 
                 if (_poolTokens.length == 2) {
                     uint256[2] memory amounts;
-                    amounts[_indexIn] = swapedAmounts[swapedAmounts.length - 1];
+                    amounts[_indexIn] = swapedAmounts;
 
                     lpAmount = _add_liquidity(
                         _poolAddress,
@@ -758,7 +742,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     );
                 } else if (_poolTokens.length == 3) {
                     uint256[3] memory amounts;
-                    amounts[_indexIn] = swapedAmounts[swapedAmounts.length - 1];
+                    amounts[_indexIn] = swapedAmounts;
 
                     lpAmount = _add_liquidity(
                         _poolAddress,
@@ -770,7 +754,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     );
                 } else if (_poolTokens.length == 4) {
                     uint256[4] memory amounts;
-                    amounts[_indexIn] = swapedAmounts[swapedAmounts.length - 1];
+                    amounts[_indexIn] = swapedAmounts;
 
                     lpAmount = _add_liquidity(
                         _poolAddress,
@@ -786,58 +770,64 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         // If the input token deposit in equal parts to the pool
         else {
             require(
-                _route.length == _poolTokens.length,
+                _routev2.length <= _poolTokens.length ||
+                    _routev3.length <= _poolTokens.length ||
+                    _routev2.length + _routev3.length <= _poolTokens.length,
                 "OneClick: route path not match"
             );
-            address[][] memory ruote = _route;
+            address[][] memory ruotev2 = _routev2;
+            bytes[] memory ruotev3 = _routev3;
+            address tokenIn = _tokenIn;
+
             address poolAddress = _poolAddress;
             address tokenAddress = _tokenAddress;
-            address[] memory poolToken = _poolTokens;
+            address[] memory poolTokens = _poolTokens;
             address vault = _vault;
 
-            uint256 swapAmount = amountIn / _poolTokens.length;
+            uint256 swapAmount = amountIn / poolTokens.length;
             uint256 crvSlippage = _crvSlippage;
 
-            bool[] memory protocol = _protocol;
-
-            if (poolToken.length == 2) {
+            if (poolTokens.length == 2) {
                 uint256[2] memory amounts;
                 lpAmount = _swapAndDeposit(
+                    ruotev2,
+                    ruotev3,
+                    tokenIn,
                     poolAddress,
                     tokenAddress,
-                    ruote,
-                    poolToken,
+                    poolTokens,
                     vault,
                     swapAmount,
                     amounts,
-                    crvSlippage,
-                    protocol
+                    crvSlippage
                 );
-            } else if (poolToken.length == 3) {
+            } else if (poolTokens.length == 3) {
                 uint256[3] memory amounts;
                 lpAmount = _swapAndDeposit(
+                    ruotev2,
+                    ruotev3,
+                    tokenIn,
                     poolAddress,
                     tokenAddress,
-                    ruote,
-                    poolToken,
+                    poolTokens,
                     vault,
                     swapAmount,
                     amounts,
-                    crvSlippage,
-                    protocol
+                    crvSlippage
                 );
-            } else if (poolToken.length == 4) {
+            } else if (poolTokens.length == 4) {
                 uint256[4] memory amounts;
                 lpAmount = _swapAndDeposit(
+                    ruotev2,
+                    ruotev3,
+                    tokenIn,
                     poolAddress,
                     tokenAddress,
-                    ruote,
-                    poolToken,
+                    poolTokens,
                     vault,
                     swapAmount,
                     amounts,
-                    crvSlippage,
-                    protocol
+                    crvSlippage
                 );
             }
         }
@@ -845,14 +835,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     }
 
     function _OneClickOut(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
         address _poolAddress,
         address _tokenAddress,
         address[] memory _poolTokens,
         address _vault,
         address _tokenOut,
-        uint256 _amountOut,
-        bool[] memory _protocol
+        uint256 _amountOut
     ) internal returns (uint256 tokeOutAmount) {
         uint256 lpAmount = ISCompVault(_vault).withdrawOneClick(
             _amountOut,
@@ -883,35 +873,35 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             if (_poolTokens.length == 2) {
                 uint256[2] memory amountOutMin;
                 tokeOutAmount = _removeAndSwap(
-                    _route,
+                    _routev2,
+                    _routev3,
                     _poolAddress,
                     _poolTokens,
                     _tokenOut,
                     lpAmount,
-                    amountOutMin,
-                    _protocol
+                    amountOutMin
                 );
             } else if (_poolTokens.length == 3) {
                 uint256[3] memory amountOutMin;
                 tokeOutAmount = _removeAndSwap(
-                    _route,
+                    _routev2,
+                    _routev3,
                     _poolAddress,
                     _poolTokens,
                     _tokenOut,
                     lpAmount,
-                    amountOutMin,
-                    _protocol
+                    amountOutMin
                 );
             } else if (_poolTokens.length == 4) {
                 uint256[4] memory amountOutMin;
                 tokeOutAmount = _removeAndSwap(
-                    _route,
+                    _routev2,
+                    _routev3,
                     _poolAddress,
                     _poolTokens,
                     _tokenOut,
                     lpAmount,
-                    amountOutMin,
-                    _protocol
+                    amountOutMin
                 );
             }
         }
@@ -919,54 +909,46 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     }
 
     function _swapAndDeposit(
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
+        address _tokenIn,
         address _poolAddress,
         address _tokenAddress,
-        address[][] memory _route,
         address[] memory _poolTokens,
         address _vault,
         uint256 _swapAmount,
         uint256[2] memory _amounts,
-        uint256 _slippage,
-        bool[] memory _protocol
+        uint256 _slippage
     ) internal returns (uint256) {
-        for (uint256 i = 0; i < _route.length; i++) {
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
             // If token in does not match token[i] of pool
-            if (_route[i][0] != _poolTokens[i]) {
-                uint256[] memory swapedAmounts;
-                address[] memory path = _route[i];
-
-                if (_protocol[i]) {
-                    _approveToken(path[0], routerAddress03, _swapAmount);
-
-                    ISwapRouter.ExactInputParams memory params = ISwapRouter
-                        .ExactInputParams({
-                            path: abi.encodePacked(path[0]),
-                            recipient: address(this),
-                            deadline: block.timestamp,
-                            amountIn: _swapAmount,
-                            amountOutMinimum: 0
-                        });
-
-                    swapedAmounts[0] = swapRouter.exactInput(params);
-                } else {
-                    _approveToken(path[0], routerAddress02, _swapAmount);
-
-                    swapedAmounts = router.swapExactTokensForTokens(
-                        _swapAmount,
-                        1,
-                        path,
-                        address(this),
-                        block.timestamp
-                    );
-                }
-
-                _amounts[i] = swapedAmounts[swapedAmounts.length - 1];
-            }
-            // If the tokenIn matches the token[i] of the pool
-            else {
+            if (_tokenIn == _poolTokens[i]) {
                 _amounts[i] = _swapAmount;
             }
         }
+
+        if (_routev3.length > 0) {
+            for (uint256 i = 0; i < _routev3.length; i++) {
+                _amounts[_getIndexV3(_routev3[i], _poolTokens)] = _swapV3(
+                    _tokenIn,
+                    _routev3[i],
+                    _swapAmount,
+                    1
+                );
+            }
+        }
+        if (_routev2.length > 0) {
+            for (uint256 i = 0; i < _routev2.length; i++) {
+                if (_routev2[i].length > 0)
+                    _amounts[_getIndexV2(_routev2[i], _poolTokens)] = _swapV2(
+                        _tokenIn,
+                        _routev2[i],
+                        _swapAmount,
+                        1
+                    );
+            }
+        }
+
         return
             _add_liquidity(
                 _poolAddress,
@@ -979,54 +961,46 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     }
 
     function _swapAndDeposit(
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
+        address _tokenIn,
         address _poolAddress,
         address _tokenAddress,
-        address[][] memory _route,
         address[] memory _poolTokens,
         address _vault,
         uint256 _swapAmount,
         uint256[3] memory _amounts,
-        uint256 _slippage,
-        bool[] memory _protocol
+        uint256 _slippage
     ) internal returns (uint256) {
-        for (uint256 i = 0; i < _route.length; i++) {
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
             // If token in does not match token[i] of pool
-            if (_route[i][0] != _poolTokens[i]) {
-                uint256[] memory swapedAmounts;
-                address[] memory path = _route[i];
-
-                if (_protocol[i]) {
-                    _approveToken(path[0], routerAddress03, _swapAmount);
-
-                    ISwapRouter.ExactInputParams memory params = ISwapRouter
-                        .ExactInputParams({
-                            path: abi.encodePacked(path[0]),
-                            recipient: address(this),
-                            deadline: block.timestamp,
-                            amountIn: _swapAmount,
-                            amountOutMinimum: 0
-                        });
-
-                    swapedAmounts[0] = swapRouter.exactInput(params);
-                } else {
-                    _approveToken(path[0], routerAddress02, _swapAmount);
-
-                    swapedAmounts = router.swapExactTokensForTokens(
-                        _swapAmount,
-                        1,
-                        path,
-                        address(this),
-                        block.timestamp
-                    );
-                }
-
-                _amounts[i] = swapedAmounts[swapedAmounts.length - 1];
-            }
-            // If the tokenIn matches the token[i] of the pool
-            else {
+            if (_tokenIn == _poolTokens[i]) {
                 _amounts[i] = _swapAmount;
             }
         }
+
+        if (_routev3.length > 0) {
+            for (uint256 i = 0; i < _routev3.length; i++) {
+                _amounts[_getIndexV3(_routev3[i], _poolTokens)] = _swapV3(
+                    _tokenIn,
+                    _routev3[i],
+                    _swapAmount,
+                    1
+                );
+            }
+        }
+        if (_routev2.length > 0) {
+            for (uint256 i = 0; i < _routev2.length; i++) {
+                if (_routev2[i].length > 0)
+                    _amounts[_getIndexV2(_routev2[i], _poolTokens)] = _swapV2(
+                        _tokenIn,
+                        _routev2[i],
+                        _swapAmount,
+                        1
+                    );
+            }
+        }
+
         return
             _add_liquidity(
                 _poolAddress,
@@ -1039,54 +1013,46 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     }
 
     function _swapAndDeposit(
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
+        address _tokenIn,
         address _poolAddress,
         address _tokenAddress,
-        address[][] memory _route,
         address[] memory _poolTokens,
         address _vault,
         uint256 _swapAmount,
         uint256[4] memory _amounts,
-        uint256 _slippage,
-        bool[] memory _protocol
+        uint256 _slippage
     ) internal returns (uint256) {
-        for (uint256 i = 0; i < _route.length; i++) {
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
             // If token in does not match token[i] of pool
-            if (_route[i][0] != _poolTokens[i]) {
-                uint256[] memory swapedAmounts;
-                address[] memory path = _route[i];
-
-                if (_protocol[i]) {
-                    _approveToken(path[0], routerAddress03, _swapAmount);
-
-                    ISwapRouter.ExactInputParams memory params = ISwapRouter
-                        .ExactInputParams({
-                            path: abi.encodePacked(path[0]),
-                            recipient: address(this),
-                            deadline: block.timestamp,
-                            amountIn: _swapAmount,
-                            amountOutMinimum: 0
-                        });
-
-                    swapedAmounts[0] = swapRouter.exactInput(params);
-                } else {
-                    _approveToken(path[0], routerAddress02, _swapAmount);
-
-                    swapedAmounts = router.swapExactTokensForTokens(
-                        _swapAmount,
-                        1,
-                        path,
-                        address(this),
-                        block.timestamp
-                    );
-                }
-
-                _amounts[i] = swapedAmounts[swapedAmounts.length - 1];
-            }
-            // If the tokenIn matches the token[i] of the pool
-            else {
+            if (_tokenIn == _poolTokens[i]) {
                 _amounts[i] = _swapAmount;
             }
         }
+
+        if (_routev3.length > 0) {
+            for (uint256 i = 0; i < _routev3.length; i++) {
+                _amounts[_getIndexV3(_routev3[i], _poolTokens)] = _swapV3(
+                    _tokenIn,
+                    _routev3[i],
+                    _swapAmount,
+                    1
+                );
+            }
+        }
+        if (_routev2.length > 0) {
+            for (uint256 i = 0; i < _routev2.length; i++) {
+                if (_routev2[i].length > 0)
+                    _amounts[_getIndexV2(_routev2[i], _poolTokens)] = _swapV2(
+                        _tokenIn,
+                        _routev2[i],
+                        _swapAmount,
+                        1
+                    );
+            }
+        }
+
         return
             _add_liquidity(
                 _poolAddress,
@@ -1193,180 +1159,218 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     }
 
     function _removeAndSwap(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
         address _poolAddress,
         address[] memory _poolTokens,
         address _tokenOut,
         uint256 _amountOut,
-        uint256[2] memory _amountOutMin,
-        bool[] memory _protocol
+        uint256[2] memory _amountOutMin
     ) internal returns (uint256) {
         ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
 
         uint256 amount;
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             if (_tokenOut != _poolTokens[i]) {
-                if (_protocol[i]) {
-                    _approveToken(
-                        _route[i][0],
-                        routerAddress03,
-                        IERC20(_poolTokens[i]).balanceOf(address(this))
-                    );
-
-                    ISwapRouter.ExactInputParams memory params = ISwapRouter
-                        .ExactInputParams({
-                            path: abi.encodePacked(_route[i]),
-                            recipient: address(this),
-                            deadline: block.timestamp,
-                            amountIn: IERC20(_poolTokens[i]).balanceOf(
-                                address(this)
-                            ),
-                            amountOutMinimum: 0
-                        });
-
-                    uint256 swapedAmounts = swapRouter.exactInput(params);
-
-                    amount += swapedAmounts;
-                } else {
-                    _approveToken(
-                        _route[i][0],
-                        routerAddress02,
-                        IERC20(_poolTokens[i]).balanceOf(address(this))
-                    );
-                    uint256[] memory swapedAmounts = router
-                        .swapExactTokensForTokens(
-                            IERC20(_poolTokens[i]).balanceOf(address(this)),
-                            1,
-                            _route[i],
-                            address(this),
-                            block.timestamp
-                        );
-
-                    amount += swapedAmounts[swapedAmounts.length - 1];
-                }
-            } else {
                 amount += IERC20(_poolTokens[i]).balanceOf(address(this));
             }
         }
+
+        if (_routev3.length > 0) {
+            for (uint256 i = 0; i < _routev3.length; i++) {
+                amount += _swapV3(
+                    _tokenOut,
+                    _routev3[i],
+                    IERC20(_getAddress(_routev3[i], 0)).balanceOf(
+                        address(this)
+                    ),
+                    1
+                );
+            }
+        }
+        if (_routev2.length > 0) {
+            for (uint256 i = 0; i < _routev2.length; i++) {
+                if (_routev2[i].length > 0)
+                    amount += _swapV2(
+                        _tokenOut,
+                        _routev2[i],
+                        IERC20(_routev2[i][0]).balanceOf(address(this)),
+                        1
+                    );
+            }
+        }
+
         return amount;
     }
 
     function _removeAndSwap(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
         address _poolAddress,
         address[] memory _poolTokens,
         address _tokenOut,
         uint256 _amountOut,
-        uint256[3] memory _amountOutMin,
-        bool[] memory _protocol
+        uint256[3] memory _amountOutMin
     ) internal returns (uint256) {
         ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
 
         uint256 amount;
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             if (_tokenOut != _poolTokens[i]) {
-                if (_protocol[i]) {
-                    _approveToken(
-                        _route[i][0],
-                        routerAddress03,
-                        IERC20(_poolTokens[i]).balanceOf(address(this))
-                    );
-
-                    ISwapRouter.ExactInputParams memory params = ISwapRouter
-                        .ExactInputParams({
-                            path: abi.encodePacked(_route[i]),
-                            recipient: address(this),
-                            deadline: block.timestamp,
-                            amountIn: IERC20(_poolTokens[i]).balanceOf(
-                                address(this)
-                            ),
-                            amountOutMinimum: 0
-                        });
-
-                    uint256 swapedAmounts = swapRouter.exactInput(params);
-
-                    amount += swapedAmounts;
-                } else {
-                    _approveToken(
-                        _route[i][0],
-                        routerAddress02,
-                        IERC20(_poolTokens[i]).balanceOf(address(this))
-                    );
-                    uint256[] memory swapedAmounts = router
-                        .swapExactTokensForTokens(
-                            IERC20(_poolTokens[i]).balanceOf(address(this)),
-                            1,
-                            _route[i],
-                            address(this),
-                            block.timestamp
-                        );
-
-                    amount += swapedAmounts[swapedAmounts.length - 1];
-                }
-            } else {
                 amount += IERC20(_poolTokens[i]).balanceOf(address(this));
             }
         }
+
+        if (_routev3.length > 0) {
+            for (uint256 i = 0; i < _routev3.length; i++) {
+                amount += _swapV3(
+                    _tokenOut,
+                    _routev3[i],
+                    IERC20(_getAddress(_routev3[i], 0)).balanceOf(
+                        address(this)
+                    ),
+                    1
+                );
+            }
+        }
+        if (_routev2.length > 0) {
+            for (uint256 i = 0; i < _routev2.length; i++) {
+                if (_routev2[i].length > 0)
+                    amount += _swapV2(
+                        _tokenOut,
+                        _routev2[i],
+                        IERC20(_routev2[i][0]).balanceOf(address(this)),
+                        1
+                    );
+            }
+        }
+
         return amount;
     }
 
     function _removeAndSwap(
-        address[][] memory _route,
+        address[][] memory _routev2,
+        bytes[] memory _routev3,
         address _poolAddress,
         address[] memory _poolTokens,
         address _tokenOut,
         uint256 _amountOut,
-        uint256[4] memory _amountOutMin,
-        bool[] memory _protocol
+        uint256[4] memory _amountOutMin
     ) internal returns (uint256) {
         ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
 
         uint256 amount;
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             if (_tokenOut != _poolTokens[i]) {
-                if (_protocol[i]) {
-                    _approveToken(
-                        _route[i][0],
-                        routerAddress03,
-                        IERC20(_poolTokens[i]).balanceOf(address(this))
-                    );
-
-                    ISwapRouter.ExactInputParams memory params = ISwapRouter
-                        .ExactInputParams({
-                            path: abi.encodePacked(_route[i]),
-                            recipient: address(this),
-                            deadline: block.timestamp,
-                            amountIn: IERC20(_poolTokens[i]).balanceOf(
-                                address(this)
-                            ),
-                            amountOutMinimum: 0
-                        });
-
-                    uint256 swapedAmounts = swapRouter.exactInput(params);
-
-                    amount += swapedAmounts;
-                } else {
-                    _approveToken(
-                        _route[i][0],
-                        routerAddress02,
-                        IERC20(_poolTokens[i]).balanceOf(address(this))
-                    );
-                    uint256[] memory swapedAmounts = router
-                        .swapExactTokensForTokens(
-                            IERC20(_poolTokens[i]).balanceOf(address(this)),
-                            1,
-                            _route[i],
-                            address(this),
-                            block.timestamp
-                        );
-
-                    amount += swapedAmounts[swapedAmounts.length - 1];
-                }
-            } else {
                 amount += IERC20(_poolTokens[i]).balanceOf(address(this));
             }
         }
+
+        if (_routev3.length > 0) {
+            for (uint256 i = 0; i < _routev3.length; i++) {
+                amount += _swapV3(
+                    _tokenOut,
+                    _routev3[i],
+                    IERC20(_getAddress(_routev3[i], 0)).balanceOf(
+                        address(this)
+                    ),
+                    1
+                );
+            }
+        }
+        if (_routev2.length > 0) {
+            for (uint256 i = 0; i < _routev2.length; i++) {
+                if (_routev2[i].length > 0)
+                    amount += _swapV2(
+                        _tokenOut,
+                        _routev2[i],
+                        IERC20(_routev2[i][0]).balanceOf(address(this)),
+                        1
+                    );
+            }
+        }
+
         return amount;
+    }
+
+    function _swapV3(
+        address _tokenIn,
+        bytes memory _route,
+        uint256 _amountIn,
+        uint256 _amountOutMin
+    ) internal returns (uint256) {
+        _approveToken(_tokenIn, routerAddress03, _amountIn);
+
+        ISwapRouter.ExactInputParams memory params = ISwapRouter
+            .ExactInputParams({
+                path: _route,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: _amountIn,
+                amountOutMinimum: _amountOutMin
+            });
+
+        return swapRouter.exactInput(params);
+    }
+
+    function _swapV2(
+        address _tokenIn,
+        address[] memory _route,
+        uint256 _amountIn,
+        uint256 _amountOutMin
+    ) internal returns (uint256) {
+        _approveToken(_tokenIn, routerAddress02, _amountIn);
+
+        uint256[] memory swapedAmounts = router.swapExactTokensForTokens(
+            _amountIn,
+            _amountOutMin,
+            _route,
+            address(this),
+            block.timestamp
+        );
+
+        return swapedAmounts[swapedAmounts.length - 1];
+    }
+
+    function _getIndexV3(
+        bytes memory _routev3,
+        address[] memory _poolTokens
+    ) internal pure returns (uint256 i) {
+        for (i = 0; i < _poolTokens.length; i++) {
+            //The length of the bytes encoded address is 20 bytes
+            if (_poolTokens[i] == _getAddress(_routev3, _routev3.length - 20)) {
+                return i;
+            }
+        }
+    }
+
+    function _getIndexV2(
+        address[] memory _routev2,
+        address[] memory _poolTokens
+    ) internal pure returns (uint256 i) {
+        for (i = 0; i < _poolTokens.length; i++) {
+            if (_poolTokens[i] == _routev2[_routev2.length - 1]) {
+                return i;
+            }
+        }
+    }
+
+    function _getAddress(
+        bytes memory _bytes,
+        uint256 _start
+    ) internal pure returns (address) {
+        require(_start + 20 >= _start, "toAddress_overflow");
+        require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
+        address tempAddress;
+
+        assembly {
+            tempAddress := div(
+                mload(add(add(_bytes, 0x20), _start)),
+                0x1000000000000000000000000
+            )
+        }
+
+        return tempAddress;
     }
 
     function _fee(

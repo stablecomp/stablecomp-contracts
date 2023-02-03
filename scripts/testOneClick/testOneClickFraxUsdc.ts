@@ -11,7 +11,9 @@ import {
   OneClickOutContract,
 } from "@scalingparrots/uniswap-smart-routing";
 
-const rpcProvider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
+const rpcProvider = new ethers.providers.JsonRpcProvider(
+  process.env.RPC_URL_SCALING
+);
 
 /* ------------------------------- Uni address ------------------------------ */
 const UniswapV2Router = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
@@ -31,7 +33,7 @@ const USDC_whale = "0x55FE002aefF02F77364de339a1292923A15844B8";
 const WBTC_whale = "0x8558FE88F8439dDcd7453ccAd6671Dfd90657a32";
 
 /* ------------------------------ Vault Address ----------------------------- */
-const sComp = "0x3f0d8746d07e7b60974Bbb1F275CD61B071d69D5";
+const sComp = "0x937A459c8F282abA432f5D5e14bD801ff848A1E3";
 
 /* -------------------------------------------------------------------------- */
 /*             impersonate account and transfer to owner (hardhat)            */
@@ -41,7 +43,7 @@ async function impersonateAdress(address: string) {
     method: "hardhat_impersonateAccount",
     params: [address],
   });
-  return await ethers.getSigner(address);
+  return await rpcProvider.getSigner(address);
 }
 
 async function OneClickIn(
@@ -77,8 +79,8 @@ async function OneClickIn(
   const amount = ethers.utils.parseUnits(amountIn, tokenIn_decimal);
 
   /* --------------------- Transfer from whale to account --------------------- */
-  const whale = await impersonateAdress(whaleAddress);
-  await tokenIn_contract.connect(whale).transfer(account.address, amount);
+  //const whale = await impersonateAdress(whaleAddress);
+  //await tokenIn_contract.connect(whale).transfer(account.address, amount);
 
   try {
     await tokenIn_contract.approve(OneClick.address, amount);
@@ -149,14 +151,15 @@ async function OneClickIn(
 
   try {
     await OneClick.connect(account).OneClickIn(
-      oneClickInV3.route,
+      oneClickInV3.routev2,
+      oneClickInV3.routev3,
+      oneClickInV3.tokenIn,
       oneClickInV3.poolAddress,
       oneClickInV3.tokenAddress,
       oneClickInV3.poolTokens,
       oneClickInV3.vault,
       oneClickInV3.amountIn,
       oneClickInV3.crvSlippage,
-      oneClickInV3.protocol,
       oneClickInV3.oneToken,
       oneClickInV3.indexIn
     );
