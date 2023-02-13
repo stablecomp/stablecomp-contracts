@@ -23,6 +23,9 @@ let uniswapV2Address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 let sushiswapAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F";
 let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
 let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
+const UniswapFactory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
+const UniswapRouter = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
 // variable address
 
@@ -135,6 +138,20 @@ async function deploySurplusConverter(): Promise<void> {
     console.log("Surplus converter contract deploy to: ", surplusConverterV2Contract.address);
 
     await setSurplusConverterV2();
+
+}
+
+async function deployOneClick(): Promise<void> {
+    const OneClickFactory = await ethers.getContractFactory("OneClick");
+    const OneClick = await OneClickFactory.deploy(
+        UniswapRouter,
+        UniswapFactory,
+        WETH,
+        20,
+        deployer.address
+    );
+    await OneClick.deployed();
+    console.log("Contract deployed to:", OneClick.address);
 
 }
 
@@ -339,6 +356,7 @@ main()
         let initialBalance:any = await deployer.getBalance();
         console.log("Initial balance: ", ethers.utils.formatEther(initialBalance))
 
+        await deployOneClick();
         await deploySCompToken();
         await deployVeScomp();
         await deployMasterchef();

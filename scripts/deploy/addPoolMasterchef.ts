@@ -8,7 +8,7 @@ let deployer : SignerWithAddress;
 
 // contract deploy
 let masterchefScomp : Contract;
-let masterchefScompAddress = "0xC48528F72A23525dBC77A3C2D85B7Aea4d2F7205"
+let masterchefScompAddress = "0x1625F066a620A551051126B40Af47cc898de158F"
 let sCompTokenContract : Contract;
 let sCompAddress = "0x565328F2B262F1182df8b58e5FFD3bAa570C8498";
 
@@ -67,7 +67,7 @@ main()
         await addPool(busd3Crv.sCompVault.address)
         await addPool(dola3crv.sCompVault.address)
         //await addPool(frax3crv.sCompVault.address)
-        //await addPool(fraxusdc.sCompVault.address)
+        await addPool(fraxusdc.sCompVault.address)
         //await addPool(ibEursEur.sCompVault.address)
         //await addPool(mim3crv.sCompVault.address)
         //await addPool(tusd3crv.sCompVault.address)

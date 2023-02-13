@@ -9,8 +9,8 @@ let deployer : SignerWithAddress;
 
 // contract deploy
 let masterchefScomp : Contract;
-let sCompTokenContractAddress = "0x05F6847ab9273366Ca4f18294efba0503513aFB7"
-let veCrvAddress = "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636"
+let sCompTokenContractAddress = "0x565328F2B262F1182df8b58e5FFD3bAa570C8498"
+let veCrvAddress = "0xfa3315912FcD8ee6E8Feda78853d517b7bbeEDcc"
 
 let tokenPerBlock = 9;
 let initialBlock : any;

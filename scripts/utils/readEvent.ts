@@ -12,12 +12,12 @@ let deployer : SignerWithAddress;
 
 const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
-let vaultAddress = "0x124dDf9BdD2DdaD012ef1D5bBd77c00F05C610DA";
-let zapperAddress = "0xD1760AA0FCD9e64bA4ea43399Ad789CFd63C7809";
+let vaultAddress = "0x937A459c8F282abA432f5D5e14bD801ff848A1E3";
+let zapperAddress = "0x937A459c8F282abA432f5D5e14bD801ff848A1E3";
 let vaultContract : Contract;
 let zapperContract : Contract;
 
-let accountAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+let accountAddress = "0xF4aE445c23e0DA77BF2bDD7934577BCe2b3f1C55";
 
 async function main(): Promise<void> {
 
@@ -51,7 +51,7 @@ async function getContract(): Promise<void> {
 }
 
 async function readBalanceShare(): Promise<void> {
-    let balanceShare = await vaultContract.balanceOf("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    let balanceShare = await vaultContract.balanceOf(accountAddress);
     console.log("Balance share of account is: ", ethers.utils.formatEther(balanceShare))
 
     let pricePerFullShare = await vaultContract.getPricePerFullShare();
@@ -60,7 +60,7 @@ async function readBalanceShare(): Promise<void> {
 
 async function readEventVault(): Promise<void> {
 
-    let filterDeposit = await vaultContract.filters.Deposit("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    let filterDeposit = await vaultContract.filters.Deposit(accountAddress);
 
     let listDeposit = await vaultContract.queryFilter(filterDeposit)
 
@@ -84,7 +84,7 @@ async function readEventVault(): Promise<void> {
 
     console.log("Total deposit is: ", ethers.utils.formatEther(totalAmountDeposit))
 
-    let filterWithdraw = await vaultContract.filters.Withdraw("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    let filterWithdraw = await vaultContract.filters.Withdraw(accountAddress);
 
     let listWithdraw = await vaultContract.queryFilter(filterWithdraw)
 
@@ -115,7 +115,7 @@ async function readEventVault(): Promise<void> {
 
 async function readEventZapper(): Promise<void> {
 
-    let filterOneClickIn = await zapperContract.filters.NewOneClickIn(null, null, null, null, "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    let filterOneClickIn = await zapperContract.filters.NewOneClickIn(null, null, null, null, accountAddress);
 
     let listNewOneClickIn = await zapperContract.queryFilter(filterOneClickIn)
 
@@ -136,7 +136,7 @@ async function readEventZapper(): Promise<void> {
     console.log("Total deposit zapper is: ", ethers.utils.formatEther(totalDepositZapper))
 
 
-    let filterOneClickOut = await zapperContract.filters.NewOneClickOut(null, null, null, null, "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    let filterOneClickOut = await zapperContract.filters.NewOneClickOut(null, null, null, null, accountAddress);
 
     let listNewOneClickOut = await zapperContract.queryFilter(filterOneClickOut)
 
@@ -163,7 +163,7 @@ async function readEventZapper(): Promise<void> {
     .then(async () => {
         await getContract();
         await readBalanceShare();
-        //await readEventVault();
+        await readEventVault();
         await readEventZapper();
     })
     .catch((error: Error) => {

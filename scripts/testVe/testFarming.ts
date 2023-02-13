@@ -387,14 +387,30 @@ async function readPendingToken(account: SignerWithAddress, pid: any): Promise<v
 
         await readMultiplier([account1, account2, account3], 0);
 
-        await deposit([account1, account2, account3],0,amountToDeposit1)
+        await deposit([account1, account2, account3],0,amountToDeposit1.div(2))
         //await deposit([account1],0,amountToDeposit1)
 
         await reachInitialBlock();
 
         await mineBlock(10);
 
+        // check pending token
+        let pendingReward = await masterchefScomp.pendingToken(0, account1.address);
+        console.log("Pending reward is: ", ethers.utils.formatEther(pendingReward))
+
+        let balanceSComp = await tokenLock.balanceOf(account1.address);
+        console.log("Balance sComp before: ", ethers.utils.formatEther(balanceSComp))
+
+        await deposit([account1, account2, account3],0,amountToDeposit1.div(2))
+
+
+        // check pending token
+        let balanceSCompAfter = await tokenLock.balanceOf(account1.address);
+        console.log("Balance sComp after: ", ethers.utils.formatEther(balanceSCompAfter))
+
         await readMultiplier([account1, account2, account3], 0);
+
+        await mineBlock(10);
 
         await readPendingToken(account1, 0);
         await readPendingToken(account2, 0);

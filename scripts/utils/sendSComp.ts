@@ -14,10 +14,12 @@ let account1 : SignerWithAddress;
 
 const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
-let accountToFund = "0xF4aE445c23e0DA77BF2bDD7934577BCe2b3f1C55"
+let accountsToFund = ["0xF4aE445c23e0DA77BF2bDD7934577BCe2b3f1C55", "0x321f2fF18767fdF94c8F3F4aa3C80091ADD29974", "0x277055A24952B1D9feCE9Af63252747FC109b2F7"]
 let amountToFund = ethers.utils.parseEther("10000")
 
-let sCompAddress = "0x05F6847ab9273366Ca4f18294efba0503513aFB7"
+const mainAddress = require('../../address/address_scaling_node/mainAddress.json');
+
+let sCompAddress = mainAddress.sCompTokenContract.address;
 let sCompContract : Contract;
 
 async function main(): Promise<void> {
@@ -31,6 +33,7 @@ async function main(): Promise<void> {
 
 async function setupContract(): Promise<void> {
 
+    console.log("Scomp token address is: ", sCompAddress)
     let factorySComp = await ethers.getContractFactory("StableCompToken");
     sCompContract = await factorySComp.attach(sCompAddress);
 
@@ -45,10 +48,13 @@ async function readBalance(): Promise<void> {
 
 async function sendSComp(): Promise<void> {
 
-    let tx = await sCompContract.connect(deployer).transfer(accountToFund, amountToFund);
-    await tx.wait();
-    console.log("Balance sComp of account to fund is: ", ethers.utils.formatEther(await sCompContract.balanceOf(accountToFund)));
+    for(let i = 0; i < accountsToFund.length; i++) {
 
+        let tx = await sCompContract.connect(deployer).transfer(accountsToFund[i], amountToFund);
+        await tx.wait();
+        console.log("Balance sComp of account to fund is: ", ethers.utils.formatEther(await sCompContract.balanceOf(accountsToFund[i])));
+
+    }
 }
 
 async function readEventSComp(): Promise<void> {

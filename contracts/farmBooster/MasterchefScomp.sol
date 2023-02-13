@@ -249,6 +249,10 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
 
         uint256 multiplier = getBoostMultiplier(msg.sender, _pid);
 
+        if (user.amount > 0) {
+            settlePendingToken(msg.sender, _pid, multiplier);
+        }
+
         if (_amount > 0) {
             uint256 before = lpToken[_pid].balanceOf(address(this));
             lpToken[_pid].safeTransferFrom(msg.sender, address(this), _amount);
