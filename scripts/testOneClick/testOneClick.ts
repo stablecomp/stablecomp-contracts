@@ -4,6 +4,9 @@ import {
   OneClickInV3,
   EstimateOneClickInV3,
   OneClickOutV3,
+} from "@scalingparrots/uniswap-smart-routing";
+
+import type {
   OneClickInSmartRouting,
   OneClickInContract,
   EstimateOneClickInContract,
@@ -79,8 +82,8 @@ async function OneClickIn(
   const amount = ethers.utils.parseUnits(amountIn, tokenIn_decimal);
 
   /* --------------------- Transfer from whale to account --------------------- */
-  //const whale = await impersonateAdress(whaleAddress);
-  //await tokenIn_contract.connect(whale).transfer(account.address, amount);
+  const whale = await impersonateAdress(whaleAddress);
+  await tokenIn_contract.connect(whale).transfer(account.address, amount);
 
   try {
     await tokenIn_contract.approve(OneClick.address, amount);
@@ -113,22 +116,29 @@ async function OneClickIn(
   /* -------------------------------------------------------------------------- */
   /*                                  OneClick                                  */
   /* -------------------------------------------------------------------------- */
-  const o: OneClickInSmartRouting = {
-    chainId: 1,
-    provider: rpcProvider,
-    tokenIn: tokenIn,
-    amountIn: amountIn,
-    vault: vault,
-    crvSlippage: crvSlippage,
-    oneToken: oneToken,
-    indexIn: indexIn,
-  };
-  const oneClickInV3: OneClickInContract = await OneClickInV3(o);
-  const eOneClickInV3: EstimateOneClickInContract = await EstimateOneClickInV3(
-    o
-  );
+  let oneClickInV3: EstimateOneClickInContract;
+  let eOneClickInV3: OneClickInContract;
+  try {
+    console.log("One Click In Smart Routing:");
+    const o: OneClickInSmartRouting = {
+      chainId: 1,
+      provider: rpcProvider,
+      tokenIn: tokenIn,
+      amountIn: amountIn,
+      vault: vault,
+      crvSlippage: crvSlippage,
+      oneToken: oneToken,
+      indexIn: indexIn,
+    };
+    oneClickInV3 = await OneClickInV3(o);
+    eOneClickInV3 = await EstimateOneClickInV3(o);
+  } catch (error) {
+    console.log("OneClickInSmartRouting failed");
+    console.log(error);
+  }
 
   try {
+    console.log("Blockchian:");
     const tx = await OneClick.connect(account).estimateOneClickIn(
       eOneClickInV3.tokenIn,
       eOneClickInV3.poolAddress,
@@ -193,8 +203,127 @@ async function OneClickIn(
   console.log(`Message sender (${account.address}) balance difference:`);
   console.table([
     {
-      "TokenIn balance": endTokenIn,
+      "TokenIn balance": startTokenIn - endTokenIn,
+      "Vault balance": endTokenIn - endVault,
+    },
+  ]);
+}
+
+async function OneClickOut(
+  tokenOut: string,
+  amountOut: string,
+  vault: string,
+  oneToken: boolean,
+  indexIn: number,
+  OneClick: any,
+  account: any
+) {
+  const tokenOut_contract = await ethers.getContractAt("ERC20", tokenOut);
+  const tokenOut_symbol = await tokenOut_contract.symbol();
+  const tokenOut_decimal = await tokenOut_contract.decimals();
+
+  const vault_contract = await ethers.getContractAt("ERC20", vault);
+  const vault_symbol = await vault_contract.symbol();
+  const vault_decimal = await vault_contract.decimals();
+
+  /* ------------------------------ Print Details ----------------------------- */
+  console.log(`
+  TokenOut: ${tokenOut_symbol}
+  AmountOut: ${amountOut}
+  Vault: ${vault_symbol}
+  OneToken: ${oneToken}
+  IndexIn: ${indexIn}
+  `);
+
+  /* ----------------------- Account Balance before swap ---------------------- */
+  const startTokenOut = parseFloat(
+    ethers.utils.formatUnits(
+      await tokenOut_contract.balanceOf(account.address),
+      tokenOut_decimal
+    )
+  );
+  const startVault = parseFloat(
+    ethers.utils.formatUnits(
+      await vault_contract.balanceOf(account.address),
+      vault_decimal
+    )
+  );
+
+  console.log(`Message sender (${account.address}) balance before OneClick:`);
+  console.table([
+    {
+      "TokenOut balance": startTokenOut,
+      "Vault balance": startVault,
+    },
+  ]);
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  OneClick                                  */
+  /* -------------------------------------------------------------------------- */
+  let oneClickOutV3: OneClickOutContract;
+  try {
+    console.log("One Click Out Smart Routing:");
+    const o: OneClickOutSmartRouting = {
+      chainId: 1,
+      provider: rpcProvider,
+      tokenOut: tokenOut,
+      amountOut: amountOut,
+      vault: vault,
+    };
+    oneClickOutV3 = await OneClickOutV3(o);
+  } catch (error) {
+    console.log("OneClickOutSmartRouting failed");
+    console.log(error);
+  }
+
+  try {
+    console.log("Blockchian:");
+    const tx = await OneClick.connect(account).OneClickOut(
+      oneClickOutV3.routev2,
+      oneClickOutV3.routev3,
+      oneClickOutV3.poolAddress,
+      oneClickOutV3.tokenAddress,
+      oneClickOutV3.poolTokens,
+      oneClickOutV3.vault,
+      oneClickOutV3.tokenOut,
+      oneClickOutV3.amountOut
+    );
+    const amountTokenOut = ethers.utils.formatUnits(tx, tokenOut_decimal);
+    console.log(
+      `Withdraw ${amountOut} of ${vault_symbol} return minium of ${amountTokenOut} ${tokenOut_symbol}`
+    );
+  } catch (error) {
+    console.log("OneClickOut failed");
+    console.log(error);
+  }
+
+  /* ----------------------- Account balance after swap ----------------------- */
+  const endTokenOut = parseFloat(
+    ethers.utils.formatUnits(
+      await tokenOut_contract.balanceOf(account.address),
+      tokenOut_decimal
+    )
+  );
+  const endVault = parseFloat(
+    ethers.utils.formatUnits(
+      await vault_contract.balanceOf(account.address),
+      vault_decimal
+    )
+  );
+
+  console.log(`Message sender (${account.address}) balance after OneClick:`);
+  console.table([
+    {
+      "TokenOut balance": endTokenOut,
       "Vault balance": endVault,
+    },
+  ]);
+
+  console.log(`Message sender (${account.address}) balance difference:`);
+  console.table([
+    {
+      "TokenOut balance": endTokenOut - startTokenOut,
+      "Vault balance": startVault - endVault,
     },
   ]);
 }
@@ -207,6 +336,7 @@ async function main() {
   console.log("Account balance:", (await account.getBalance()).toString());
 
   /* --------------------------- Deploy the contract -------------------------- */
+  /*
   const OneClickFactory = await ethers.getContractFactory("OneClickV3");
   const OneClick = await OneClickFactory.deploy(
     UniswapV2Router,
@@ -218,8 +348,13 @@ async function main() {
   );
   await OneClick.deployed();
   console.log("Contract deployed to:", OneClick.address);
+  */
+  const OneClick = await ethers.getContractAt(
+    "OneClickV3",
+    "0x15BB2cc3Ea43ab2658F7AaecEb78A9d3769BE3cb"
+  );
 
-  /* -------------------------------------------------------------------------- */
+  /* -------------------------------------------------------------------------- 
   await OneClickIn(
     WBTC,
     "0.1",
@@ -231,6 +366,9 @@ async function main() {
     OneClick,
     account
   );
+  */
+
+  await OneClickOut(WBTC, "100", sComp, false, 0, OneClick, account);
 }
 
 main().catch((error) => {
