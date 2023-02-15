@@ -874,8 +874,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 uint256[2] memory amountOutMin = _getAmountOutMin2(
                     _poolAddress,
                     _poolTokens,
-                    _amountOut,
-                    false
+                    _amountOut
                 );
                 tokeOutAmount = _removeAndSwap(
                     _routev2,
@@ -1311,8 +1310,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     function _getAmountOutMin2(
         address _poolAddress,
         address[] memory _poolTokens,
-        uint256 _amountOut,
-        bool _estimate
+        uint256 _amountOut
     ) internal view returns (uint256[2] memory _amountOutMin) {
         uint256 totalSupply;
         for (uint256 i = 0; i < _poolTokens.length; i++) {
@@ -1322,32 +1320,16 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 decimalDiff10;
         }
 
-        if (_estimate) {
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-                uint256 percent = (IERC20(_poolTokens[i]).balanceOf(
-                    _poolAddress
-                ) *
-                    decimalDiff10 *
-                    oneClickFeeMax) / totalSupply;
-                _amountOutMin[i] =
-                    (percent *
-                        _amountOut *
-                        ICurvePool(_poolAddress).get_virtual_price()) /
-                    (decimalDiff10 * oneClickFeeMax * 1e18);
-            }
-        } else {
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-                uint256 percent = (IERC20(_poolTokens[i]).balanceOf(
-                    _poolAddress
-                ) *
-                    decimalDiff10 *
-                    oneClickFeeMax) / totalSupply;
-                _amountOutMin[i] =
-                    (percent * _amountOut) /
-                    (decimalDiff10 * oneClickFeeMax);
-            }
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10 *
+                10) / totalSupply;
+            _amountOutMin[i] =
+                (percent *
+                    _amountOut *
+                    ICurvePool(_poolAddress).get_virtual_price()) /
+                (decimalDiff10 * 1e19);
         }
     }
 
@@ -1365,32 +1347,16 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 decimalDiff10;
         }
 
-        if (_estimate) {
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-                uint256 percent = (IERC20(_poolTokens[i]).balanceOf(
-                    _poolAddress
-                ) *
-                    decimalDiff10 *
-                    oneClickFeeMax) / totalSupply;
-                _amountOutMin[i] =
-                    (percent *
-                        _amountOut *
-                        ICurvePool(_poolAddress).get_virtual_price()) /
-                    (decimalDiff10 * oneClickFeeMax * 1e18);
-            }
-        } else {
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-                uint256 percent = (IERC20(_poolTokens[i]).balanceOf(
-                    _poolAddress
-                ) *
-                    decimalDiff10 *
-                    oneClickFeeMax) / totalSupply;
-                _amountOutMin[i] =
-                    (percent * _amountOut) /
-                    (decimalDiff10 * oneClickFeeMax);
-            }
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10 *
+                10) / totalSupply;
+            _amountOutMin[i] =
+                (percent *
+                    _amountOut *
+                    ICurvePool(_poolAddress).get_virtual_price()) /
+                (decimalDiff10 * 1e19);
         }
     }
 
@@ -1408,32 +1374,16 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 decimalDiff10;
         }
 
-        if (_estimate) {
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-                uint256 percent = (IERC20(_poolTokens[i]).balanceOf(
-                    _poolAddress
-                ) *
-                    decimalDiff10 *
-                    oneClickFeeMax) / totalSupply;
-                _amountOutMin[i] =
-                    (percent *
-                        _amountOut *
-                        ICurvePool(_poolAddress).get_virtual_price()) /
-                    (decimalDiff10 * oneClickFeeMax * 1e18);
-            }
-        } else {
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-                uint256 percent = (IERC20(_poolTokens[i]).balanceOf(
-                    _poolAddress
-                ) *
-                    decimalDiff10 *
-                    oneClickFeeMax) / totalSupply;
-                _amountOutMin[i] =
-                    (percent * _amountOut) /
-                    (decimalDiff10 * oneClickFeeMax);
-            }
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10 *
+                10) / totalSupply;
+            _amountOutMin[i] =
+                (percent *
+                    _amountOut *
+                    ICurvePool(_poolAddress).get_virtual_price()) /
+                (decimalDiff10 * 1e19);
         }
     }
 
