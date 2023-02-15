@@ -5,7 +5,6 @@ import {
   EstimateOneClickInV3,
   OneClickOutV3,
 } from "@scalingparrots/uniswap-smart-routing";
-
 import type {
   OneClickInSmartRouting,
   OneClickInContract,
@@ -49,6 +48,59 @@ async function impersonateAdress(address: string) {
   return await rpcProvider.getSigner(address);
 }
 
+async function main() {
+  /* ----------------------------- Deploy address ----------------------------- */
+  const accounts = await ethers.getSigners();
+  const account = accounts[0];
+  console.log("Deploying contracts by account:", account.address);
+  console.log("Account balance:", (await account.getBalance()).toString());
+
+  /* --------------------------- Deploy the contract -------------------------- */
+
+  const OneClickFactory = await ethers.getContractFactory("OneClickV3");
+  const OneClick = await OneClickFactory.deploy(
+    UniswapV2Router,
+    SwapRouter,
+    Quoter,
+    WETH,
+    20,
+    account.address
+  );
+  await OneClick.deployed();
+  console.log("Contract deployed to:", OneClick.address);
+
+  /*
+  const OneClick = await ethers.getContractAt(
+    "OneClickV3",
+    "0x15BB2cc3Ea43ab2658F7AaecEb78A9d3769BE3cb"
+  );
+    */
+
+  /* -------------------------------------------------------------------------- 
+  await OneClickIn(
+    WBTC,
+    "0.1",
+    sComp,
+    0.1,
+    false,
+    0,
+    WBTC_whale,
+    OneClick,
+    account
+  );
+  */
+
+  await OneClickOut(WBTC, "100", sComp, false, 0, OneClick, account);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
+
+/* -------------------------------------------------------------------------- */
+/*                                 OneClick In                                */
+/* -------------------------------------------------------------------------- */
 async function OneClickIn(
   tokenIn: string,
   amountIn: string,
@@ -113,11 +165,32 @@ async function OneClickIn(
     },
   ]);
 
-  /* -------------------------------------------------------------------------- */
-  /*                                  OneClick                                  */
-  /* -------------------------------------------------------------------------- */
-  let oneClickInV3: EstimateOneClickInContract;
-  let eOneClickInV3: OneClickInContract;
+  /* -------------------------------- OneClick -------------------------------- */
+  let oneClickInV3: OneClickInContract = {
+    routev2: [],
+    routev3: [],
+    tokenIn: "",
+    poolAddress: "",
+    tokenAddress: "",
+    poolTokens: [],
+    vault: "",
+    amountIn: "",
+    crvSlippage: 0,
+    oneToken: false,
+    indexIn,
+  };
+  let eOneClickInV3: EstimateOneClickInContract = {
+    tokenIn: "",
+    poolAddress: "",
+    poolTokens: [],
+    priceTokenIn: [],
+    vault: "",
+    amountIn: "",
+    crvSlippage: 0,
+    oneToken: false,
+    indexIn,
+  };
+
   try {
     console.log("One Click In Smart Routing:");
     const o: OneClickInSmartRouting = {
@@ -209,6 +282,9 @@ async function OneClickIn(
   ]);
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                 OneClickOut                                */
+/* -------------------------------------------------------------------------- */
 async function OneClickOut(
   tokenOut: string,
   amountOut: string,
@@ -257,10 +333,26 @@ async function OneClickOut(
     },
   ]);
 
-  /* -------------------------------------------------------------------------- */
-  /*                                  OneClick                                  */
-  /* -------------------------------------------------------------------------- */
-  let oneClickOutV3: OneClickOutContract;
+  /* -------------------------------- OneClick -------------------------------- */
+  try {
+    const amount = ethers.utils.parseUnits(amountOut, vault_decimal);
+    await vault_contract.approve(OneClick.address, amount);
+    console.log(`Approve ${amountOut} ${vault_symbol}: success`);
+  } catch {
+    console.log(`Approve ${vault_symbol} failed`);
+  }
+
+  let oneClickOutV3: OneClickOutContract = {
+    routev2: [],
+    routev3: [],
+    poolAddress: "",
+    tokenAddress: "",
+    poolTokens: [],
+    vault: "",
+    tokenOut: "",
+    amountOut: "",
+  };
+
   try {
     console.log("One Click Out Smart Routing:");
     const o: OneClickOutSmartRouting = {
@@ -271,6 +363,7 @@ async function OneClickOut(
       vault: vault,
     };
     oneClickOutV3 = await OneClickOutV3(o);
+    console.log(oneClickOutV3);
   } catch (error) {
     console.log("OneClickOutSmartRouting failed");
     console.log(error);
@@ -278,7 +371,7 @@ async function OneClickOut(
 
   try {
     console.log("Blockchian:");
-    const tx = await OneClick.connect(account).OneClickOut(
+    await OneClick.connect(account).OneClickOut(
       oneClickOutV3.routev2,
       oneClickOutV3.routev3,
       oneClickOutV3.poolAddress,
@@ -287,10 +380,6 @@ async function OneClickOut(
       oneClickOutV3.vault,
       oneClickOutV3.tokenOut,
       oneClickOutV3.amountOut
-    );
-    const amountTokenOut = ethers.utils.formatUnits(tx, tokenOut_decimal);
-    console.log(
-      `Withdraw ${amountOut} of ${vault_symbol} return minium of ${amountTokenOut} ${tokenOut_symbol}`
     );
   } catch (error) {
     console.log("OneClickOut failed");
@@ -323,55 +412,7 @@ async function OneClickOut(
   console.table([
     {
       "TokenOut balance": endTokenOut - startTokenOut,
-      "Vault balance": startVault - endVault,
+      "Vault balance": endVault - startVault,
     },
   ]);
 }
-
-async function main() {
-  /* ----------------------------- Deploy address ----------------------------- */
-  const accounts = await ethers.getSigners();
-  const account = accounts[0];
-  console.log("Deploying contracts by account:", account.address);
-  console.log("Account balance:", (await account.getBalance()).toString());
-
-  /* --------------------------- Deploy the contract -------------------------- */
-  /*
-  const OneClickFactory = await ethers.getContractFactory("OneClickV3");
-  const OneClick = await OneClickFactory.deploy(
-    UniswapV2Router,
-    SwapRouter,
-    Quoter,
-    WETH,
-    20,
-    account.address
-  );
-  await OneClick.deployed();
-  console.log("Contract deployed to:", OneClick.address);
-  */
-  const OneClick = await ethers.getContractAt(
-    "OneClickV3",
-    "0x15BB2cc3Ea43ab2658F7AaecEb78A9d3769BE3cb"
-  );
-
-  /* -------------------------------------------------------------------------- 
-  await OneClickIn(
-    WBTC,
-    "0.1",
-    sComp,
-    0.1,
-    false,
-    0,
-    WBTC_whale,
-    OneClick,
-    account
-  );
-  */
-
-  await OneClickOut(WBTC, "100", sComp, false, 0, OneClick, account);
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
