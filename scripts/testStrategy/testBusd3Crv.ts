@@ -14,6 +14,10 @@ const poolCurveABI = require('../../abi/poolCurve.json');
 
 // variable json
 const info = require('../../strategyInfo/infoPool/busd3Crv.json');
+const curveAddress = require('../../strategyInfo/address_mainnet/curveAddress.json');
+const routerAddress = require('../../strategyInfo/address_mainnet/routerAddress.json');
+const tokenAddress = require('../../strategyInfo/address_mainnet/tokenAddress.json');
+const tokenDecimals = require('../../strategyInfo/address_mainnet/tokenDecimals.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -64,13 +68,13 @@ let baseRewardPoolAddress = info.baseRewardPoolAddress; // address of baseReward
 
 let decimalsTokenDeposit = 18
 // constant address
-let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
-let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
-let boosterAddress = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31";
-let wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-let uniswapV2Address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-let uniswapV3Address = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
-let sushiswapAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F";
+let crvAddress = tokenAddress.crv
+let cvxAddress = tokenAddress.cvx
+let boosterAddress = curveAddress.boosterAddress;
+let wethAddress = tokenAddress.weth;
+let uniswapV2Address = routerAddress.uniswapV2;
+let uniswapV3Address = routerAddress.uniswapV3;
+let sushiswapAddress = routerAddress.sushiswap;
 
 // convex pool info
 let nameStrategy = info.nameStrategy
@@ -133,6 +137,12 @@ async function setupContract(): Promise<void> {
 
     await deployTimeLockController();
 
+    // set tokenSwapPath
+    await sCompStrategy.connect(governance).setTokenSwapPathV2(tokenAddress.crv, tokenAddress.busd, [tokenAddress.crv, tokenAddress.weth, tokenAddress.busd], 0);
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.cvx, tokenAddress.busd, [tokenAddress.cvx, tokenAddress.usdc, tokenAddress.busd], [10000, 500], 2);
+    await sCompStrategy.connect(governance).setUniswapV3Router(uniswapV3Address);
+    await sCompStrategy.connect(governance).setUniswapV2Router(uniswapV2Address);
+    await sCompStrategy.connect(governance).setSushiswapRouter(sushiswapAddress);
 
     // set strategy and vault in controller
     await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);

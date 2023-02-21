@@ -1,27 +1,43 @@
 // SPDX-License-Identifier: ISC
 
 pragma solidity ^0.8.13;
-import "./BaseSwapper.sol";
+
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "../interface/IUniswapRouterV2.sol";
 import "../interface/IUniswapV2Factory.sol";
+import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
+import "./BaseSwapper.sol";
 
 /*
     Expands swapping functionality over base strategy
     - ETH in and ETH out Variants
     - Sushiswap support in addition to Uniswap
 */
-contract UniswapSwapper is BaseSwapper {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address;
-    using SafeMathUpgradeable for uint256;
+contract UniswapSwapper is BaseSwapper{
+    using SafeERC20 for IERC20;
+    using Address for address;
+    using SafeMath for uint256;
 
-    address internal constant uniswap =
-    0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D; // Uniswap router
-    address internal constant uniswapv3 =
-    0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45; // Uniswapv3 router
-    address internal constant sushiswap =
-    0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F; // Sushiswap router
+    address public uniswapV2; // Uniswap router
+    address public sushiswap; // Sushiswap router
+    address public uniswapV3; // Uniswapv3 router
 
+    function _setUniswapV2Router(address router) internal {
+        uniswapV2 = router;
+    }
+
+    function _setSushiswapRouter(address router) internal {
+        sushiswap = router;
+    }
+
+    function _setUniswapV3Router(address router) internal {
+        uniswapV3 = router;
+    }
+
+    // V2
     function _swapExactTokensForTokens(
         address router,
         address startToken,
@@ -43,7 +59,7 @@ contract UniswapSwapper is BaseSwapper {
         uint256 balance,
         address[] memory path
     ) internal {
-        IUniswapRouterV2(uniswap).swapExactETHForTokens{value: balance}(
+        IUniswapRouterV2(router).swapExactETHForTokens{value: balance}(
             0,
             path,
             address(this),
@@ -83,9 +99,9 @@ contract UniswapSwapper is BaseSwapper {
         address token1
     ) internal {
         uint256 _token0Balance =
-        IERC20Upgradeable(token0).balanceOf(address(this));
+        IERC20(token0).balanceOf(address(this));
         uint256 _token1Balance =
-        IERC20Upgradeable(token1).balanceOf(address(this));
+        IERC20(token1).balanceOf(address(this));
 
         _safeApproveHelper(token0, router, _token0Balance);
         _safeApproveHelper(token1, router, _token1Balance);
@@ -104,11 +120,11 @@ contract UniswapSwapper is BaseSwapper {
 
     function _addMaxLiquidityEth(address router, address token0) internal {
         uint256 _token0Balance =
-        IERC20Upgradeable(token0).balanceOf(address(this));
+        IERC20(token0).balanceOf(address(this));
         uint256 _ethBalance = address(this).balance;
 
         _safeApproveHelper(token0, router, _token0Balance);
-        IUniswapRouterV2(router).addLiquidityETH{value: address(this).balance}(
+        IUniswapRouterV2(router).addLiquidityETH{value: _ethBalance}(
             token0,
             _token0Balance,
             0,
@@ -117,4 +133,81 @@ contract UniswapSwapper is BaseSwapper {
             block.timestamp
         );
     }
+
+    // V3
+    function _swapExactInputMultihop3(
+        address router,
+        address startToken,
+        uint256 balance,
+        address[] memory path,
+        uint24[] memory feePath
+    ) internal {
+        ISwapRouter swapRouter = ISwapRouter(router);
+
+        TransferHelper.safeApprove(startToken, address(swapRouter), 0);
+        TransferHelper.safeApprove(startToken, address(swapRouter), balance);
+
+        ISwapRouter.ExactInputParams memory params =
+        ISwapRouter.ExactInputParams({
+        path: abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2], feePath[2], path[3]),
+        recipient: address(this),
+        deadline: block.timestamp,
+        amountIn: balance,
+        amountOutMinimum: 0
+        });
+
+        // Executes the swap.
+        swapRouter.exactInput(params);
+    }
+
+    function _swapExactInputMultihop2(
+        address router,
+        address startToken,
+        uint256 balance,
+        address[] memory path,
+        uint24[] memory feePath
+    ) internal {
+        ISwapRouter swapRouter = ISwapRouter(router);
+
+        TransferHelper.safeApprove(startToken, address(swapRouter), 0);
+        TransferHelper.safeApprove(startToken, address(swapRouter), balance);
+
+        ISwapRouter.ExactInputParams memory params =
+        ISwapRouter.ExactInputParams({
+        path: abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2]),
+        recipient: address(this),
+        deadline: block.timestamp,
+        amountIn: balance,
+        amountOutMinimum: 0
+        });
+
+        // Executes the swap.
+        swapRouter.exactInput(params);
+    }
+
+    function _swapExactInputMultihop1(
+        address router,
+        address startToken,
+        uint256 balance,
+        address[] memory path,
+        uint24[] memory feePath
+    ) internal {
+        ISwapRouter swapRouter = ISwapRouter(router);
+
+        TransferHelper.safeApprove(startToken, address(swapRouter), 0);
+        TransferHelper.safeApprove(startToken, address(swapRouter), balance);
+
+        ISwapRouter.ExactInputParams memory params =
+        ISwapRouter.ExactInputParams({
+        path: abi.encodePacked(path[0], feePath[0], path[1]),
+        recipient: address(this),
+        deadline: block.timestamp,
+        amountIn: balance,
+        amountOutMinimum: 0
+        });
+
+        // Executes the swap.
+        swapRouter.exactInput(params);
+    }
+
 }

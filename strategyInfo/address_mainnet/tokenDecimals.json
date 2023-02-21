@@ -1,0 +1,20 @@
+{
+  "threeCrv": 18,
+  "crv": 18,
+  "cvx": 18,
+  "weth": 18,
+  "dai": 18,
+  "usdc": 6,
+  "frax": 18,
+  "mim": 18,
+  "eurs": 2,
+  "agEur": 18,
+  "eurT": 6,
+  "busd": 18,
+  "dola": 18,
+  "ibEur": 18,
+  "sEur": 18,
+  "tusd": 18,
+  "euroC": 6,
+  "usdd": 18
+}

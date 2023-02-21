@@ -43,9 +43,9 @@ async function setupContract(): Promise<void> {
 }
 
 async function fundContract(): Promise<void> {
-    let balanceDeployer = await sCompTokenContract.balanceOf(deployer.address);
+    //let balanceDeployer = await sCompTokenContract.balanceOf(deployer.address);
 
-    let amountToFund = balanceDeployer.div(2);
+    let amountToFund = ethers.utils.parseEther("100000");
     let txApprove = await sCompTokenContract.connect(deployer).approve(masterchefScomp.address, amountToFund);
     await txApprove.wait();
 

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: ISC
 
 pragma solidity ^0.8.13;
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "./BaseSwapper.sol";
 import "../interface/ICurveRegistryAddressProvider.sol";
 import "../interface/ICurveRegistry.sol";
@@ -12,9 +15,9 @@ import "../interface/ICurveFi.sol";
     - Sushiswap support in addition to Uniswap
 */
 contract CurveSwapper is BaseSwapper {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address;
-    using SafeMathUpgradeable for uint256;
+    using SafeERC20 for IERC20;
+    using Address for address;
+    using SafeMath for uint256;
 
     address public constant addressProvider =
     0x0000000022D53366457F9d5E68Ec105046FC4383;
@@ -55,7 +58,6 @@ contract CurveSwapper is BaseSwapper {
 
     function _add_liquidity_single_coin(
         address swap,
-        address pool,
         address inputToken,
         uint256 inputAmount,
         uint256 inputPosition,

@@ -11,13 +11,9 @@ import "../utility/CurveSwapper.sol";
 import "../utility/TokenSwapPathRegistry.sol";
 import "../utility/UniswapSwapper.sol";
 
-import "../interface/ICrvDepositor.sol";
 import "../interface/IBooster.sol";
 
 import "../interface/IBaseRewardsPool.sol";
-import "../interface/ICvxRewardsPool.sol";
-
-import "hardhat/console.sol";
 
 pragma experimental ABIEncoderV2;
 
@@ -79,14 +75,13 @@ TokenSwapPathRegistry
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ===== Token Registry =====
-    address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant crv = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address public constant cvx = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
 
     IERC20 public constant crvToken =
-    IERC20(0xD533a949740bb3306d119CC777fa900bA034cd52);
+    IERC20(crv);
     IERC20 public constant cvxToken =
-    IERC20(0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B);
+    IERC20(cvx);
 
     // ===== Convex Registry =====
     IBooster public constant booster =
@@ -123,8 +118,6 @@ TokenSwapPathRegistry
     CurvePoolConfig public curvePool;
 
     string nameStrategy;
-
-    uint swapIndex;
 
     event PerformanceFeeGovernance(
         address indexed destination,
@@ -191,20 +184,6 @@ TokenSwapPathRegistry
             _curvePool.tokenCompoundPosition,
             _curvePool.numElements
         );
-
-        // Set Swap Paths
-        address[] memory path = new address[](3);
-        path[0] = crv;
-        path[1] = weth;
-        path[2] = tokenCompoundAddress;
-        _setTokenSwapPath(crv, tokenCompoundAddress, path);
-
-
-        path = new address[](3);
-        path[0] = cvx;
-        path[1] = weth;
-        path[2] = tokenCompoundAddress;
-        _setTokenSwapPath(cvx, tokenCompoundAddress, path);
     }
 
     function approveForAll() external {
@@ -218,9 +197,13 @@ TokenSwapPathRegistry
         pid = _pid; // LP token pool ID
     }
 
-    function setCurvePoolSwap(address _swap) external {
+    function setCurvePoolSwap(CurvePoolConfig memory _curvePool) external {
         _onlyGovernance();
-        curvePool.swap = _swap;
+        curvePool = CurvePoolConfig(
+                _curvePool.swap,
+                _curvePool.tokenCompoundPosition,
+                _curvePool.numElements
+        );
     }
 
     function setTokenCompound(address _tokenCompound, uint _tokenCompoundPosition) external {
@@ -229,19 +212,32 @@ TokenSwapPathRegistry
         tokenCompound = IERC20(_tokenCompound);
         curvePool.tokenCompoundPosition = _tokenCompoundPosition;
 
-        // Set Swap Paths
-        address[] memory path = new address[](3);
-        path[0] = crv;
-        path[1] = weth;
-        path[2] = _tokenCompound;
-        _setTokenSwapPath(crv, _tokenCompound, path);
+    }
 
-        path = new address[](3);
-        path[0] = cvx;
-        path[1] = weth;
-        path[2] = _tokenCompound;
-        _setTokenSwapPath(cvx, _tokenCompound, path);
+    function setTokenSwapPathV2(address _tokenIn, address _tokenOut, address[] memory _path, uint _typeRouter) external {
+        _onlyGovernance();
+        require(_typeRouter < 2, "SCompStrategy: router can be only 0 or 1");
+        _setTokenSwapPathV2(_tokenIn, _tokenOut, _path, _typeRouter);
+    }
 
+    function setTokenSwapPathV3(address _tokenIn, address _tokenOut, address[] memory _coinPathCrv, uint24[] memory _feePathCrv, uint _nPoolCrv) external {
+        _onlyGovernance();
+        _setTokenSwapPathV3(_tokenIn, _tokenOut, _coinPathCrv, _feePathCrv, _nPoolCrv);
+    }
+
+    function setUniswapV3Router(address _router) external {
+        _onlyGovernance();
+        _setUniswapV3Router(_router);
+    }
+
+    function setUniswapV2Router(address _router) external {
+        _onlyGovernance();
+        _setUniswapV2Router(_router);
+    }
+
+    function setSushiswapRouter(address _router) external {
+        _onlyGovernance();
+        _setSushiswapRouter(_router);
     }
 
     /// ===== View Functions =====
@@ -249,7 +245,7 @@ TokenSwapPathRegistry
         return "1.0";
     }
 
-    function getName() external override returns (string memory) {
+    function getName() external view override returns (string memory) {
         return nameStrategy;
     }
 
@@ -275,7 +271,7 @@ TokenSwapPathRegistry
     }
 
     /// ===== Internal Core Implementations =====
-    function _onlyNotProtectedTokens(address _asset) internal override {
+    function _onlyNotProtectedTokens(address _asset) internal view override {
         require(address(want) != _asset, "SCompStrategy: want");
         require(address(crv) != _asset, "SCompStrategy: crv");
         require(address(cvx) != _asset, "SCompStrategy: cvx");
@@ -324,96 +320,7 @@ TokenSwapPathRegistry
         baseRewardsPool.getReward(address(this), true);
     }
 
-    /// @notice The more frequent the tend, the higher returns will beautoCompoundedPerformanceFeeGovernance
-    function tend() external whenNotPaused returns (TendData memory) {
-        TendData memory tendData;
-
-        // 1. Harvest gains from positions
-        _tendGainsFromPositions();
-
-        // Track harvested coins, before conversion
-        tendData.crvTended = crvToken.balanceOf(address(this));
-        tendData.cvxTended = cvxToken.balanceOf(address(this));
-
-        emit Tend(0);
-        emit TendState(
-            tendData.crvTended,
-            tendData.cvxTended
-        );
-        return tendData;
-    }
-
-    function harvest() external whenNotPaused returns (uint256) {
-        uint256 idleWant = IERC20(want).balanceOf(address(this));
-        uint256 totalWantBefore = balanceOf();
-
-        // 1. Withdraw accrued rewards from staking positions (claim unclaimed positions as well)
-        baseRewardsPool.getReward(address(this), true);
-
-
-        // 3. Sell 100% of accured rewards for underlying
-        uint crvToSell = crvToken.balanceOf(address(this));
-        if(crvToSell > 0)  {
-            uint fee = takeFee(crv, crvToSell);
-            crvToSell = crvToSell.sub(fee);
-
-            _swapExactTokensForTokens(
-                sushiswap,
-                crv,
-                crvToSell,
-                getTokenSwapPath(crv, tokenCompoundAddress)
-            );
-        }
-
-        uint cvxToSell = cvxToken.balanceOf(address(this));
-        if(cvxToSell > 0)  {
-            uint fee = takeFee(cvx, cvxToSell);
-            cvxToSell = cvxToSell.sub(fee);
-
-            _swapExactTokensForTokens(
-                sushiswap,
-                cvx,
-                cvxToSell,
-                getTokenSwapPath(cvx, tokenCompoundAddress)
-            );
-        }
-
-        // 4. Roll Want gained into want position
-        uint256 tokenCompoundToDeposit = tokenCompound.balanceOf(address(this));
-        uint256 wantGained;
-
-        if (tokenCompoundToDeposit > 0) {
-            // Add liquidity
-            _add_liquidity_single_coin(
-                curvePool.swap,
-                want,
-                tokenCompoundAddress,
-                tokenCompoundToDeposit,
-                curvePool.tokenCompoundPosition,
-                curvePool.numElements,
-                0
-            );
-            wantGained = IERC20(want).balanceOf(address(this)).sub(
-                idleWant
-            );
-        }
-
-        // Deposit remaining want (including idle want) into strategy position
-        uint256 wantToDeposited =
-        IERC20(want).balanceOf(address(this));
-
-        if (wantToDeposited > 0) {
-            _deposit(wantToDeposited);
-        }
-
-        uint256 totalWantAfter = balanceOf();
-        require(totalWantAfter >= totalWantBefore, "SCompStrategy: want-decreased");
-
-        emit Harvest(wantGained, block.number);
-        return wantGained;
-    }
-
-    function takeFee(address _tokenAddress, uint _amount) internal returns(uint) {
+    function _takeFeeAutoCompounded(address _tokenAddress, uint _amount) internal returns(uint) {
         // take fee
         uint256 autoCompoundedPerformanceFeeGovernance;
         if(performanceFeeGovernance > 0) {
@@ -455,4 +362,111 @@ TokenSwapPathRegistry
         return autoCompoundedPerformanceFeeStrategist + autoCompoundedPerformanceFeeGovernance;
 
     }
+
+    /// @notice The more frequent the tend, the higher returns will be
+    function tend() external whenNotPaused returns (TendData memory) {
+        TendData memory tendData;
+
+        // 1. Harvest gains from positions
+        _tendGainsFromPositions();
+
+        // Track harvested coins, before conversion
+        tendData.crvTended = crvToken.balanceOf(address(this));
+        tendData.cvxTended = cvxToken.balanceOf(address(this));
+
+        emit Tend(0);
+        emit TendState(
+            tendData.crvTended,
+            tendData.cvxTended
+        );
+        return tendData;
+    }
+
+    function harvest() external whenNotPaused returns (uint256) {
+        uint256 idleWant = IERC20(want).balanceOf(address(this));
+        uint256 totalWantBefore = balanceOf();
+
+        // 1. Withdraw accrued rewards from staking positions (claim unclaimed positions as well)
+        baseRewardsPool.getReward(address(this), true);
+
+        // 2. Sell reward - fee for underlying
+        uint crvToSell = crvToken.balanceOf(address(this));
+        if(crvToSell > 0)  {
+            uint fee = _takeFeeAutoCompounded(crv, crvToSell);
+            crvToSell = crvToSell.sub(fee);
+            _makeSwap(crv, tokenCompoundAddress, crvToSell);
+        }
+
+        uint cvxToSell = cvxToken.balanceOf(address(this));
+        if(cvxToSell > 0)  {
+            uint fee = _takeFeeAutoCompounded(cvx, cvxToSell);
+            cvxToSell = cvxToSell.sub(fee);
+            _makeSwap(cvx, tokenCompoundAddress, cvxToSell);
+        }
+
+        // 4. Roll Want gained into want position
+        uint256 tokenCompoundToDeposit = tokenCompound.balanceOf(address(this));
+        uint256 wantGained;
+
+        if (tokenCompoundToDeposit > 0) {
+            // Add liquidity
+            _add_liquidity_single_coin(
+                curvePool.swap,
+                tokenCompoundAddress,
+                tokenCompoundToDeposit,
+                curvePool.tokenCompoundPosition,
+                curvePool.numElements,
+                0
+            );
+            wantGained = IERC20(want).balanceOf(address(this)).sub(
+                idleWant
+            );
+        }
+
+        // Deposit remaining want (including idle want) into strategy position
+        uint256 wantToDeposited =
+        IERC20(want).balanceOf(address(this));
+
+        if (wantToDeposited > 0) {
+            _deposit(wantToDeposited);
+        }
+
+        uint256 totalWantAfter = balanceOf();
+        require(totalWantAfter >= totalWantBefore, "SCompStrategy: want-decreased");
+
+        emit Harvest(wantGained, block.number);
+        return wantGained;
+    }
+
+    function getRouterAddress(address _tokenIn, address _tokenOut) public view returns(address) {
+        if(getTypeRouterAddress(_tokenIn, _tokenOut) == 0){
+            return uniswapV2;
+        }
+        if(getTypeRouterAddress(_tokenIn, _tokenOut) == 1){
+            return sushiswap;
+        } else {
+            return uniswapV3;
+        }
+    }
+
+    function _makeSwap(address _tokenIn, address _tokenOut, uint _amountIn) internal {
+        address router = getRouterAddress(_tokenIn, _tokenOut);
+
+        if(getTypeSwap(_tokenIn, _tokenOut) == 0){
+            _swapExactTokensForTokens(router, _tokenIn, _amountIn, getTokenSwapPath(_tokenIn, _tokenOut));
+        } else if(getTypeSwap(_tokenIn, _tokenOut) == 1) {
+            if(getNPool(_tokenIn, _tokenOut) == 1) {
+                _swapExactInputMultihop1(router, _tokenIn, _amountIn, getTokenSwapPath(_tokenIn, _tokenOut), getFeeSwapPath(_tokenIn, _tokenOut));
+            } else if(getNPool(_tokenIn, _tokenOut) == 2) {
+                _swapExactInputMultihop2(router, _tokenIn, _amountIn, getTokenSwapPath(_tokenIn, _tokenOut), getFeeSwapPath(_tokenIn, _tokenOut));
+            } else if(getNPool(_tokenIn, _tokenOut) == 3) {
+                _swapExactInputMultihop3(router, _tokenIn, _amountIn, getTokenSwapPath(_tokenIn, _tokenOut), getFeeSwapPath(_tokenIn, _tokenOut));
+            }
+        } else {
+            // todo mixed
+
+        }
+
+    }
+
 }

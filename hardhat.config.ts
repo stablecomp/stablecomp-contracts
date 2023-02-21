@@ -148,7 +148,7 @@ const config: HardhatUserConfig = {
     },
     hardhat: {
       forking: {
-        url: "https://mainnet.infura.io/v3/899c81095bc24dc2b06d43b6c2b65b8a",
+        url: "http://104.248.142.30:8545",
         //url: "https://mainnet.infura.io/v3/899c81095bc24dc2b06d43b6c2b65b8a",
         //url: "https://eth-mainnet.g.alchemy.com/v2/VA0iJJN6a26rGrc0GT4_qmHvuDu5_vWe",
         //url: "https://eth-mainnet.nodereal.io/v1/375a16da699343ee9e7cd67d8a5690d8",

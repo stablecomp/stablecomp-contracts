@@ -1,0 +1,33 @@
+{
+  "sCompVault": {
+    "address": "0xBB2a3be4C9Ec742634bbFD9269b1A7D26747dC3A",
+    "args": {
+      "wantAddress": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
+      "sCompControllerAddress": "0x2149Fac3fb1a69917266dD5b15121747D4365f58",
+      "treasuryFee": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "depositFee": 0
+    }
+  },
+  "sCompStrategy": {
+    "address": "0x8141404558933EC0F4e8fE7044b343791eBB8b57",
+    "args": {
+      "nameStrategy": "Mim3crv",
+      "governance": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "strategist": "0xfAD2dAd06A16FBA763E215343A8741F0D7d7F5a5",
+      "controller": "0x2149Fac3fb1a69917266dD5b15121747D4365f58",
+      "want": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
+      "tokenCompound": "0x99d8a9c45b2eca8864373a26d1459e3dff1e17f3",
+      "pid": 40,
+      "feeConfig": [
+        500,
+        500,
+        20
+      ],
+      "curvePool": {
+        "swap": "0x5a6a4d54456819380173272a5e8e9b9904bdf41b",
+        "tokenCompoundPosition": 0,
+        "numElements": 2
+      }
+    }
+  }
+}

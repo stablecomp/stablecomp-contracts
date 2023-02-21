@@ -107,7 +107,7 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
     ) public {
         TOKEN = _TOKEN;
         veContract = IVotingEscrow(_veContract);
-        tokenPerBlock = _tokenPerBlock * 1e18;
+        tokenPerBlock = _tokenPerBlock;
         startBlock = _startBlock;
         endBlock = _startBlock;
 

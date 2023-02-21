@@ -325,5 +325,5 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     /// @dev Balance of want currently held in strategy positions
     function balanceOfPool() public view virtual returns (uint256);
 
-    uint256[49] private __gap;
+
 }

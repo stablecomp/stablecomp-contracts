@@ -37,7 +37,7 @@ let symbolVe = "veScomp"
 let versionVe = "veScomp1.0.0";
 
 // Masterchef config
-let tokenPerBlock = 9;
+let tokenPerBlock = ethers.utils.parseEther("1.5");
 let initialBlock : any;
 
 // Fee distribution config
@@ -356,7 +356,7 @@ main()
         let initialBalance:any = await deployer.getBalance();
         console.log("Initial balance: ", ethers.utils.formatEther(initialBalance))
 
-        await deployOneClick();
+        //await deployOneClick();
         await deploySCompToken();
         await deployVeScomp();
         await deployMasterchef();

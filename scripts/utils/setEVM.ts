@@ -10,7 +10,8 @@ const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
 
 let deployer : SignerWithAddress;
 
-const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
+//const provider = new ethers.providers.JsonRpcProvider("https://104.248.142.30:8545")
+const provider = new ethers.providers.JsonRpcProvider("https://johnchain.org/")
 
 async function main(): Promise<void> {
 

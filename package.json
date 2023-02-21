@@ -16,7 +16,10 @@
     "sendLP": "npx hardhat run scripts/utils/sendLP.ts --network scaling_node",
     "testSandwitchAttack": "npx hardhat run scripts/utils/testSandwitchAttack.ts --network hardhat",
 
-    "testSwapUniswapV3": "npx hardhat run scripts/utils/swapUniswapV3.ts --network hardhat",
+    "testSwapUniswapV3": "npx hardhat run scripts/uniswap/swapUniswapV3.ts --network hardhat",
+    "getBestQuoteUniswap": "npx hardhat run scripts/uniswap/getBestQuoteUniswap.ts --network hardhat",
+    "testSwapV3": "npx hardhat run scripts/uniswap/testSwapV3.ts --network hardhat",
+    "testAddRemoveLiquidity": "npx hardhat run scripts/uniswap/addRemoveLiquidity.ts --network hardhat",
 
     "test-euroc3crv": "npx hardhat run scripts/testStrategy/testEuroc3Crv.ts --network hardhat",
     "test-ibEURsEUR": "npx hardhat run scripts/testStrategy/testibEURsEUR.ts --network hardhat",

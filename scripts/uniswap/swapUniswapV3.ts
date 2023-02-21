@@ -3,7 +3,7 @@ import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Pool, Route, SwapOptions, SwapQuoter, SwapRouter, Trade} from "@uniswap/v3-sdk";
 import {CurrencyAmount, Percent, SupportedChainId, Token, TradeType} from "@uniswap/sdk-core";
-import {AlphaRouter, ChainId, SwapOptionsSwapRouter02, SwapType} from '@uniswap/smart-order-router'
+import {AlphaRouter, ChainId, SwapOptionsSwapRouter02, SwapType, SwapOptionsUniversalRouter} from '@uniswap/smart-order-router'
 
 import JSBI from 'jsbi'
 import {BigNumber, BigNumberish} from "ethers";
@@ -43,6 +43,8 @@ let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
 const cvxDecimals = 18;
 let fraxAddress = "0x853d955aCEf822Db058eb8505911ED77F175b99e"
 const fraxDecimals = 18;
+let mimAddress = "0x99d8a9c45b2eca8864373a26d1459e3dff1e17f3"
+const mimDecimals = 18;
 
 let daiWhaleAddress = "0xb527a981e1d415af696936b3174f2d7ac8d11369";
 let whaleAccount : SignerWithAddress;
@@ -55,6 +57,40 @@ let amountIn = ethers.utils.parseEther("1")
 let amountInNumber = 1;
 export const MAX_FEE_PER_GAS = 100000000000
 export const MAX_PRIORITY_FEE_PER_GAS = 100000000000
+
+// token
+const fraxToken = new Token(
+    SupportedChainId.MAINNET,
+    fraxAddress,
+    fraxDecimals,
+    'frax',
+    'frax'
+)
+
+const mimToken = new Token(
+    SupportedChainId.MAINNET,
+    mimAddress,
+    mimDecimals,
+    'Magic internet money',
+    'MIM'
+)
+
+const crvToken = new Token(
+    SupportedChainId.MAINNET,
+    crvAddress,
+    crvDecimals,
+    'crv',
+    'Curve token'
+)
+
+const cvxToken = new Token(
+    SupportedChainId.MAINNET,
+    cvxAddress,
+    cvxDecimals,
+    'cvx',
+    'Convex token'
+)
+
 
 async function main(): Promise<void> {
     await run('compile');
@@ -118,31 +154,7 @@ async function fundAccountDai(account: SignerWithAddress): Promise<void> {
     await tx.wait();
 }
 
-async function getRoutingSwap(amountIn: any): Promise<any> {
-
-    const fraxToken = new Token(
-        SupportedChainId.MAINNET,
-        fraxAddress,
-        fraxDecimals,
-        'frax',
-        'frax'
-    )
-
-    const crvToken = new Token(
-        SupportedChainId.MAINNET,
-        crvAddress,
-        crvDecimals,
-        'crv',
-        'Curve token'
-    )
-
-    const cvxToken = new Token(
-        SupportedChainId.MAINNET,
-        cvxAddress,
-        cvxDecimals,
-        'cvx',
-        'Convex token'
-    )
+async function getRoutingSwap(tokenIn : Token, tokenOut: Token, amountIn: any): Promise<any> {
 
     let provider  = new ethers.providers.JsonRpcProvider(
         "https://mainnet.infura.io/v3/899c81095bc24dc2b06d43b6c2b65b8a"
@@ -153,36 +165,37 @@ async function getRoutingSwap(amountIn: any): Promise<any> {
         provider: provider,
     })
 
-    const options: SwapOptionsSwapRouter02 = {
+    const options: SwapOptionsUniversalRouter = {
         recipient: deployer.address,
         slippageTolerance: new Percent(5, 100),
-        deadline: Math.floor(Date.now() / 1000 + 1800),
-        type: SwapType.SWAP_ROUTER_02,
+        type: SwapType.UNIVERSAL_ROUTER,
     }
 
     return await router.route(
         CurrencyAmount.fromRawAmount(
-            crvToken,
+            tokenIn,
             fromReadableAmount(
                 amountIn,
                 daiDecimals
             ).toString()
         ),
-        fraxToken,
+        tokenOut,
         TradeType.EXACT_INPUT,
         options
     );
 
 }
 
-async function getBestQuote(amountIn: any): Promise<void> {
+async function getBestQuote(tokenIn: Token, tokenOut: Token, amountIn: any): Promise<void> {
 
-    let route = await getRoutingSwap(amountIn);
+    let route = await getRoutingSwap(tokenIn, tokenOut, amountIn);
+
+    console.log(route)
     let poolAddress = route?.route[0].poolAddresses;
+    let protocol = route?.route[0].protocol;
 
-
+    console.log("Protocol: ", protocol)
     console.log(poolAddress);
-
 
 
 }
@@ -196,7 +209,7 @@ async function checkBalance(account: SignerWithAddress): Promise<void> {
     console.log("Balance of usdc is: ", ethers.utils.formatUnits(balanceUsdc, usdcDecimals))
 
 }
-
+/*
 async function getOutputQuote(poolAddress: any, amountIn: any): Promise<any> {
 
     if (poolAddress.length > 0) {
@@ -287,6 +300,7 @@ async function getOutputQuote(poolAddress: any, amountIn: any): Promise<any> {
 
     return quote;
 }
+*/
 
 async function getOutputQuoteOnChain(amountIn: any): Promise<BigNumber> {
 
@@ -412,7 +426,15 @@ main()
 
         console.log("Initial balance: ", initialBalance)
 
-        await getBestQuote(amountInNumber);
+        console.log("\n")
+        console.log("----- MIM3CRV STRATEGY -----")
+        console.log("Best quote from crv to mim")
+        await getBestQuote(crvToken, mimToken, amountInNumber);
+        console.log("Best quote from cvx to mim")
+        await getBestQuote(cvxToken, mimToken, amountInNumber);
+        console.log("\n")
+
+
         /*
         await fundAccountDai(whaleAccount);
 

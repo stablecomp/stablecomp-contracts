@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interface/IController.sol";
-import "hardhat/console.sol";
 
 contract SCompVault is ERC20 {
     using SafeERC20 for IERC20;
@@ -98,15 +97,8 @@ contract SCompVault is ERC20 {
         _amount = _after.sub(_before); // Additional check for deflationary tokens
         uint256 shares = 0;
         if (totalSupply() == 0) {
-            console.log("dentro caso supply 0");
             shares = _amount;
         } else {
-            console.log("totalSupply()");
-            console.log(totalSupply());
-            console.log("_pool");
-            console.log(_pool);
-            console.log("IController(controller).balanceOf(address(token))");
-            console.log(IController(controller).balanceOf(address(token)));
             shares = (_amount.mul(totalSupply())).div(_pool);
         }
         _mint(msg.sender, shares);

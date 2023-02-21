@@ -33,6 +33,10 @@ let sCompStrategy : Contract;
 let wantAddress = info.wantAddress; // **name** // 18 decimals
 let tokenCompoundAddress = info.tokenCompoundAddress; // **name** // 18 decimals
 let curveSwapAddress = info.curveSwapAddress; // pool **name pool** curve
+const curveAddress = require('../../../strategyInfo/address_mainnet/curveAddress.json');
+const routerAddress = require('../../../strategyInfo/address_mainnet/routerAddress.json');
+const tokenAddress = require('../../../strategyInfo/address_mainnet/tokenAddress.json');
+const tokenDecimals = require('../../../strategyInfo/address_mainnet/tokenDecimals.json');
 
 // convex pool info
 let nameStrategy = info.nameStrategy
@@ -58,6 +62,12 @@ async function getControllerContract(): Promise<void> {
 async function setupContract(): Promise<void> {
     await deploySCompVault();
     await deployStrategy();
+
+    await sCompStrategy.connect(deployer).setTokenSwapPathV2(tokenAddress.crv, tokenAddress.mim, [tokenAddress.crv, tokenAddress.weth, tokenAddress.mim],0);
+    await sCompStrategy.connect(deployer).setTokenSwapPathV2(tokenAddress.cvx, tokenAddress.mim, [tokenAddress.cvx, tokenAddress.weth, tokenAddress.mim],0);
+    await sCompStrategy.connect(deployer).setUniswapV3Router(routerAddress.uniswapV3);
+    await sCompStrategy.connect(deployer).setUniswapV2Router(routerAddress.uniswapV2);
+    await sCompStrategy.connect(deployer).setSushiswapRouter(routerAddress.sushiswap);
 
     // set strategy in controller
     let tx = await sCompController.connect(deployer).approveStrategy(wantAddress, sCompStrategy.address);

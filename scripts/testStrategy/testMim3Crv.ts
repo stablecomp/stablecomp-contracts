@@ -14,6 +14,10 @@ const poolCurveABI = require('../../abi/poolCurve.json');
 
 // variable json
 const info = require('../../strategyInfo/infoPool/mim3Crv.json');
+const curveAddress = require('../../strategyInfo/address_mainnet/curveAddress.json');
+const routerAddress = require('../../strategyInfo/address_mainnet/routerAddress.json');
+const tokenAddress = require('../../strategyInfo/address_mainnet/tokenAddress.json');
+const tokenDecimals = require('../../strategyInfo/address_mainnet/tokenDecimals.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -37,6 +41,7 @@ let curveSwapWrapped : Contract;
 let curveSwap : Contract;
 let wantContract: Contract;
 let tokenDepositContract: Contract;
+let token2: Contract;
 let tokenCompoundContract: Contract;
 let feeContract: Contract;
 let baseRewardPoolContract: Contract;
@@ -64,13 +69,15 @@ let baseRewardPoolAddress = info.baseRewardPoolAddress; // address of baseReward
 
 let decimalsTokenDeposit = 18
 // constant address
-let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
-let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
-let boosterAddress = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31";
-let wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-let uniswapV2Address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-let uniswapV3Address = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
-let sushiswapAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F";
+let crvAddress = tokenAddress.crv
+let cvxAddress = tokenAddress.cvx
+let boosterAddress = curveAddress.boosterAddress;
+let wethAddress = tokenAddress.weth;
+let usdcAddress = tokenAddress.usdc;
+
+let uniswapV2Address = routerAddress.uniswapV2;
+let uniswapV3Address = routerAddress.uniswapV3;
+let sushiswapAddress = routerAddress.sushiswap;
 
 // convex pool info
 let nameStrategy = info.nameStrategy
@@ -96,7 +103,7 @@ let depositv1Value: any = [];
 let initialBalanceDepositPool: any = [];
 let blockFinishBaseReward: any;
 let amountToDepositLiquidity: any = ethers.utils.parseEther(info.amountToDepositLiquidity);
-let amountToDepositVault: any = ethers.utils.parseEther("1000");
+let amountToDepositVault: any = ethers.utils.parseEther("10000");
 let initialTimestamp: any;
 
 let name = "Voting Escrow Scomp"
@@ -133,18 +140,19 @@ async function setupContract(): Promise<void> {
 
     await deployTimeLockController();
 
+    // set tokenSwapPath
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(crvAddress, tokenCompoundAddress, [crvAddress, wethAddress, tokenCompoundAddress], [10000, 10000], 2);
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(cvxAddress, tokenCompoundAddress, [cvxAddress, usdcAddress, tokenCompoundAddress], [10000, 500], 2);
+    await sCompStrategy.connect(governance).setUniswapV3Router(uniswapV3Address);
+    await sCompStrategy.connect(governance).setUniswapV2Router(uniswapV2Address);
+    await sCompStrategy.connect(governance).setSushiswapRouter(sushiswapAddress);
 
     // set strategy and vault in controller
     await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
-    console.log("Approve strategy ok");
     await sCompController.connect(governance).setStrategy(wantAddress, sCompStrategy.address);
-    console.log("Set strategy ok");
     await sCompController.connect(governance).setVault(wantAddress, sCompVault.address);
-    console.log("Set vault ok");
-
     // set timelock controller in strategy
     await sCompStrategy.connect(governance).setTimeLockController(sCompTimelockController.address);
-    console.log("Set time lock controller");
 
 }
 
@@ -400,6 +408,7 @@ async function setupUtilityContract(abiCurveSwap: any): Promise<void> {
 
     // get feeContract
     tokenDepositContract = await new ethers.Contract(tokenDepositAddress, wethABI, ethers.provider);
+    token2 = await new ethers.Contract("0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", wethABI, ethers.provider);
 
     boosterContract = await new ethers.Contract(boosterAddress, boosterABI, ethers.provider);
 
@@ -426,6 +435,10 @@ async function removeLiquidity(account: SignerWithAddress, index: any): Promise<
   await tx.wait();
 
   let balanceTokenDeposit = await tokenDepositContract.balanceOf(account.address);
+  let balance2 = await token2.balanceOf(account.address);
+
+  console.log("Balance token deposit: ", ethers.utils.formatEther(balanceTokenDeposit))
+  console.log("Balance 2: ", ethers.utils.formatEther(balance2))
 
   let diff = balanceTokenDeposit.sub(initialBalanceDepositPool[index]);
   console.log("Initial balance of account ", account.address, " is: ", ethers.utils.formatUnits(initialBalanceDepositPool[index], decimalsTokenDeposit));
@@ -476,7 +489,7 @@ async function deposit(account: SignerWithAddress, index: any): Promise<void> {
     let tx = await sCompVault.connect(account).deposit(amountToDepositVault);
     let txCompleted = await tx.wait();
     let feeDeposit = await price.getFeeTx(tx, txCompleted);
-    console.log("Fee transaction deposit is: ", ethers.utils.formatEther(feeDeposit));
+    //console.log("Fee transaction deposit is: ", ethers.utils.formatEther(feeDeposit));
 
     let balanceShare = await sCompVault.balanceOf(account.address);
     //console.log("Share balance after deposit: ", ethers.utils.formatEther(balanceShare));
@@ -503,7 +516,7 @@ async function depositFor(account: SignerWithAddress, index: any): Promise<void>
     let tx = await sCompVault.connect(depositor).depositFor(amountToDepositVault, account.address);
     let txCompleted = await tx.wait();
     let feeDeposit = await price.getFeeTx(tx, txCompleted);
-    console.log("Fee transaction deposit is: ", ethers.utils.formatEther(feeDeposit));
+    //console.log("Fee transaction deposit is: ", ethers.utils.formatEther(feeDeposit));
     let balanceShare = await sCompVault.balanceOf(account.address);
     //console.log("Share balance after deposit: ", ethers.utils.formatEther(balanceShare));
 
@@ -518,7 +531,7 @@ async function earn(): Promise<void> {
     let tx = await sCompVault.earn();
     let txCompleted = await tx.wait();
     let feeEarn = await price.getFeeTx(tx, txCompleted);
-    console.log("Fee cost for earn transaction is: ", ethers.utils.formatEther(feeEarn))
+    //console.log("Fee cost for earn transaction is: ", ethers.utils.formatEther(feeEarn))
 }
 
 async function harvest(): Promise<void> {
@@ -703,6 +716,8 @@ async function createLock(account: SignerWithAddress): Promise<void> {
 
 main()
     .then(async () => {
+        console.log("\n ----------- ADDRESS CONTRACT ---------- \n")
+
         await setupContract();
         let abi = [
             "function add_liquidity(uint[2] calldata amounts, uint min_mint_amount)",
@@ -715,10 +730,13 @@ main()
 
         await impersonateAccount();
 
+        console.log("\n ----------- ADD LIQUIDITY ---------- \n")
+
         await addLiquidity(depositAccount1, 0);
         await addLiquidity(depositAccount2, 1);
         await addLiquidity(depositAccount3, 2);
 
+        /*
         // change fee
         await proposeChangeFeeStrategy(feeGovernance/2);
         await mineBlock(2);
@@ -727,7 +745,9 @@ main()
         await proposeChangeFeeStrategy(feeGovernance);
         await mineBlock(2);
         await executeChangeFeeStrategy(feeGovernance);
+*/
 
+        console.log("\n ----------- DEPOSIT ---------- \n")
         await deposit(depositAccount1, 0);
         await deposit(depositAccount2, 1);
         //await deposit(depositAccount3, 2);
@@ -742,7 +762,7 @@ main()
         await createLock(deployer);
         await createLock(governance);
 
-
+        console.log("harvest 1")
         await harvest();
 
         await buyBackConverter();
@@ -751,30 +771,37 @@ main()
 
         await earnMarkReward();
         await mineBlock(dayToMine);
+        console.log("harvest 2")
         await harvest();
         await buyBackConverter();
         await checkBalance();
 
         await earnMarkReward();
         await mineBlock(dayToMine);
+        await mineBlock(dayToMine);
+        await mineBlock(dayToMine);
+        console.log("harvest 3")
         await harvest();
         await buyBackConverter();
         await checkBalance();
 
 
         await mineBlock(dayToMine);
+        console.log("harvest 4")
         await harvest();
         await buyBackConverter();
         await checkBalance();
 
 
         await mineBlock(dayToMine);
+        console.log("harvest 5")
         await harvest();
         await buyBackConverter();
         await checkBalance();
 
 
         await mineBlock(dayToMine);
+        console.log("harvest 6")
         await harvest();
         await buyBackConverter();
         await checkBalance();
@@ -793,6 +820,7 @@ main()
 
         await mineBlock(50);
         await earnMarkReward();
+        console.log("harvest 7")
         await harvest();
         await checkBalance();
         await buyBackConverter();
