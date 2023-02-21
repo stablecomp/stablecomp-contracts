@@ -32,10 +32,10 @@ const WBTC = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599";
 
 /* ------------------------------ Whale address ----------------------------- */
 const USDC_whale = "0x55FE002aefF02F77364de339a1292923A15844B8";
-const WBTC_whale = "0x8558FE88F8439dDcd7453ccAd6671Dfd90657a32";
+const WBTC_whale = "0x0aaeFad51c8Cd1303aA3054b87BdD6f9A356DfC8";
 
 /* ------------------------------ Vault Address ----------------------------- */
-const sComp = "0x937A459c8F282abA432f5D5e14bD801ff848A1E3";
+const sComp = "0x494d51A38ACEEBcc1D6b8e6A1EE8D8d489052033";
 
 /* -------------------------------------------------------------------------- */
 /*             impersonate account and transfer to owner (hardhat)            */
@@ -46,6 +46,14 @@ async function impersonateAdress(address: string) {
     params: [address],
   });
   return await rpcProvider.getSigner(address);
+}
+
+async function impersonateHardhat(address: string) {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [address],
+  });
+  return await ethers.getSigner(address);
 }
 
 async function main() {
@@ -74,9 +82,8 @@ async function main() {
     "OneClickV3",
     "0x15BB2cc3Ea43ab2658F7AaecEb78A9d3769BE3cb"
   );
-    */
+      */
 
-  /* -------------------------------------------------------------------------- 
   await OneClickIn(
     WBTC,
     "0.1",
@@ -88,7 +95,6 @@ async function main() {
     OneClick,
     account
   );
-  */
 
   await OneClickOut(WBTC, "100", sComp, false, 0, OneClick, account);
 }
@@ -134,9 +140,8 @@ async function OneClickIn(
   const amount = ethers.utils.parseUnits(amountIn, tokenIn_decimal);
 
   /* --------------------- Transfer from whale to account --------------------- */
-  const whale = await impersonateAdress(whaleAddress);
+  const whale = await impersonateHardhat(whaleAddress);
   await tokenIn_contract.connect(whale).transfer(account.address, amount);
-
   try {
     await tokenIn_contract.approve(OneClick.address, amount);
   } catch {
@@ -276,8 +281,8 @@ async function OneClickIn(
   console.log(`Message sender (${account.address}) balance difference:`);
   console.table([
     {
-      "TokenIn balance": startTokenIn - endTokenIn,
-      "Vault balance": endTokenIn - endVault,
+      "TokenIn balance": endTokenIn - startTokenIn,
+      "Vault balance": endVault - startVault,
     },
   ]);
 }
@@ -303,6 +308,7 @@ async function OneClickOut(
   const vault_decimal = await vault_contract.decimals();
 
   /* ------------------------------ Print Details ----------------------------- */
+  console.log("OneClickOut:");
   console.log(`
   TokenOut: ${tokenOut_symbol}
   AmountOut: ${amountOut}
@@ -354,7 +360,6 @@ async function OneClickOut(
   };
 
   try {
-    console.log("One Click Out Smart Routing:");
     const o: OneClickOutSmartRouting = {
       chainId: 1,
       provider: rpcProvider,
@@ -363,7 +368,7 @@ async function OneClickOut(
       vault: vault,
     };
     oneClickOutV3 = await OneClickOutV3(o);
-    console.log(oneClickOutV3);
+    console.log("One Click Out Smart Routing success");
   } catch (error) {
     console.log("OneClickOutSmartRouting failed");
     console.log(error);

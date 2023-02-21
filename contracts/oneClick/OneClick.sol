@@ -394,9 +394,10 @@ contract OneClick is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 3) {
                     uint256[3] memory amounts;
                     amounts[_indexIn] = _amountIn;
@@ -408,9 +409,10 @@ contract OneClick is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 4) {
                     uint256[4] memory amounts;
                     amounts[_indexIn] = _amountIn;
@@ -422,9 +424,10 @@ contract OneClick is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 }
             }
             // If the input token does not match the one you want to deposit --> Swap --> Deposit
@@ -462,9 +465,10 @@ contract OneClick is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 } else if (_poolTokens.length == 4) {
                     uint256[4] memory amounts;
                     amounts[_indexIn] = estimatePrice(
@@ -480,9 +484,10 @@ contract OneClick is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut =
-                        (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                        ? amountCurveOut
+                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                            ISCompVault(_vault).balance();
                 }
             }
         }
@@ -505,9 +510,10 @@ contract OneClick is Ownable, ReentrancyGuard {
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
-                amountTokenOut =
-                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                    ISCompVault(_vault).balance();
+                amountTokenOut = ISCompVault(_vault).balance() == 0
+                    ? amountCurveOut
+                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
             } else if (_poolTokens.length == 3) {
                 uint256[3] memory amounts;
                 amounts = _getEstimate(
@@ -523,9 +529,10 @@ contract OneClick is Ownable, ReentrancyGuard {
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
-                amountTokenOut =
-                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                    ISCompVault(_vault).balance();
+                amountTokenOut = ISCompVault(_vault).balance() == 0
+                    ? amountCurveOut
+                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
             } else if (_poolTokens.length == 4) {
                 uint256[4] memory amounts;
                 amounts = _getEstimate(
@@ -541,9 +548,10 @@ contract OneClick is Ownable, ReentrancyGuard {
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
-                amountTokenOut =
-                    (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                    ISCompVault(_vault).balance();
+                amountTokenOut = ISCompVault(_vault).balance() == 0
+                    ? amountCurveOut
+                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
+                        ISCompVault(_vault).balance();
             }
         }
     }
@@ -795,7 +803,10 @@ contract OneClick is Ownable, ReentrancyGuard {
         address _tokenOut,
         uint256 _amountOut
     ) internal returns (uint256 tokeOutAmount) {
-        uint256 lpAmount = ISCompVault(_vault).withdrawOneClick(_amountOut, address(this));
+        uint256 lpAmount = ISCompVault(_vault).withdrawOneClick(
+            _amountOut,
+            address(this)
+        );
 
         if (_tokenOut == _tokenAddress) {
             if (_poolTokens.length == 2) {

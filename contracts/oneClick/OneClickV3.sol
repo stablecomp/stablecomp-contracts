@@ -604,6 +604,102 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @notice Estimate minimum amount out from Curve pool of 2 tokens
+     * @param _poolAddress: Curve pool address
+     * @param _poolTokens: Curve pool tokens
+     * @param _amountOut: Amount out
+     */
+    function getAmountOutMin2(
+        address _poolAddress,
+        address[] memory _poolTokens,
+        uint256 _amountOut
+    ) public view returns (uint256[2] memory _amountOutMin) {
+        uint256 totalSupply;
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            totalSupply +=
+                IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10;
+        }
+
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10 *
+                10) / totalSupply;
+            _amountOutMin[i] =
+                (percent *
+                    _amountOut *
+                    ICurvePool(_poolAddress).get_virtual_price()) /
+                (decimalDiff10 * 1e19);
+        }
+    }
+
+    /**
+     * @notice Estimate minimum amount out from Curve pool of 3 tokens
+     * @param _poolAddress: Curve pool address
+     * @param _poolTokens: Curve pool tokens
+     * @param _amountOut: Amount out
+     */
+    function getAmountOutMin3(
+        address _poolAddress,
+        address[] memory _poolTokens,
+        uint256 _amountOut
+    ) public view returns (uint256[3] memory _amountOutMin) {
+        uint256 totalSupply;
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            totalSupply +=
+                IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10;
+        }
+
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10 *
+                10) / totalSupply;
+            _amountOutMin[i] =
+                (percent *
+                    _amountOut *
+                    ICurvePool(_poolAddress).get_virtual_price()) /
+                (decimalDiff10 * 1e19);
+        }
+    }
+
+    /**
+     * @notice Estimate minimum amount out from Curve pool of 4 tokens
+     * @param _poolAddress: Curve pool address
+     * @param _poolTokens: Curve pool tokens
+     * @param _amountOut: Amount out
+     */
+    function getAmountOutMin4(
+        address _poolAddress,
+        address[] memory _poolTokens,
+        uint256 _amountOut
+    ) public view returns (uint256[4] memory _amountOutMin) {
+        uint256 totalSupply;
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            totalSupply +=
+                IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10;
+        }
+
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
+            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
+                decimalDiff10 *
+                10) / totalSupply;
+            _amountOutMin[i] =
+                (percent *
+                    _amountOut *
+                    ICurvePool(_poolAddress).get_virtual_price()) /
+                (decimalDiff10 * 1e19);
+        }
+    }
+
+    /**
      * @notice Set the new address and the new % for the zapper fees
      * @param _newAddressFee: the address where to send the zapper fees
      * @param _newVauleFee: the fee percentage for each transaction
@@ -851,19 +947,31 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
         if (_tokenOut == _tokenAddress) {
             if (_poolTokens.length == 2) {
-                uint256[2] memory amountOutMin;
+                uint256[2] memory amountOutMin = getAmountOutMin2(
+                    _poolAddress,
+                    _poolTokens,
+                    _amountOut
+                );
                 ICurvePool(_poolAddress).remove_liquidity(
                     _amountOut,
                     amountOutMin
                 );
             } else if (_poolTokens.length == 3) {
-                uint256[3] memory amountOutMin;
+                uint256[3] memory amountOutMin = getAmountOutMin3(
+                    _poolAddress,
+                    _poolTokens,
+                    _amountOut
+                );
                 ICurvePool(_poolAddress).remove_liquidity(
                     _amountOut,
                     amountOutMin
                 );
             } else if (_poolTokens.length == 4) {
-                uint256[4] memory amountOutMin;
+                uint256[4] memory amountOutMin = getAmountOutMin4(
+                    _poolAddress,
+                    _poolTokens,
+                    _amountOut
+                );
                 ICurvePool(_poolAddress).remove_liquidity(
                     _amountOut,
                     amountOutMin
@@ -871,7 +979,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             }
         } else {
             if (_poolTokens.length == 2) {
-                uint256[2] memory amountOutMin = _getAmountOutMin2(
+                uint256[2] memory amountOutMin = getAmountOutMin2(
                     _poolAddress,
                     _poolTokens,
                     _amountOut
@@ -886,11 +994,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     amountOutMin
                 );
             } else if (_poolTokens.length == 3) {
-                uint256[3] memory amountOutMin = _getAmountOutMin3(
+                uint256[3] memory amountOutMin = getAmountOutMin3(
                     _poolAddress,
                     _poolTokens,
-                    _amountOut,
-                    false
+                    _amountOut
                 );
                 tokeOutAmount = _removeAndSwap(
                     _routev2,
@@ -902,11 +1009,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     amountOutMin
                 );
             } else if (_poolTokens.length == 4) {
-                uint256[4] memory amountOutMin = _getAmountOutMin4(
+                uint256[4] memory amountOutMin = getAmountOutMin4(
                     _poolAddress,
                     _poolTokens,
-                    _amountOut,
-                    false
+                    _amountOut
                 );
                 tokeOutAmount = _removeAndSwap(
                     _routev2,
@@ -1305,86 +1411,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         }
 
         return amount;
-    }
-
-    function _getAmountOutMin2(
-        address _poolAddress,
-        address[] memory _poolTokens,
-        uint256 _amountOut
-    ) internal view returns (uint256[2] memory _amountOutMin) {
-        uint256 totalSupply;
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-            totalSupply +=
-                IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
-                decimalDiff10;
-        }
-
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
-                decimalDiff10 *
-                10) / totalSupply;
-            _amountOutMin[i] =
-                (percent *
-                    _amountOut *
-                    ICurvePool(_poolAddress).get_virtual_price()) /
-                (decimalDiff10 * 1e19);
-        }
-    }
-
-    function _getAmountOutMin3(
-        address _poolAddress,
-        address[] memory _poolTokens,
-        uint256 _amountOut,
-        bool _estimate
-    ) internal view returns (uint256[3] memory _amountOutMin) {
-        uint256 totalSupply;
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-            totalSupply +=
-                IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
-                decimalDiff10;
-        }
-
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
-                decimalDiff10 *
-                10) / totalSupply;
-            _amountOutMin[i] =
-                (percent *
-                    _amountOut *
-                    ICurvePool(_poolAddress).get_virtual_price()) /
-                (decimalDiff10 * 1e19);
-        }
-    }
-
-    function _getAmountOutMin4(
-        address _poolAddress,
-        address[] memory _poolTokens,
-        uint256 _amountOut,
-        bool _estimate
-    ) internal view returns (uint256[4] memory _amountOutMin) {
-        uint256 totalSupply;
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-            totalSupply +=
-                IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
-                decimalDiff10;
-        }
-
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
-            uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
-                decimalDiff10 *
-                10) / totalSupply;
-            _amountOutMin[i] =
-                (percent *
-                    _amountOut *
-                    ICurvePool(_poolAddress).get_virtual_price()) /
-                (decimalDiff10 * 1e19);
-        }
     }
 
     function _swapV3(
