@@ -31,7 +31,7 @@ contract OneClick is Ownable, ReentrancyGuard {
     uint256 private constant minAmount = 1000;
     uint256 public constant maxInt = 2 ** 256 - 1;
 
-    uint256 public constant oneClickMax = 10000; // 100%
+    uint256 public constant oneClickFeeMax = 10000; // 100%
     uint256 public oneClickFee; // 1 = 0.01% ; 10 = 0.1% ; 100 = 1% ; 1000 = 10% ; 10000 = 100%
     address public oneClickFeeAddress;
     address public timeLockController;
@@ -388,7 +388,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                     amounts[_indexIn] = _amountIn;
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                        _slippageCurve) / oneClickMax;
+                        _slippageCurve) / oneClickFeeMax;
 
                     uint256 amountCurveOut = pool.calc_token_amount(
                         amounts,
@@ -403,7 +403,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                     amounts[_indexIn] = _amountIn;
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                        _slippageCurve) / oneClickMax;
+                        _slippageCurve) / oneClickFeeMax;
 
                     uint256 amountCurveOut = pool.calc_token_amount(
                         amounts,
@@ -418,7 +418,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                     amounts[_indexIn] = _amountIn;
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                        _slippageCurve) / oneClickMax;
+                        _slippageCurve) / oneClickFeeMax;
 
                     uint256 amountCurveOut = pool.calc_token_amount(
                         amounts,
@@ -441,7 +441,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                     );
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                        _slippageCurve) / oneClickMax;
+                        _slippageCurve) / oneClickFeeMax;
 
                     uint256 amountCurveOut = pool.calc_token_amount(
                         amounts,
@@ -459,7 +459,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                     );
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                        _slippageCurve) / oneClickMax;
+                        _slippageCurve) / oneClickFeeMax;
 
                     uint256 amountCurveOut = pool.calc_token_amount(
                         amounts,
@@ -478,7 +478,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                     );
 
                     uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                        _slippageCurve) / oneClickMax;
+                        _slippageCurve) / oneClickFeeMax;
 
                     uint256 amountCurveOut = pool.calc_token_amount(
                         amounts,
@@ -506,7 +506,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                 );
 
                 uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                    _slippageCurve) / oneClickMax;
+                    _slippageCurve) / oneClickFeeMax;
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
@@ -525,7 +525,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                 );
 
                 uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                    _slippageCurve) / oneClickMax;
+                    _slippageCurve) / oneClickFeeMax;
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
@@ -544,7 +544,7 @@ contract OneClick is Ownable, ReentrancyGuard {
                 );
 
                 uint256 slippage = (pool.calc_token_amount(amounts, true) *
-                    _slippageCurve) / oneClickMax;
+                    _slippageCurve) / oneClickFeeMax;
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
@@ -571,7 +571,7 @@ contract OneClick is Ownable, ReentrancyGuard {
 
         uint256[] memory amountsOut = router.getAmountsOut(_swapAmount, _path);
         uint256 slippage = (amountsOut[amountsOut.length - 1] * _slippage) /
-            oneClickMax;
+            oneClickFeeMax;
         amountOut = amountsOut[amountsOut.length - 1] - slippage;
     }
 
@@ -592,7 +592,7 @@ contract OneClick is Ownable, ReentrancyGuard {
             "OneClick: Fee Address not allowed"
         );
         require(
-            _newVauleFee >= 0 && _newVauleFee <= oneClickMax,
+            _newVauleFee >= 0 && _newVauleFee <= oneClickFeeMax,
             "OneClick: Fee Value not allowed"
         );
         oneClickFeeAddress = _newAddressFee;
@@ -1013,7 +1013,7 @@ contract OneClick is Ownable, ReentrancyGuard {
         uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
-        ) * _slippage) / oneClickMax;
+        ) * _slippage) / oneClickFeeMax;
         uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
@@ -1045,7 +1045,7 @@ contract OneClick is Ownable, ReentrancyGuard {
         uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
-        ) * _slippage) / oneClickMax;
+        ) * _slippage) / oneClickFeeMax;
         uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
@@ -1077,7 +1077,7 @@ contract OneClick is Ownable, ReentrancyGuard {
         uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
-        ) * _slippage) / oneClickMax;
+        ) * _slippage) / oneClickFeeMax;
         uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
             _amounts,
             true
@@ -1250,7 +1250,7 @@ contract OneClick is Ownable, ReentrancyGuard {
         address _tokenAddress,
         uint256 _amountIn
     ) internal returns (uint256) {
-        uint256 fee = (_amountIn * oneClickFee) / oneClickMax;
+        uint256 fee = (_amountIn * oneClickFee) / oneClickFeeMax;
         IERC20(_tokenAddress).safeTransfer(oneClickFeeAddress, fee);
         return _amountIn - fee;
     }

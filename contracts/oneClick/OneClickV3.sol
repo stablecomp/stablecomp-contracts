@@ -557,11 +557,103 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         }
     }
 
-    function estimateOneClickOut()
-        external
-        view
-        returns (uint256 amountTokenOut)
-    {}
+    function estimateOneClickOut(
+        address _poolAddress,
+        address[] memory _poolTokens,
+        address _vault,
+        address _tokenOut,
+        uint256[] memory _priceTokens,
+        uint256 _amountOut
+    ) external view returns (uint256 amountTokenOut) {
+        ISCompVault vault = ISCompVault(_vault);
+
+        uint256 vaultBalance = vault.balance() == 0 ? 1 : vault.balance();
+        uint256 vaultTotalSupply = vault.totalSupply() == 0
+            ? 1
+            : vault.totalSupply();
+
+        uint256 curveLpAmount = (vaultBalance * _amountOut) / vaultTotalSupply;
+
+        if (_poolTokens.length == 2) {
+            uint256[2] memory amountOutMin = getAmountOutMin2(
+                _poolAddress,
+                _poolTokens,
+                curveLpAmount
+            );
+
+            for (uint256 i = 0; i < _poolTokens.length; i++) {
+                if (_poolTokens[i] == _tokenOut) {
+                    amountTokenOut += amountOutMin[i];
+                } else {
+                    uint256 decimalTokenOut = IERC20Metadata(_tokenOut)
+                        .decimals();
+                    uint256 decimalTokenIn = IERC20Metadata(_poolTokens[i])
+                        .decimals();
+                    if (decimalTokenOut > decimalTokenIn) {
+                        uint256 pricePoolToken = _priceTokens[i] *
+                            (10 ** (decimalTokenOut - decimalTokenIn));
+                        amountTokenOut += pricePoolToken;
+                    } else {
+                        uint256 pricePoolToken = _priceTokens[i] /
+                            (10 ** (decimalTokenIn - decimalTokenOut));
+                        amountTokenOut += pricePoolToken;
+                    }
+                }
+            }
+        } else if (_poolTokens.length == 3) {
+            uint256[3] memory amountOutMin = getAmountOutMin3(
+                _poolAddress,
+                _poolTokens,
+                curveLpAmount
+            );
+
+            for (uint256 i = 0; i < _poolTokens.length; i++) {
+                if (_poolTokens[i] == _tokenOut) {
+                    amountTokenOut += amountOutMin[i];
+                } else {
+                    uint256 decimalTokenOut = IERC20Metadata(_tokenOut)
+                        .decimals();
+                    uint256 decimalTokenIn = IERC20Metadata(_poolTokens[i])
+                        .decimals();
+                    if (decimalTokenOut > decimalTokenIn) {
+                        uint256 pricePoolToken = _priceTokens[i] *
+                            (10 ** (decimalTokenOut - decimalTokenIn));
+                        amountTokenOut += pricePoolToken;
+                    } else {
+                        uint256 pricePoolToken = _priceTokens[i] /
+                            (10 ** (decimalTokenIn - decimalTokenOut));
+                        amountTokenOut += pricePoolToken;
+                    }
+                }
+            }
+        } else if (_poolTokens.length == 4) {
+            uint256[4] memory amountOutMin = getAmountOutMin4(
+                _poolAddress,
+                _poolTokens,
+                curveLpAmount
+            );
+
+            for (uint256 i = 0; i < _poolTokens.length; i++) {
+                if (_poolTokens[i] == _tokenOut) {
+                    amountTokenOut += amountOutMin[i];
+                } else {
+                    uint256 decimalTokenOut = IERC20Metadata(_tokenOut)
+                        .decimals();
+                    uint256 decimalTokenIn = IERC20Metadata(_poolTokens[i])
+                        .decimals();
+                    if (decimalTokenOut > decimalTokenIn) {
+                        uint256 pricePoolToken = _priceTokens[i] *
+                            (10 ** (decimalTokenOut - decimalTokenIn));
+                        amountTokenOut += pricePoolToken;
+                    } else {
+                        uint256 pricePoolToken = _priceTokens[i] /
+                            (10 ** (decimalTokenIn - decimalTokenOut));
+                        amountTokenOut += pricePoolToken;
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * @notice Estimate the price of a token in using the UniswapV2 router
