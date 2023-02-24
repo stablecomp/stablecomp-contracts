@@ -139,7 +139,7 @@ async function setupContract(): Promise<void> {
 
     // set tokenSwapPath
     await sCompStrategy.connect(governance).setTokenSwapPathV2(tokenAddress.crv, tokenAddress.busd, [tokenAddress.crv, tokenAddress.weth, tokenAddress.busd], 0);
-    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.cvx, tokenAddress.busd, [tokenAddress.cvx, tokenAddress.usdc, tokenAddress.busd], [10000, 500], 2);
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.cvx, tokenAddress.busd, [tokenAddress.cvx, tokenAddress.weth, tokenAddress.busd], [10000, 10000], 2);
     await sCompStrategy.connect(governance).setUniswapV3Router(uniswapV3Address);
     await sCompStrategy.connect(governance).setUniswapV2Router(uniswapV2Address);
     await sCompStrategy.connect(governance).setSushiswapRouter(sushiswapAddress);
@@ -391,12 +391,12 @@ async function impersonateAccount(): Promise<void> {
 
 async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
     initialBalanceDepositPool[index] = await tokenDepositContract.balanceOf(account.address);
-    console.log("add liquidity amount: ", ethers.utils.formatUnits(initialBalanceDepositPool[index], decimalsTokenDeposit))
+    console.log("add liquidity amount: ", ethers.utils.formatUnits(amountToDepositLiquidity, decimalsTokenDeposit))
 
     let txApprove = await tokenDepositContract.connect(account).approve(curveSwap.address, ethers.constants.MaxUint256);
     await txApprove.wait();
 
-    let tx = await curveSwap.connect(account).add_liquidity([initialBalanceDepositPool[index], 0],0);
+    let tx = await curveSwap.connect(account).add_liquidity([amountToDepositLiquidity, 0],0);
     await tx.wait();
 }
 

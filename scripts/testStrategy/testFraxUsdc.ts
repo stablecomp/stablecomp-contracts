@@ -138,8 +138,9 @@ async function setupContract(): Promise<void> {
     await deployTimeLockController();
 
     // set tokenSwapPath
-    await sCompStrategy.connect(governance).setTokenSwapPathV3(crvAddress, tokenCompoundAddress, [crvAddress, usdcAddress], [10000], 1);
-    await sCompStrategy.connect(governance).setTokenSwapPathV3(cvxAddress, tokenCompoundAddress, [cvxAddress, usdcAddress], [10000], 1);
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(crvAddress, tokenAddress.usdc, [crvAddress, tokenAddress.usdc], [10000], 1);
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(cvxAddress, tokenAddress.usdc, [cvxAddress, tokenAddress.usdc], [10000], 1);
+
     await sCompStrategy.connect(governance).setUniswapV3Router(uniswapV3Address);
     await sCompStrategy.connect(governance).setUniswapV2Router(uniswapV2Address);
     await sCompStrategy.connect(governance).setSushiswapRouter(sushiswapAddress);

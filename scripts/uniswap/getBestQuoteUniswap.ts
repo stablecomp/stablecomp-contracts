@@ -232,56 +232,61 @@ async function getBestQuote(tokenIn: Token, tokenOut: Token, amountIn: any): Pro
     let protocol = route?.route[0].protocol;
 
     console.log("Protocol: ", protocol)
-    for (let i = 0; i < listPoolAddress.length; i++){
-        console.log("")
-        let address = listPoolAddress[i];
-        console.log("Pool address: ", address);
+    if (listPoolAddress !== null){
 
-        if (protocol == "V3") {
-            let poolContract = new ethers.Contract(
-                address,
-                poolUniswapV3Abi,
-                ethers.provider
-            )
-            let fee = await poolContract.fee();
-            console.log("Fee is: ", fee);
-            let token0 = await poolContract.token0();
-            let token0Contract = new ethers.Contract(
-                token0,
-                erc20ABI,
-                ethers.provider
-            )
-            console.log("Token 0 is: ", await token0Contract.name(), " with address: ", token0);
-            let token1 = await poolContract.token1();
-            let token1Contract = new ethers.Contract(
-                token1,
-                erc20ABI,
-                ethers.provider
-            )
-            console.log("Token 1 is: ", await token1Contract.name(), " with address", token1);
+        for (let i = 0; i < listPoolAddress.length; i++){
+            console.log("")
+            let address = listPoolAddress[i];
+            console.log("Pool address: ", address);
 
-        } else {
-            let poolContract = new ethers.Contract(
-                address,
-                poolUniswapV2Abi,
-                ethers.provider
-            )
-            let token0 = await poolContract.token0();
-            let token0Contract = new ethers.Contract(
-                token0,
-                erc20ABI,
-                ethers.provider
-            )
-            console.log("Token 0 is: ", await token0Contract.name(), " with address: ", token0);
-            let token1 = await poolContract.token1();
-            let token1Contract = new ethers.Contract(
-                token1,
-                erc20ABI,
-                ethers.provider
-            )
-            console.log("Token 1 is: ", await token1Contract.name(), " with address", token1);
+            if (protocol == "V3") {
+                let poolContract = new ethers.Contract(
+                    address,
+                    poolUniswapV3Abi,
+                    ethers.provider
+                )
+                let fee = await poolContract.fee();
+                console.log("Fee is: ", fee);
+                let token0 = await poolContract.token0();
+                let token0Contract = new ethers.Contract(
+                    token0,
+                    erc20ABI,
+                    ethers.provider
+                )
+                console.log("Token 0 is: ", await token0Contract.name(), " with address: ", token0);
+                let token1 = await poolContract.token1();
+                let token1Contract = new ethers.Contract(
+                    token1,
+                    erc20ABI,
+                    ethers.provider
+                )
+                console.log("Token 1 is: ", await token1Contract.name(), " with address", token1);
+
+            } else {
+                let poolContract = new ethers.Contract(
+                    address,
+                    poolUniswapV2Abi,
+                    ethers.provider
+                )
+                let token0 = await poolContract.token0();
+                let token0Contract = new ethers.Contract(
+                    token0,
+                    erc20ABI,
+                    ethers.provider
+                )
+                console.log("Token 0 is: ", await token0Contract.name(), " with address: ", token0);
+                let token1 = await poolContract.token1();
+                let token1Contract = new ethers.Contract(
+                    token1,
+                    erc20ABI,
+                    ethers.provider
+                )
+                console.log("Token 1 is: ", await token1Contract.name(), " with address", token1);
+            }
+
         }
-
+    } else {
+        console.log("No pool founded")
     }
 
 }
@@ -468,12 +473,7 @@ main()
 
         console.log("\n")
 
-
-        //await getBestQuoteTusd();
-        //await getBestQuoteUsdd();
-        //await getBestQuoteEurs();
-        //await getBestQuoteAgEur();
-        await getBestQuoteTetherEur();
+        await getBestQuoteTusd();
         //await getBestQuoteTetherUsd();
 
         //await getBestQuoteIbEur();

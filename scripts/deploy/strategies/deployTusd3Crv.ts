@@ -63,8 +63,10 @@ async function setupContract(): Promise<void> {
     await deploySCompVault();
     await deployStrategy();
 
-    await sCompStrategy.connect(deployer).setTokenSwapPathV2(tokenAddress.crv, tokenAddress.tusd, [tokenAddress.crv, tokenAddress.weth, tokenAddress.tusd],0);
-    await sCompStrategy.connect(deployer).setTokenSwapPathV2(tokenAddress.cvx, tokenAddress.tusd, [tokenAddress.cvx, tokenAddress.weth, tokenAddress.tusd],0);
+    // set tokenSwapPath
+    await sCompStrategy.connect(deployer).setTokenSwapPathV3(tokenAddress.crv, tokenAddress.tusd, [tokenAddress.crv, tokenAddress.usdc, tokenAddress.tusd], [10000, 100], 2);
+    await sCompStrategy.connect(deployer).setTokenSwapPathV3(tokenAddress.cvx, tokenAddress.tusd, [tokenAddress.cvx, tokenAddress.usdc, tokenAddress.tusd], [10000, 100], 2);
+
     await sCompStrategy.connect(deployer).setUniswapV3Router(routerAddress.uniswapV3);
     await sCompStrategy.connect(deployer).setUniswapV2Router(routerAddress.uniswapV2);
     await sCompStrategy.connect(deployer).setSushiswapRouter(routerAddress.sushiswap);

@@ -1,0 +1,33 @@
+{
+  "sCompVault": {
+    "address": "0xc0691c76e6770F7CA45bFee818Fe9FcB46618bD5",
+    "args": {
+      "wantAddress": "",
+      "sCompControllerAddress": "",
+      "treasuryFee": "",
+      "depositFee": 0
+    }
+  },
+  "sCompStrategy": {
+    "address": "0x94ef93237ca29F2E2CA5762d38f8C473E339076E",
+    "args": {
+      "nameStrategy": "",
+      "governance": "",
+      "strategist": "",
+      "controller": "",
+      "want": "",
+      "tokenCompound": "",
+      "pid": 0,
+      "feeConfig": [
+        500,
+        500,
+        20
+      ],
+      "curvePool": {
+        "swap": "",
+        "tokenCompoundPosition": 0,
+        "numElements": 2
+      }
+    }
+  }
+}
