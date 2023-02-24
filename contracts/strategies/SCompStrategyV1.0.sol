@@ -15,6 +15,8 @@ import "../interface/IBooster.sol";
 
 import "../interface/IBaseRewardsPool.sol";
 
+import "hardhat/console.sol";
+
 pragma experimental ABIEncoderV2;
 
 /*

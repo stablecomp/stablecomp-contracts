@@ -95,6 +95,22 @@ const agEurToken = new Token(
     'agEur'
 )
 
+const tetherUsdToken = new Token(
+    SupportedChainId.MAINNET,
+    tokenAddress.tetherUsd,
+    tokenDecimals.tetherUsd,
+    'tether usd',
+    'tether usd'
+)
+
+const tetherEurToken = new Token(
+    SupportedChainId.MAINNET,
+    tokenAddress.tetherEur,
+    tokenDecimals.tetherEur,
+    'tether eur',
+    'tether eur'
+)
+
 const fraxToken = new Token(
     SupportedChainId.MAINNET,
     tokenAddress.frax,
@@ -157,6 +173,14 @@ const usddToken = new Token(
     tokenDecimals.usdd,
     'usdd',
     'usdd'
+)
+
+const euroCToken = new Token(
+    SupportedChainId.MAINNET,
+    tokenAddress.euroC,
+    tokenDecimals.euroC,
+    'euroC',
+    'euroC'
 )
 
 let provider: JsonRpcProvider;
@@ -311,6 +335,24 @@ async function getBestQuoteAgEur() : Promise<void> {
     await getBestQuote(cvxToken, agEurToken, amountInNumber);
 }
 
+async function getBestQuoteTetherUsd() : Promise<void> {
+    console.log("----- Tether usd -----")
+    console.log("Best quote crv -> tether usd")
+    await getBestQuote(crvToken, tetherUsdToken, amountInNumber);
+    console.log("")
+    console.log("Best quote cvx -> tether usd")
+    await getBestQuote(cvxToken, tetherUsdToken, amountInNumber);
+}
+
+async function getBestQuoteTetherEur() : Promise<void> {
+    console.log("----- Tether eur -----")
+    console.log("Best quote crv -> tether eur")
+    await getBestQuote(crvToken, tetherEurToken, amountInNumber);
+    console.log("")
+    console.log("Best quote cvx -> tether eur")
+    await getBestQuote(cvxToken, tetherEurToken, amountInNumber);
+}
+
 async function getBestQuoteEurt() : Promise<void> {
     console.log("----- eurt -----")
     console.log("Best quote crv -> eurt")
@@ -344,10 +386,10 @@ async function getBestQuoteEuroC() : Promise<void> {
     console.log("----- EuroC -----")
     console.log("")
     console.log("Best quote crv -> euroC")
-    await getBestQuote(crvToken, dolaToken, amountInNumber);
+    await getBestQuote(crvToken, euroCToken, amountInNumber);
     console.log("")
     console.log("Best quote cvx -> euroC")
-    await getBestQuote(cvxToken, dolaToken, amountInNumber);
+    await getBestQuote(cvxToken, euroCToken, amountInNumber);
 }
 
 async function getBestQuoteFrax() : Promise<void> {
@@ -426,16 +468,25 @@ main()
 
         console.log("\n")
 
-        await getBestQuoteEurs();
-        await getBestQuoteAgEur();
+
+        //await getBestQuoteTusd();
+        //await getBestQuoteUsdd();
+        //await getBestQuoteEurs();
+        //await getBestQuoteAgEur();
+        await getBestQuoteTetherEur();
+        //await getBestQuoteTetherUsd();
+
+        //await getBestQuoteIbEur();
+        /*
+        await getBestQuoteEuroC();
         await getBestQuoteEurt();
         await getBestQuoteEuroC();
         //await getBestQuoteIbEur();
         await getBestQuoteSEur();
-        await getBestQuoteTusd();
-        await getBestQuoteUsdd();
         console.log("\n")
 
+
+         */
         process.exit(0)
     })
     .catch((error: Error) => {

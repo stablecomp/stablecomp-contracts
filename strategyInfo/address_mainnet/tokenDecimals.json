@@ -16,5 +16,8 @@
   "sEur": 18,
   "tusd": 18,
   "euroC": 6,
-  "usdd": 18
+  "usdd": 18,
+  "tetherUsd": 6,
+  "tetherEur": 6,
+  "fei": 18
 }

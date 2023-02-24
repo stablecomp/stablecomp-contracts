@@ -4,13 +4,15 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const { run, ethers } = hardhat;
 
+const mainnetAddress = require('../../address/address_scaling_node/mainAddress.json');
+
 let deployer : SignerWithAddress;
 
 // contract deploy
 let masterchefScomp : Contract;
-let masterchefScompAddress = "0x1625F066a620A551051126B40Af47cc898de158F"
+let masterchefScompAddress = mainnetAddress.masterchefScomp.address
 let sCompTokenContract : Contract;
-let sCompAddress = "0x565328F2B262F1182df8b58e5FFD3bAa570C8498";
+let sCompAddress = mainnetAddress.sCompTokenContract.address;
 
 const infoBusd3Crv = require('../../strategyInfo/infoPool/busd3Crv.json');
 const infoDola3Crv = require('../../strategyInfo/infoPool/dola3Crv.json');
@@ -65,9 +67,12 @@ main()
         await setupContract();
         await fundContract();
         await addPool(busd3Crv.sCompVault.address)
+        console.log("Pool busd3crv added")
         await addPool(dola3crv.sCompVault.address)
+        console.log("Pool dola3crv added")
         //await addPool(frax3crv.sCompVault.address)
         await addPool(fraxusdc.sCompVault.address)
+        console.log("Pool fraxusdc added")
         //await addPool(ibEursEur.sCompVault.address)
         //await addPool(mim3crv.sCompVault.address)
         //await addPool(tusd3crv.sCompVault.address)

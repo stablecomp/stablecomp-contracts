@@ -21,14 +21,14 @@
         "type": "BigNumber",
         "hex": "0x14d1120d7b160000"
       },
-      "initialBlock": 16672638
+      "initialBlock": 16677788
     }
   },
   "feeDistributionContract": {
     "address": "0x753fB727B2487fd22c8860167aCf01E20B69FbeA",
     "args": {
       "veScompAddress": "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636",
-      "startTimestamp": 1676909308,
+      "startTimestamp": 1676971763,
       "tokenAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
       "admin": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
       "emergencyReturn": "0x2b276218D962dEEbF96C749ffB228601b2C7a587"

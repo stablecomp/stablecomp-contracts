@@ -14,6 +14,10 @@ const poolCurveABI = require('../../abi/poolCurve.json');
 
 // variable json
 const info = require('../../strategyInfo/infoPool/euroc3Crv.json');
+const curveAddress = require('../../strategyInfo/address_mainnet/curveAddress.json');
+const routerAddress = require('../../strategyInfo/address_mainnet/routerAddress.json');
+const tokenAddress = require('../../strategyInfo/address_mainnet/tokenAddress.json');
+const tokenDecimals = require('../../strategyInfo/address_mainnet/tokenDecimals.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -62,15 +66,15 @@ let accountDepositAddress2 = info.accountDepositAddress2; // account have amount
 let accountDepositAddress3 = info.accountDepositAddress3; // account have amount of token deposit
 let baseRewardPoolAddress = info.baseRewardPoolAddress; // address of baseRewardPool in convex
 
-let decimalsTokenDeposit = 18
+let decimalsTokenDeposit = 6
 // constant address
-let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
-let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
-let boosterAddress = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31";
-let wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-let uniswapV2Address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-let uniswapV3Address = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
-let sushiswapAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F";
+let crvAddress = tokenAddress.crv
+let cvxAddress = tokenAddress.cvx
+let boosterAddress = curveAddress.boosterAddress;
+let wethAddress = tokenAddress.weth;
+let uniswapV2Address = routerAddress.uniswapV2;
+let uniswapV3Address = routerAddress.uniswapV3;
+let sushiswapAddress = routerAddress.sushiswap;
 
 // convex pool info
 let nameStrategy = info.nameStrategy
@@ -95,7 +99,7 @@ let WEEK = 7 * 86400;
 let depositv1Value: any = [];
 let initialBalanceDepositPool: any = [];
 let blockFinishBaseReward: any;
-let amountToDepositLiquidity: any = ethers.utils.parseEther(info.amountToDepositLiquidity);
+let amountToDepositLiquidity: any = ethers.utils.parseUnits(info.amountToDepositLiquidity, decimalsTokenDeposit);
 let amountToDepositVault: any = ethers.utils.parseEther("1000");
 let initialTimestamp: any;
 
@@ -133,6 +137,13 @@ async function setupContract(): Promise<void> {
 
     await deployTimeLockController();
 
+    // set tokenSwapPath
+    await sCompStrategy.connect(governance).setUniswapV3Router(uniswapV3Address);
+    await sCompStrategy.connect(governance).setUniswapV2Router(uniswapV2Address);
+    await sCompStrategy.connect(governance).setSushiswapRouter(sushiswapAddress);
+
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.crv, tokenAddress.euroC, [tokenAddress.crv, tokenAddress.weth, tokenAddress.euroC], [10000, 500], 2);
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.cvx, tokenAddress.euroC, [tokenAddress.cvx, tokenAddress.usdc, tokenAddress.euroC], [10000, 500], 2);
 
     // set strategy and vault in controller
     await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
@@ -381,13 +392,22 @@ async function impersonateAccount(): Promise<void> {
 
 async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
     initialBalanceDepositPool[index] = await tokenDepositContract.balanceOf(account.address);
+
     console.log("add liquidity amount: ", ethers.utils.formatUnits(initialBalanceDepositPool[index], decimalsTokenDeposit))
 
     let txApprove = await tokenDepositContract.connect(account).approve(curveSwap.address, ethers.constants.MaxUint256);
     await txApprove.wait();
 
-    let tx = await curveSwap.connect(account).add_liquidity([initialBalanceDepositPool[index], 0, 0, 0],0);
+
+    let balanceWantBefore = await wantContract.balanceOf(account.address);
+    console.log("Balance want before: ", ethers.utils.formatEther(balanceWantBefore));
+
+    let tx = await curveSwap.connect(account).add_liquidity([amountToDepositLiquidity, 0],0);
     await tx.wait();
+
+    let balanceWant = await wantContract.balanceOf(account.address);
+    console.log("Balance want: ", ethers.utils.formatEther(balanceWant));
+
 }
 
 async function setupUtilityContract(abiCurveSwap: any): Promise<void> {
@@ -417,20 +437,22 @@ async function setupUtilityContract(abiCurveSwap: any): Promise<void> {
 
 async function removeLiquidity(account: SignerWithAddress, index: any): Promise<void> {
 
-  let balanceWant = await wantContract.balanceOf(account.address);
+    let balanceEthAccount = await account.getBalance();
+    console.log("Eth balance is: ", ethers.utils.formatEther(balanceEthAccount))
+    let balanceWant = await wantContract.balanceOf(account.address);
+    await wantContract.connect(account).approve(curveSwap.address, ethers.constants.MaxUint256);
 
-  await wantContract.connect(account).approve(curveSwap.address, ethers.constants.MaxUint256);
+    console.log("Balance want is: ", ethers.utils.formatEther(balanceWant))
+    console.log("remove liquidity...")
+    let tx = await curveSwap.connect(account).remove_liquidity_one_coin(balanceWant,0,0);
+    await tx.wait();
 
-  console.log("remove liquidity...")
-  let tx = await curveSwap.connect(account).remove_liquidity_one_coin(balanceWant, 0,0);
-  await tx.wait();
+    let balanceTokenDeposit = await tokenDepositContract.balanceOf(account.address);
 
-  let balanceTokenDeposit = await tokenDepositContract.balanceOf(account.address);
-
-  let diff = balanceTokenDeposit.sub(initialBalanceDepositPool[index]);
-  console.log("Initial balance of account ", account.address, " is: ", ethers.utils.formatUnits(initialBalanceDepositPool[index], decimalsTokenDeposit));
-  console.log("Actual balance is: ", ethers.utils.formatUnits(balanceTokenDeposit, decimalsTokenDeposit));
-  console.log("Diff is: ", ethers.utils.formatUnits(diff,decimalsTokenDeposit))
+    let diff = balanceTokenDeposit.sub(initialBalanceDepositPool[index]);
+    console.log("Initial balance of account ", account.address, " is: ", ethers.utils.formatUnits(initialBalanceDepositPool[index], decimalsTokenDeposit));
+    console.log("Actual balance is: ", ethers.utils.formatUnits(balanceTokenDeposit, decimalsTokenDeposit));
+    console.log("Diff is: ", ethers.utils.formatUnits(diff,decimalsTokenDeposit))
 }
 
 let lastBalanceOfGovernance : any = 0;
@@ -705,9 +727,8 @@ main()
     .then(async () => {
         await setupContract();
         let abi = [
-            "function add_liquidity(uint[4] calldata amounts, uint min_mint_amount)",
-            "function remove_liquidity(uint amounts, uint[4] calldata min_mint_amounts)",
-            "function remove_liquidity_one_coin(uint amounts, int128 index, uint min_mint_amounts)",
+            "function add_liquidity(uint[2] calldata amounts, uint min_mint_amount)",
+            "function remove_liquidity_one_coin(uint amounts, uint index, uint min_mint_amounts)",
             "function balanceOf(address arg0) view returns(uint)"
         ];
 
@@ -718,7 +739,7 @@ main()
         await addLiquidity(depositAccount1, 0);
         await addLiquidity(depositAccount2, 1);
         await addLiquidity(depositAccount3, 2);
-
+/*
         // change fee
         await proposeChangeFeeStrategy(feeGovernance/2);
         await mineBlock(2);
@@ -727,6 +748,7 @@ main()
         await proposeChangeFeeStrategy(feeGovernance);
         await mineBlock(2);
         await executeChangeFeeStrategy(feeGovernance);
+ */
 
         await deposit(depositAccount1, 0);
         await deposit(depositAccount2, 1);

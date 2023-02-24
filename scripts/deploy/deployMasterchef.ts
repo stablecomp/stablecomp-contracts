@@ -1,7 +1,7 @@
 import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import fs from "fs";
+const mainnetAddress = require('../../address/address_scaling_node/mainAddress.json');
 
 const { run, ethers } = hardhat;
 
@@ -9,10 +9,10 @@ let deployer : SignerWithAddress;
 
 // contract deploy
 let masterchefScomp : Contract;
-let sCompTokenContractAddress = "0x565328F2B262F1182df8b58e5FFD3bAa570C8498"
-let veCrvAddress = "0xfa3315912FcD8ee6E8Feda78853d517b7bbeEDcc"
+let sCompTokenContractAddress = mainnetAddress.sCompTokenContract.address
+let veCrvAddress = mainnetAddress.veScompContract.address
 
-let tokenPerBlock = 9;
+let tokenPerBlock = ethers.utils.parseEther("1.5");
 let initialBlock : any;
 
 async function main(): Promise<void> {
@@ -22,7 +22,7 @@ async function main(): Promise<void> {
 
 async function deployMasterchef(): Promise<void> {
     let blockNumber = await ethers.provider.getBlockNumber();
-    initialBlock = blockNumber + 1800;
+    initialBlock = blockNumber + 50;
 
     let factoryMasterchef = await ethers.getContractFactory("MasterChefScomp");
     masterchefScomp = await factoryMasterchef.deploy(
@@ -33,6 +33,7 @@ async function deployMasterchef(): Promise<void> {
     );
 
     console.log("Masterchef contract deployed to address: ", masterchefScomp.address);
+    console.log("Initial block: ", initialBlock)
 
 }
 
