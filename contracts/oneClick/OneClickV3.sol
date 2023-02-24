@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 
 import "../interface/ICurvePool.sol";
 import "../interface/ISCompVault.sol";
@@ -25,9 +24,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
 
     ISwapRouter public immutable swapRouter;
     address private routerAddress03;
-
-    IQuoter public immutable quoter;
-    address private quoterAddress;
 
     IWETH public immutable wTokenInterface;
     address private wToken;
@@ -77,7 +73,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     constructor(
         address _router,
         address _swapRouter,
-        address _quoter,
         address _wToken,
         uint256 _oneClickFee,
         address _oneClickFeeAddress
@@ -88,9 +83,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         //Uniswap V3 Router
         routerAddress03 = _swapRouter;
         swapRouter = ISwapRouter(_swapRouter);
-        //Uniswap V3 Quoter
-        quoterAddress = _quoter;
-        quoter = IQuoter(_quoter);
         //wToken
         wToken = _wToken;
         wTokenInterface = IWETH(_wToken);
@@ -124,12 +116,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         bool _oneToken,
         uint256 _indexIn
     ) external payable nonReentrant {
-        require(msg.value >= minAmount, "One Click: too small input amount");
-        require(
-            _poolTokens.length <= 4 && _poolTokens.length >= 2,
-            "OneClick: pool size range is: min 2, max 4"
-        );
-
         wTokenInterface.deposit{value: msg.value}();
 
         uint256 lpAmount = _OneClickIn(
@@ -182,15 +168,9 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         bool _oneToken,
         uint256 _indexIn
     ) external nonReentrant {
-        require(_amountIn >= minAmount, "OneClick: too small input amount");
-        require(
-            _poolTokens.length <= 4 && _poolTokens.length >= 2,
-            "OneClick: pool size range is: min 2, max 4"
-        );
-
         require(
             IERC20(_tokenIn).allowance(msg.sender, address(this)) >= _amountIn,
-            "OneClick: Input token is not approved"
+            "OneClick: input token not approved"
         );
 
         IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _amountIn);
@@ -237,15 +217,9 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _vault,
         uint256 _amountOut
     ) external nonReentrant {
-        require(_amountOut >= minAmount, "OneClick: too small input amount");
-        require(
-            _poolTokens.length <= 4 && _poolTokens.length >= 2,
-            "OneClick: pool size range is: min 2, max 4"
-        );
-
         require(
             IERC20(_vault).allowance(msg.sender, address(this)) >= _amountOut,
-            "OneClick: Input token is not approved"
+            "OneClick: input token not approved"
         );
 
         IERC20(_vault).safeTransferFrom(msg.sender, address(this), _amountOut);
@@ -297,15 +271,9 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _tokenOut,
         uint256 _amountOut
     ) external nonReentrant {
-        require(_amountOut >= minAmount, "OneClick: too small input amount");
-        require(
-            _poolTokens.length <= 4 && _poolTokens.length >= 2,
-            "OneClick: pool size range is: min 2, max 4"
-        );
-
         require(
             IERC20(_vault).allowance(msg.sender, address(this)) >= _amountOut,
-            "OneClick: Input token is not approved"
+            "OneClick: Input token not approved"
         );
 
         IERC20(_vault).safeTransferFrom(msg.sender, address(this), _amountOut);
@@ -391,13 +359,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         bool _oneToken,
         uint256 _indexIn
     ) external view returns (uint256 amountTokenOut) {
-        require(_amountIn >= minAmount, "OneClick: too small input amount");
+        require(_amountIn >= minAmount, "OneClick: input too small");
         require(
             _poolTokens.length <= 4 && _poolTokens.length >= 2,
-            "OneClick: pool size range is: min 2, max 4"
+            "OneClick: pool size min 2 max 4"
         );
 
         ICurvePool pool = ICurvePool(_poolAddress);
+        ISCompVault vault = ISCompVault(_vault);
 
         // If you intend to deposit only one token
         if (_oneToken) {
@@ -419,10 +388,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                    amountTokenOut = vault.balance() == 0
                         ? amountCurveOut
-                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                            ISCompVault(_vault).balance();
+                        : (amountCurveOut * vault.totalSupply()) /
+                            vault.balance();
                 } else if (_poolTokens.length == 3) {
                     uint256[3] memory amounts;
                     amounts[_indexIn] = _amountIn;
@@ -434,10 +403,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                    amountTokenOut = vault.balance() == 0
                         ? amountCurveOut
-                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                            ISCompVault(_vault).balance();
+                        : (amountCurveOut * vault.totalSupply()) /
+                            vault.balance();
                 } else if (_poolTokens.length == 4) {
                     uint256[4] memory amounts;
                     amounts[_indexIn] = _amountIn;
@@ -449,10 +418,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                    amountTokenOut = vault.balance() == 0
                         ? amountCurveOut
-                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                            ISCompVault(_vault).balance();
+                        : (amountCurveOut * vault.totalSupply()) /
+                            vault.balance();
                 }
             }
             // If the input token does not match the one you want to deposit --> Swap --> Deposit
@@ -468,10 +437,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                    amountTokenOut = vault.balance() == 0
                         ? amountCurveOut
-                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                            ISCompVault(_vault).balance();
+                        : (amountCurveOut * vault.totalSupply()) /
+                            vault.balance();
                 } else if (_poolTokens.length == 3) {
                     uint256[3] memory amounts;
                     amounts[_indexIn] = _priceTokensIn[_indexIn];
@@ -483,10 +452,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                    amountTokenOut = vault.balance() == 0
                         ? amountCurveOut
-                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                            ISCompVault(_vault).balance();
+                        : (amountCurveOut * vault.totalSupply()) /
+                            vault.balance();
                 } else if (_poolTokens.length == 4) {
                     uint256[4] memory amounts;
                     amounts[_indexIn] = _priceTokensIn[_indexIn];
@@ -498,10 +467,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                         amounts,
                         true
                     ) - slippage;
-                    amountTokenOut = ISCompVault(_vault).balance() == 0
+                    amountTokenOut = vault.balance() == 0
                         ? amountCurveOut
-                        : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                            ISCompVault(_vault).balance();
+                        : (amountCurveOut * vault.totalSupply()) /
+                            vault.balance();
                 }
             }
         }
@@ -518,41 +487,37 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
 
-                amountTokenOut = ISCompVault(_vault).balance() == 0
+                amountTokenOut = vault.balance() == 0
                     ? amountCurveOut
-                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    : (amountCurveOut * vault.totalSupply()) / vault.balance();
             } else if (_poolTokens.length == 3) {
                 uint256[3] memory amounts;
-                amounts[0] = _priceTokensIn[0];
-                amounts[1] = _priceTokensIn[1];
-                amounts[2] = _priceTokensIn[2];
+                for (uint256 i = 0; i < _poolTokens.length; i++) {
+                    amounts[i] = _priceTokensIn[i];
+                }
 
                 uint256 slippage = (pool.calc_token_amount(amounts, true) *
                     _crvSlippage) / oneClickFeeMax;
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
-                amountTokenOut = ISCompVault(_vault).balance() == 0
+                amountTokenOut = vault.balance() == 0
                     ? amountCurveOut
-                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    : (amountCurveOut * vault.totalSupply()) / vault.balance();
             } else if (_poolTokens.length == 4) {
                 uint256[4] memory amounts;
-                amounts[0] = _priceTokensIn[0];
-                amounts[1] = _priceTokensIn[1];
-                amounts[2] = _priceTokensIn[2];
-                amounts[3] = _priceTokensIn[3];
+                for (uint256 i = 0; i < _poolTokens.length; i++) {
+                    amounts[i] = _priceTokensIn[i];
+                }
 
                 uint256 slippage = (pool.calc_token_amount(amounts, true) *
                     _crvSlippage) / oneClickFeeMax;
 
                 uint256 amountCurveOut = pool.calc_token_amount(amounts, true) -
                     slippage;
-                amountTokenOut = ISCompVault(_vault).balance() == 0
+                amountTokenOut = vault.balance() == 0
                     ? amountCurveOut
-                    : (amountCurveOut * ISCompVault(_vault).totalSupply()) /
-                        ISCompVault(_vault).balance();
+                    : (amountCurveOut * vault.totalSupply()) / vault.balance();
             }
         }
     }
@@ -565,6 +530,16 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         uint256[] memory _priceTokens,
         uint256 _amountOut
     ) external view returns (uint256 amountTokenOut) {
+        require(_amountOut >= minAmount, "OneClick: input too small");
+        require(
+            _poolTokens.length <= 4 && _poolTokens.length >= 2,
+            "OneClick: pool size min 2 max 4"
+        );
+        require(
+            _poolTokens.length == _priceTokens.length,
+            "OneClick: Tokens and Price length not equal"
+        );
+
         ISCompVault vault = ISCompVault(_vault);
 
         uint256 vaultBalance = vault.balance() == 0 ? 1 : vault.balance();
@@ -656,46 +631,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Estimate the price of a token in using the UniswapV2 router
-     * @param _path: The token in and routing for swap
-     * @param _swapAmount: amount of token to swap
-     * @param _slippage: slippage percentage
-     */
-    function estimatePriceV2(
-        address[] memory _path,
-        uint256 _swapAmount,
-        uint256 _slippage
-    ) public view returns (uint256 amountOut) {
-        require(_path.length >= 2, "Estimate Price: path size is: min 2");
-
-        uint256[] memory amountsOut = router.getAmountsOut(_swapAmount, _path);
-        uint256 slippage = (amountsOut[amountsOut.length - 1] * _slippage) /
-            oneClickFeeMax;
-        amountOut = amountsOut[amountsOut.length - 1] - slippage;
-    }
-
-    /**
-     * @notice Estimate the price of a token in using the UniswapV3 router
-     * @param _path: The token in and routing for swap
-     * @param _swapAmount: amount of token to swap
-     * @param _slippage: slippage percentage
-     */
-    function estimatePriceV3(
-        address[] memory _path,
-        uint256 _swapAmount,
-        uint256 _slippage
-    ) public returns (uint256 amountOut) {
-        require(_path.length >= 2, "Estimate Price: path size is: min 2");
-
-        uint256 amountsOut = quoter.quoteExactInput(
-            abi.encodePacked(_path),
-            _swapAmount
-        );
-        uint256 slippage = (amountsOut * _slippage) / oneClickFeeMax;
-        amountOut = amountsOut - slippage;
-    }
-
-    /**
      * @notice Estimate minimum amount out from Curve pool of 2 tokens
      * @param _poolAddress: Curve pool address
      * @param _poolTokens: Curve pool tokens
@@ -713,7 +648,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
                 decimalDiff10;
         }
-
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
             uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
@@ -745,7 +679,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
                 decimalDiff10;
         }
-
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
             uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
@@ -777,7 +710,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
                 decimalDiff10;
         }
-
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             uint256 decimalDiff10 = _get18Decimals(_poolTokens[i]);
             uint256 percent = (IERC20(_poolTokens[i]).balanceOf(_poolAddress) *
@@ -803,13 +735,10 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     ) external {
         _onlyTimeLockController();
 
-        require(
-            _newAddressFee != address(0),
-            "OneClick: Fee Address not allowed"
-        );
+        require(_newAddressFee != address(0), "Fee Address not allowed");
         require(
             _newVauleFee >= 0 && _newVauleFee <= oneClickFeeMax,
-            "OneClick: Fee Value not allowed"
+            "Fee Value not allowed"
         );
         oneClickFeeAddress = _newAddressFee;
         oneClickFee = _newVauleFee;
@@ -852,10 +781,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         uint256 _crvSlippage,
         bool _oneToken,
         uint256 _indexIn
-    ) internal returns (uint256) {
-        uint256 amountIn = _fee(_tokenIn, _amountIn);
+    ) internal returns (uint256 share) {
+        require(_amountIn >= minAmount, "OneClick: input too small");
+        require(
+            _poolTokens.length <= 4 && _poolTokens.length >= 2,
+            "OneClick: pool size min 2 max 4"
+        );
 
-        uint256 lpAmount;
+        uint256 amountIn = _fee(_tokenIn, _amountIn);
 
         // If you intend to deposit only one token
         if (_oneToken) {
@@ -870,7 +803,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     uint256[2] memory amounts;
                     amounts[_indexIn] = amountIn;
 
-                    lpAmount = _add_liquidity(
+                    share = _add_liquidity(
                         _poolAddress,
                         _tokenAddress,
                         _poolTokens,
@@ -882,7 +815,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     uint256[3] memory amounts;
                     amounts[_indexIn] = amountIn;
 
-                    lpAmount = _add_liquidity(
+                    share = _add_liquidity(
                         _poolAddress,
                         _tokenAddress,
                         _poolTokens,
@@ -894,7 +827,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     uint256[4] memory amounts;
                     amounts[_indexIn] = amountIn;
 
-                    lpAmount = _add_liquidity(
+                    share = _add_liquidity(
                         _poolAddress,
                         _tokenAddress,
                         _poolTokens,
@@ -920,7 +853,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     uint256[2] memory amounts;
                     amounts[_indexIn] = swapedAmounts;
 
-                    lpAmount = _add_liquidity(
+                    share = _add_liquidity(
                         _poolAddress,
                         _tokenAddress,
                         _poolTokens,
@@ -932,7 +865,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     uint256[3] memory amounts;
                     amounts[_indexIn] = swapedAmounts;
 
-                    lpAmount = _add_liquidity(
+                    share = _add_liquidity(
                         _poolAddress,
                         _tokenAddress,
                         _poolTokens,
@@ -944,7 +877,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     uint256[4] memory amounts;
                     amounts[_indexIn] = swapedAmounts;
 
-                    lpAmount = _add_liquidity(
+                    share = _add_liquidity(
                         _poolAddress,
                         _tokenAddress,
                         _poolTokens,
@@ -975,51 +908,18 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             uint256 swapAmount = amountIn / poolTokens.length;
             uint256 crvSlippage = _crvSlippage;
 
-            if (poolTokens.length == 2) {
-                uint256[2] memory amounts;
-                lpAmount = _swapAndDeposit(
-                    ruotev2,
-                    ruotev3,
-                    tokenIn,
-                    poolAddress,
-                    tokenAddress,
-                    poolTokens,
-                    vault,
-                    swapAmount,
-                    amounts,
-                    crvSlippage
-                );
-            } else if (poolTokens.length == 3) {
-                uint256[3] memory amounts;
-                lpAmount = _swapAndDeposit(
-                    ruotev2,
-                    ruotev3,
-                    tokenIn,
-                    poolAddress,
-                    tokenAddress,
-                    poolTokens,
-                    vault,
-                    swapAmount,
-                    amounts,
-                    crvSlippage
-                );
-            } else if (poolTokens.length == 4) {
-                uint256[4] memory amounts;
-                lpAmount = _swapAndDeposit(
-                    ruotev2,
-                    ruotev3,
-                    tokenIn,
-                    poolAddress,
-                    tokenAddress,
-                    poolTokens,
-                    vault,
-                    swapAmount,
-                    amounts,
-                    crvSlippage
-                );
-            }
+            share = _swapAndDeposit(
+                ruotev2,
+                ruotev3,
+                tokenIn,
+                poolAddress,
+                tokenAddress,
+                poolTokens,
+                vault,
+                swapAmount,
+                crvSlippage
+            );
         }
-        return lpAmount;
     }
 
     function _OneClickOut(
@@ -1032,6 +932,14 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _tokenOut,
         uint256 _amountOut
     ) internal returns (uint256 tokeOutAmount) {
+        require(_amountOut >= minAmount, "OneClick: input too small");
+        require(
+            _poolTokens.length <= 4 && _poolTokens.length >= 2,
+            "OneClick: pool size min 2 max 4"
+        );
+
+        ICurvePool pool = ICurvePool(_poolAddress);
+
         uint256 lpAmount = ISCompVault(_vault).withdrawOneClick(
             _amountOut,
             address(this)
@@ -1044,80 +952,32 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     _poolTokens,
                     _amountOut
                 );
-                ICurvePool(_poolAddress).remove_liquidity(
-                    _amountOut,
-                    amountOutMin
-                );
+                pool.remove_liquidity(_amountOut, amountOutMin);
             } else if (_poolTokens.length == 3) {
                 uint256[3] memory amountOutMin = getAmountOutMin3(
                     _poolAddress,
                     _poolTokens,
                     _amountOut
                 );
-                ICurvePool(_poolAddress).remove_liquidity(
-                    _amountOut,
-                    amountOutMin
-                );
+                pool.remove_liquidity(_amountOut, amountOutMin);
             } else if (_poolTokens.length == 4) {
                 uint256[4] memory amountOutMin = getAmountOutMin4(
                     _poolAddress,
                     _poolTokens,
                     _amountOut
                 );
-                ICurvePool(_poolAddress).remove_liquidity(
-                    _amountOut,
-                    amountOutMin
-                );
+                pool.remove_liquidity(_amountOut, amountOutMin);
             }
         } else {
-            if (_poolTokens.length == 2) {
-                uint256[2] memory amountOutMin = getAmountOutMin2(
-                    _poolAddress,
-                    _poolTokens,
-                    _amountOut
-                );
-                tokeOutAmount = _removeAndSwap(
-                    _routev2,
-                    _routev3,
-                    _poolAddress,
-                    _poolTokens,
-                    _tokenOut,
-                    lpAmount,
-                    amountOutMin
-                );
-            } else if (_poolTokens.length == 3) {
-                uint256[3] memory amountOutMin = getAmountOutMin3(
-                    _poolAddress,
-                    _poolTokens,
-                    _amountOut
-                );
-                tokeOutAmount = _removeAndSwap(
-                    _routev2,
-                    _routev3,
-                    _poolAddress,
-                    _poolTokens,
-                    _tokenOut,
-                    lpAmount,
-                    amountOutMin
-                );
-            } else if (_poolTokens.length == 4) {
-                uint256[4] memory amountOutMin = getAmountOutMin4(
-                    _poolAddress,
-                    _poolTokens,
-                    _amountOut
-                );
-                tokeOutAmount = _removeAndSwap(
-                    _routev2,
-                    _routev3,
-                    _poolAddress,
-                    _poolTokens,
-                    _tokenOut,
-                    lpAmount,
-                    amountOutMin
-                );
-            }
+            tokeOutAmount = _removeAndSwap(
+                _routev2,
+                _routev3,
+                _poolAddress,
+                _poolTokens,
+                _tokenOut,
+                lpAmount
+            );
         }
-        return tokeOutAmount;
     }
 
     function _swapAndDeposit(
@@ -1129,151 +989,77 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address[] memory _poolTokens,
         address _vault,
         uint256 _swapAmount,
-        uint256[2] memory _amounts,
         uint256 _slippage
-    ) internal returns (uint256) {
+    ) internal returns (uint256 share) {
+        uint256[] memory amounts = new uint256[](_poolTokens.length);
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             // If token in does not match token[i] of pool
             if (_tokenIn == _poolTokens[i]) {
-                _amounts[i] = _swapAmount;
+                amounts[i] = _swapAmount;
             }
         }
 
-        if (_routev3.length > 0) {
-            for (uint256 i = 0; i < _routev3.length; i++) {
-                _amounts[_getIndexV3(_routev3[i], _poolTokens)] = _swapV3(
+        for (uint256 i = 0; i < _routev3.length; i++) {
+            amounts[_getIndexV3(_routev3[i], _poolTokens)] = _swapV3(
+                _tokenIn,
+                _routev3[i],
+                _swapAmount,
+                1
+            );
+        }
+        for (uint256 i = 0; i < _routev2.length; i++) {
+            if (_routev2[i].length > 0)
+                amounts[_getIndexV2(_routev2[i], _poolTokens)] = _swapV2(
                     _tokenIn,
-                    _routev3[i],
+                    _routev2[i],
                     _swapAmount,
                     1
                 );
-            }
-        }
-        if (_routev2.length > 0) {
-            for (uint256 i = 0; i < _routev2.length; i++) {
-                if (_routev2[i].length > 0)
-                    _amounts[_getIndexV2(_routev2[i], _poolTokens)] = _swapV2(
-                        _tokenIn,
-                        _routev2[i],
-                        _swapAmount,
-                        1
-                    );
-            }
         }
 
-        return
-            _add_liquidity(
+        if (_poolTokens.length == 2) {
+            uint256[2] memory amounts2;
+            for (uint256 i = 0; i < _poolTokens.length; i++) {
+                amounts2[i] = amounts[i];
+            }
+
+            share = _add_liquidity(
                 _poolAddress,
                 _tokenAddress,
                 _poolTokens,
                 _vault,
-                _amounts,
+                amounts2,
                 _slippage
             );
-    }
-
-    function _swapAndDeposit(
-        address[][] memory _routev2,
-        bytes[] memory _routev3,
-        address _tokenIn,
-        address _poolAddress,
-        address _tokenAddress,
-        address[] memory _poolTokens,
-        address _vault,
-        uint256 _swapAmount,
-        uint256[3] memory _amounts,
-        uint256 _slippage
-    ) internal returns (uint256) {
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            // If token in does not match token[i] of pool
-            if (_tokenIn == _poolTokens[i]) {
-                _amounts[i] = _swapAmount;
+        } else if (_poolTokens.length == 3) {
+            uint256[3] memory amounts3;
+            for (uint256 i = 0; i < _poolTokens.length; i++) {
+                amounts3[i] = amounts[i];
             }
-        }
 
-        if (_routev3.length > 0) {
-            for (uint256 i = 0; i < _routev3.length; i++) {
-                _amounts[_getIndexV3(_routev3[i], _poolTokens)] = _swapV3(
-                    _tokenIn,
-                    _routev3[i],
-                    _swapAmount,
-                    1
-                );
-            }
-        }
-        if (_routev2.length > 0) {
-            for (uint256 i = 0; i < _routev2.length; i++) {
-                if (_routev2[i].length > 0)
-                    _amounts[_getIndexV2(_routev2[i], _poolTokens)] = _swapV2(
-                        _tokenIn,
-                        _routev2[i],
-                        _swapAmount,
-                        1
-                    );
-            }
-        }
-
-        return
-            _add_liquidity(
+            share = _add_liquidity(
                 _poolAddress,
                 _tokenAddress,
                 _poolTokens,
                 _vault,
-                _amounts,
+                amounts3,
                 _slippage
             );
-    }
-
-    function _swapAndDeposit(
-        address[][] memory _routev2,
-        bytes[] memory _routev3,
-        address _tokenIn,
-        address _poolAddress,
-        address _tokenAddress,
-        address[] memory _poolTokens,
-        address _vault,
-        uint256 _swapAmount,
-        uint256[4] memory _amounts,
-        uint256 _slippage
-    ) internal returns (uint256) {
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            // If token in does not match token[i] of pool
-            if (_tokenIn == _poolTokens[i]) {
-                _amounts[i] = _swapAmount;
+        } else if (_poolTokens.length == 4) {
+            uint256[4] memory amounts4;
+            for (uint256 i = 0; i < _poolTokens.length; i++) {
+                amounts4[i] = amounts[i];
             }
-        }
 
-        if (_routev3.length > 0) {
-            for (uint256 i = 0; i < _routev3.length; i++) {
-                _amounts[_getIndexV3(_routev3[i], _poolTokens)] = _swapV3(
-                    _tokenIn,
-                    _routev3[i],
-                    _swapAmount,
-                    1
-                );
-            }
-        }
-        if (_routev2.length > 0) {
-            for (uint256 i = 0; i < _routev2.length; i++) {
-                if (_routev2[i].length > 0)
-                    _amounts[_getIndexV2(_routev2[i], _poolTokens)] = _swapV2(
-                        _tokenIn,
-                        _routev2[i],
-                        _swapAmount,
-                        1
-                    );
-            }
-        }
-
-        return
-            _add_liquidity(
+            share = _add_liquidity(
                 _poolAddress,
                 _tokenAddress,
                 _poolTokens,
                 _vault,
-                _amounts,
+                amounts4,
                 _slippage
             );
+        }
     }
 
     function _add_liquidity(
@@ -1283,20 +1069,19 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _vault,
         uint256[2] memory _amounts,
         uint256 _slippage
-    ) internal returns (uint256) {
-        _approveToken(_poolTokens[0], _poolAddress, _amounts[0]);
-        _approveToken(_poolTokens[1], _poolAddress, _amounts[1]);
+    ) internal returns (uint256 share) {
+        ICurvePool pool = ICurvePool(_poolAddress);
 
-        uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
-            _amounts,
-            true
-        ) * _slippage) / oneClickFeeMax;
-        uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
-            _amounts,
-            true
-        ) - slippage;
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            _approveToken(_poolTokens[i], _poolAddress, _amounts[i]);
+        }
 
-        ICurvePool(_poolAddress).add_liquidity(_amounts, amountOutMin);
+        uint256 slippage = (pool.calc_token_amount(_amounts, true) *
+            _slippage) / oneClickFeeMax;
+        uint256 amountOutMin = pool.calc_token_amount(_amounts, true) -
+            slippage;
+
+        pool.add_liquidity(_amounts, amountOutMin);
 
         _approveToken(
             _tokenAddress,
@@ -1304,7 +1089,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             IERC20(_tokenAddress).balanceOf(address(this))
         );
 
-        return ISCompVault(_vault).depositAllFor(msg.sender);
+        share = ISCompVault(_vault).depositAllFor(msg.sender);
     }
 
     function _add_liquidity(
@@ -1314,20 +1099,18 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _vault,
         uint256[3] memory _amounts,
         uint256 _slippage
-    ) internal returns (uint256) {
-        _approveToken(_poolTokens[0], _poolAddress, _amounts[0]);
-        _approveToken(_poolTokens[1], _poolAddress, _amounts[1]);
-        _approveToken(_poolTokens[2], _poolAddress, _amounts[2]);
+    ) internal returns (uint256 share) {
+        ICurvePool pool = ICurvePool(_poolAddress);
 
-        uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
-            _amounts,
-            true
-        ) * _slippage) / oneClickFeeMax;
-        uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
-            _amounts,
-            true
-        ) - slippage;
-        ICurvePool(_poolAddress).add_liquidity(_amounts, amountOutMin);
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            _approveToken(_poolTokens[i], _poolAddress, _amounts[i]);
+        }
+
+        uint256 slippage = (pool.calc_token_amount(_amounts, true) *
+            _slippage) / oneClickFeeMax;
+        uint256 amountOutMin = pool.calc_token_amount(_amounts, true) -
+            slippage;
+        pool.add_liquidity(_amounts, amountOutMin);
 
         _approveToken(
             _tokenAddress,
@@ -1335,7 +1118,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             IERC20(_tokenAddress).balanceOf(address(this))
         );
 
-        return ISCompVault(_vault).depositAllFor(msg.sender);
+        share = ISCompVault(_vault).depositAllFor(msg.sender);
     }
 
     function _add_liquidity(
@@ -1345,21 +1128,18 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _vault,
         uint256[4] memory _amounts,
         uint256 _slippage
-    ) internal returns (uint256) {
-        _approveToken(_poolTokens[0], _poolAddress, _amounts[0]);
-        _approveToken(_poolTokens[1], _poolAddress, _amounts[1]);
-        _approveToken(_poolTokens[2], _poolAddress, _amounts[2]);
-        _approveToken(_poolTokens[3], _poolAddress, _amounts[3]);
+    ) internal returns (uint256 share) {
+        ICurvePool pool = ICurvePool(_poolAddress);
 
-        uint256 slippage = (ICurvePool(_poolAddress).calc_token_amount(
-            _amounts,
-            true
-        ) * _slippage) / oneClickFeeMax;
-        uint256 amountOutMin = ICurvePool(_poolAddress).calc_token_amount(
-            _amounts,
-            true
-        ) - slippage;
-        ICurvePool(_poolAddress).add_liquidity(_amounts, amountOutMin);
+        for (uint256 i = 0; i < _poolTokens.length; i++) {
+            _approveToken(_poolTokens[i], _poolAddress, _amounts[i]);
+        }
+
+        uint256 slippage = (pool.calc_token_amount(_amounts, true) *
+            _slippage) / oneClickFeeMax;
+        uint256 amountOutMin = pool.calc_token_amount(_amounts, true) -
+            slippage;
+        pool.add_liquidity(_amounts, amountOutMin);
 
         _approveToken(
             _tokenAddress,
@@ -1367,7 +1147,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             IERC20(_tokenAddress).balanceOf(address(this))
         );
 
-        return ISCompVault(_vault).depositAllFor(msg.sender);
+        share = ISCompVault(_vault).depositAllFor(msg.sender);
     }
 
     function _removeAndSwap(
@@ -1376,12 +1156,31 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         address _poolAddress,
         address[] memory _poolTokens,
         address _tokenOut,
-        uint256 _amountOut,
-        uint256[2] memory _amountOutMin
-    ) internal returns (uint256) {
-        ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
+        uint256 _amountOut
+    ) internal returns (uint256 amount) {
+        if (_poolTokens.length == 2) {
+            uint256[2] memory amountOutMin = getAmountOutMin2(
+                _poolAddress,
+                _poolTokens,
+                _amountOut
+            );
+            ICurvePool(_poolAddress).remove_liquidity(_amountOut, amountOutMin);
+        } else if (_poolTokens.length == 3) {
+            uint256[3] memory amountOutMin = getAmountOutMin3(
+                _poolAddress,
+                _poolTokens,
+                _amountOut
+            );
+            ICurvePool(_poolAddress).remove_liquidity(_amountOut, amountOutMin);
+        } else if (_poolTokens.length == 4) {
+            uint256[4] memory amountOutMin = getAmountOutMin4(
+                _poolAddress,
+                _poolTokens,
+                _amountOut
+            );
+            ICurvePool(_poolAddress).remove_liquidity(_amountOut, amountOutMin);
+        }
 
-        uint256 amount;
         for (uint256 i = 0; i < _poolTokens.length; i++) {
             if (_tokenOut == _poolTokens[i]) {
                 amount += IERC20(_poolTokens[i]).balanceOf(address(this));
@@ -1411,98 +1210,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                     );
             }
         }
-
-        return amount;
-    }
-
-    function _removeAndSwap(
-        address[][] memory _routev2,
-        bytes[] memory _routev3,
-        address _poolAddress,
-        address[] memory _poolTokens,
-        address _tokenOut,
-        uint256 _amountOut,
-        uint256[3] memory _amountOutMin
-    ) internal returns (uint256) {
-        ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
-
-        uint256 amount;
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            if (_tokenOut == _poolTokens[i]) {
-                amount += IERC20(_poolTokens[i]).balanceOf(address(this));
-            }
-        }
-
-        if (_routev3.length > 0) {
-            for (uint256 i = 0; i < _routev3.length; i++) {
-                amount += _swapV3(
-                    _getAddress(_routev3[i], 0),
-                    _routev3[i],
-                    IERC20(_getAddress(_routev3[i], 0)).balanceOf(
-                        address(this)
-                    ),
-                    1
-                );
-            }
-        }
-        if (_routev2.length > 0) {
-            for (uint256 i = 0; i < _routev2.length; i++) {
-                if (_routev2[i].length > 0)
-                    amount += _swapV2(
-                        _routev2[i][0],
-                        _routev2[i],
-                        IERC20(_routev2[i][0]).balanceOf(address(this)),
-                        1
-                    );
-            }
-        }
-
-        return amount;
-    }
-
-    function _removeAndSwap(
-        address[][] memory _routev2,
-        bytes[] memory _routev3,
-        address _poolAddress,
-        address[] memory _poolTokens,
-        address _tokenOut,
-        uint256 _amountOut,
-        uint256[4] memory _amountOutMin
-    ) internal returns (uint256) {
-        ICurvePool(_poolAddress).remove_liquidity(_amountOut, _amountOutMin);
-
-        uint256 amount;
-        for (uint256 i = 0; i < _poolTokens.length; i++) {
-            if (_tokenOut == _poolTokens[i]) {
-                amount += IERC20(_poolTokens[i]).balanceOf(address(this));
-            }
-        }
-
-        if (_routev3.length > 0) {
-            for (uint256 i = 0; i < _routev3.length; i++) {
-                amount += _swapV3(
-                    _getAddress(_routev3[i], 0),
-                    _routev3[i],
-                    IERC20(_getAddress(_routev3[i], 0)).balanceOf(
-                        address(this)
-                    ),
-                    1
-                );
-            }
-        }
-        if (_routev2.length > 0) {
-            for (uint256 i = 0; i < _routev2.length; i++) {
-                if (_routev2[i].length > 0)
-                    amount += _swapV2(
-                        _routev2[i][0],
-                        _routev2[i],
-                        IERC20(_routev2[i][0]).balanceOf(address(this)),
-                        1
-                    );
-            }
-        }
-
-        return amount;
     }
 
     function _swapV3(
@@ -1570,10 +1277,9 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     function _getAddress(
         bytes memory _bytes,
         uint256 _start
-    ) internal pure returns (address) {
+    ) internal pure returns (address tempAddress) {
         require(_start + 20 >= _start, "toAddress_overflow");
         require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
-        address tempAddress;
 
         assembly {
             tempAddress := div(
@@ -1581,8 +1287,6 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 0x1000000000000000000000000
             )
         }
-
-        return tempAddress;
     }
 
     function _get18Decimals(address _token) internal view returns (uint256) {
@@ -1601,7 +1305,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
     function _onlyTimeLockController() internal view {
         require(
             msg.sender == timeLockController,
-            "Time Lock Controller: Only Time Lock Controller"
+            "TLC: Only Time Lock Controller"
         );
     }
 

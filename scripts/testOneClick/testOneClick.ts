@@ -20,7 +20,6 @@ const rpcProvider = new ethers.providers.JsonRpcProvider(
 /* ------------------------------- Uni address ------------------------------ */
 const UniswapV2Router = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 const SwapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
-const Quoter = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";
 
 /* ------------------------------ Token address ----------------------------- */
 const ETH = "0x0000000000000000000000000000000000000000";
@@ -69,7 +68,6 @@ async function main() {
   const OneClick = await OneClickFactory.deploy(
     UniswapV2Router,
     SwapRouter,
-    Quoter,
     WETH,
     20,
     account.address
