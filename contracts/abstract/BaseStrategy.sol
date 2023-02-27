@@ -32,11 +32,6 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     using Address for address;
     using SafeMath for uint256;
 
-    event Withdraw(uint256 amount);
-    event WithdrawAll(uint256 balance);
-    event WithdrawOther(address token, uint256 amount);
-    event SetStrategist(address strategist);
-    event SetGovernance(address governance);
     event SetController(address controller);
     event SetWithdrawalFee(uint256 withdrawalFee);
     event SetPerformanceFeeStrategist(uint256 performanceFeeStrategist);
@@ -123,6 +118,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
         _onlyTimeLockController();
         require(_withdrawalFee <= MAX_FEE, "excessive-fee");
         withdrawalFee = _withdrawalFee;
+        emit SetWithdrawalFee(_withdrawalFee);
     }
 
     function setPerformanceFeeStrategist(uint256 _performanceFeeStrategist)
@@ -131,6 +127,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
         _onlyTimeLockController();
         require(_performanceFeeStrategist <= MAX_FEE, "excessive-fee");
         performanceFeeStrategist = _performanceFeeStrategist;
+        emit SetPerformanceFeeStrategist(_performanceFeeStrategist);
     }
 
     function setPerformanceFeeGovernance(uint256 _performanceFeeGovernance)
@@ -139,6 +136,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
         _onlyTimeLockController();
         require(_performanceFeeGovernance <= MAX_FEE, "excessive-fee");
         performanceFeeGovernance = _performanceFeeGovernance;
+        emit SetPerformanceFeeGovernance(_performanceFeeGovernance);
     }
 
     /// ===== Permissioned Actions: Governance =====
@@ -146,6 +144,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     function setController(address _controller) external {
         _onlyGovernance();
         controller = _controller;
+        emit SetController(_controller);
     }
 
     function setWithdrawalMaxDeviationThreshold(uint256 _threshold) external {
