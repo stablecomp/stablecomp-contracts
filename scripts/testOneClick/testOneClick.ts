@@ -4,6 +4,7 @@ import {
   OneClickInV3,
   EstimateOneClickInV3,
   OneClickOutV3,
+  EstimateOneClickOutV3,
 } from "@scalingparrots/uniswap-smart-routing";
 import type {
   OneClickInSmartRouting,
@@ -11,6 +12,7 @@ import type {
   EstimateOneClickInContract,
   OneClickOutSmartRouting,
   OneClickOutContract,
+  EstimateOneClickOutContract,
 } from "@scalingparrots/uniswap-smart-routing";
 
 const rpcProvider = new ethers.providers.JsonRpcProvider(
@@ -94,7 +96,7 @@ async function main() {
     account
   );
 
-  await OneClickOut(WBTC, "100", sComp, false, 0, OneClick, account);
+  await OneClickOut(WBTC, "2500", sComp, false, 0, OneClick, account);
 }
 
 main().catch((error) => {
@@ -346,6 +348,16 @@ async function OneClickOut(
     console.log(`Approve ${vault_symbol} failed`);
   }
 
+  let eOneClickOutV3: EstimateOneClickOutContract = {
+    poolAddress: "",
+    tokenAddress: "",
+    poolTokens: [],
+    vault: "",
+    tokenOut: "",
+    priceToken: "",
+    amountOut: "",
+  };
+
   let oneClickOutV3: OneClickOutContract = {
     routev2: [],
     routev3: [],
@@ -365,6 +377,8 @@ async function OneClickOut(
       amountOut: amountOut,
       vault: vault,
     };
+    eOneClickOutV3 = await EstimateOneClickOutV3(o);
+    console.log("Estimate One Click Out Smart Routing success");
     oneClickOutV3 = await OneClickOutV3(o);
     console.log("One Click Out Smart Routing success");
   } catch (error) {
@@ -374,6 +388,26 @@ async function OneClickOut(
 
   try {
     console.log("Blockchian:");
+    const tx = await OneClick.connect(account).estimateOneClickOut(
+      eOneClickOutV3.poolAddress,
+      eOneClickOutV3.tokenAddress,
+      eOneClickOutV3.poolTokens,
+      eOneClickOutV3.vault,
+      eOneClickOutV3.tokenOut,
+      eOneClickOutV3.priceToken,
+      eOneClickOutV3.amountOut
+    );
+    const amountTokenOut = ethers.utils.formatUnits(tx, tokenOut_decimal);
+
+    console.log(
+      `Witdhdraw ${amountOut} of ${vault_symbol} return minimum ${amountTokenOut} of ${tokenOut_symbol}`
+    );
+  } catch (error) {
+    console.log("estimateOneClickOut failed");
+    console.log(error);
+  }
+
+  try {
     await OneClick.connect(account).OneClickOut(
       oneClickOutV3.routev2,
       oneClickOutV3.routev3,

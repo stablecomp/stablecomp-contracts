@@ -1045,10 +1045,10 @@
     "path-browserify" "^1.0.0"
     "url" "^0.11.0"
 
-"@scalingparrots/uniswap-smart-routing@^0.1.12":
-  "integrity" "sha512-32Tyq6tTYrQ1sebLwqpTu09bGnvHR0mr8svtamcYmiO51DG9mZo/T4YzHx+XB1n9rQmKoCHemOe9s1lDRj17YA=="
-  "resolved" "https://registry.npmjs.org/@scalingparrots/uniswap-smart-routing/-/uniswap-smart-routing-0.1.12.tgz"
-  "version" "0.1.12"
+"@scalingparrots/uniswap-smart-routing@^0.2.1":
+  "integrity" "sha512-kfq8Lu8W3mZfrUL7JEZ5dS4LaXDa7Orraa6dQFNtu2k+AZzNiiM2XBFSvU4SyUHI2vRqVVcP1tfiSTxuxEAqqQ=="
+  "resolved" "https://registry.npmjs.org/@scalingparrots/uniswap-smart-routing/-/uniswap-smart-routing-0.2.1.tgz"
+  "version" "0.2.1"
   dependencies:
     "@uniswap/sdk-core" "^3.1.1"
     "@uniswap/smart-order-router" "^3.5.0"

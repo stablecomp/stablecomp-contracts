@@ -522,8 +522,19 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Estimate the amount of tokens that will be received withdrawing from the vault
+     * @param _poolAddress: address of the Curve pool
+     * @param _tokenAddress: address of the Curve token of the pool
+     * @param _poolTokens: array of addresses of the tokens in the Curve pool
+     * @param _vault: address of the StableComp vault
+     * @param _tokenOut: address of the token to withdraw
+     * @param _priceTokens: array of prices of the tokens in the Curve pool
+     * @param _amountOut: amount of share to withdraw
+     */
     function estimateOneClickOut(
         address _poolAddress,
+        address _tokenAddress,
         address[] memory _poolTokens,
         address _vault,
         address _tokenOut,
@@ -540,6 +551,66 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             "OneClick: Tokens and Price length not equal"
         );
 
+        uint256 curveLpAmount = shareToLp(_vault, _amountOut);
+
+        if (_tokenOut == _tokenAddress) {
+            amountTokenOut = curveLpAmount;
+        } else {
+            if (_poolTokens.length == 2) {
+                uint256[2] memory amountOutMin = getAmountOutMin2(
+                    _poolAddress,
+                    _poolTokens,
+                    curveLpAmount
+                );
+
+                for (uint256 i = 0; i < _poolTokens.length; i++) {
+                    if (_poolTokens[i] == _tokenOut) {
+                        amountTokenOut += amountOutMin[i];
+                    } else {
+                        amountTokenOut += _priceTokens[i];
+                    }
+                }
+            } else if (_poolTokens.length == 3) {
+                uint256[3] memory amountOutMin = getAmountOutMin3(
+                    _poolAddress,
+                    _poolTokens,
+                    curveLpAmount
+                );
+
+                for (uint256 i = 0; i < _poolTokens.length; i++) {
+                    if (_poolTokens[i] == _tokenOut) {
+                        amountTokenOut += amountOutMin[i];
+                    } else {
+                        amountTokenOut += _priceTokens[i];
+                    }
+                }
+            } else if (_poolTokens.length == 4) {
+                uint256[4] memory amountOutMin = getAmountOutMin4(
+                    _poolAddress,
+                    _poolTokens,
+                    curveLpAmount
+                );
+
+                for (uint256 i = 0; i < _poolTokens.length; i++) {
+                    if (_poolTokens[i] == _tokenOut) {
+                        amountTokenOut += amountOutMin[i];
+                    } else {
+                        amountTokenOut += _priceTokens[i];
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @notice Estimate minimum amount of Curve LP tokens from Vault
+     * @param _vault: address of the StableComp vault
+     * @param _amountOut: amount of share to withdraw
+     */
+    function shareToLp(
+        address _vault,
+        uint256 _amountOut
+    ) public view returns (uint256 curveLpAmount) {
         ISCompVault vault = ISCompVault(_vault);
 
         uint256 vaultBalance = vault.balance() == 0 ? 1 : vault.balance();
@@ -547,87 +618,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
             ? 1
             : vault.totalSupply();
 
-        uint256 curveLpAmount = (vaultBalance * _amountOut) / vaultTotalSupply;
-
-        if (_poolTokens.length == 2) {
-            uint256[2] memory amountOutMin = getAmountOutMin2(
-                _poolAddress,
-                _poolTokens,
-                curveLpAmount
-            );
-
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                if (_poolTokens[i] == _tokenOut) {
-                    amountTokenOut += amountOutMin[i];
-                } else {
-                    uint256 decimalTokenOut = IERC20Metadata(_tokenOut)
-                        .decimals();
-                    uint256 decimalTokenIn = IERC20Metadata(_poolTokens[i])
-                        .decimals();
-                    if (decimalTokenOut > decimalTokenIn) {
-                        uint256 pricePoolToken = _priceTokens[i] *
-                            (10 ** (decimalTokenOut - decimalTokenIn));
-                        amountTokenOut += pricePoolToken;
-                    } else {
-                        uint256 pricePoolToken = _priceTokens[i] /
-                            (10 ** (decimalTokenIn - decimalTokenOut));
-                        amountTokenOut += pricePoolToken;
-                    }
-                }
-            }
-        } else if (_poolTokens.length == 3) {
-            uint256[3] memory amountOutMin = getAmountOutMin3(
-                _poolAddress,
-                _poolTokens,
-                curveLpAmount
-            );
-
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                if (_poolTokens[i] == _tokenOut) {
-                    amountTokenOut += amountOutMin[i];
-                } else {
-                    uint256 decimalTokenOut = IERC20Metadata(_tokenOut)
-                        .decimals();
-                    uint256 decimalTokenIn = IERC20Metadata(_poolTokens[i])
-                        .decimals();
-                    if (decimalTokenOut > decimalTokenIn) {
-                        uint256 pricePoolToken = _priceTokens[i] *
-                            (10 ** (decimalTokenOut - decimalTokenIn));
-                        amountTokenOut += pricePoolToken;
-                    } else {
-                        uint256 pricePoolToken = _priceTokens[i] /
-                            (10 ** (decimalTokenIn - decimalTokenOut));
-                        amountTokenOut += pricePoolToken;
-                    }
-                }
-            }
-        } else if (_poolTokens.length == 4) {
-            uint256[4] memory amountOutMin = getAmountOutMin4(
-                _poolAddress,
-                _poolTokens,
-                curveLpAmount
-            );
-
-            for (uint256 i = 0; i < _poolTokens.length; i++) {
-                if (_poolTokens[i] == _tokenOut) {
-                    amountTokenOut += amountOutMin[i];
-                } else {
-                    uint256 decimalTokenOut = IERC20Metadata(_tokenOut)
-                        .decimals();
-                    uint256 decimalTokenIn = IERC20Metadata(_poolTokens[i])
-                        .decimals();
-                    if (decimalTokenOut > decimalTokenIn) {
-                        uint256 pricePoolToken = _priceTokens[i] *
-                            (10 ** (decimalTokenOut - decimalTokenIn));
-                        amountTokenOut += pricePoolToken;
-                    } else {
-                        uint256 pricePoolToken = _priceTokens[i] /
-                            (10 ** (decimalTokenIn - decimalTokenOut));
-                        amountTokenOut += pricePoolToken;
-                    }
-                }
-            }
-        }
+        curveLpAmount = (vaultBalance * _amountOut) / vaultTotalSupply;
     }
 
     /**
