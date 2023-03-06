@@ -38,6 +38,7 @@
     "test-veScomp": "npx hardhat run scripts/testVe/testVeScomp.ts --network hardhat",
     "test-farming": "npx hardhat run scripts/testVe/testFarming.ts --network hardhat",
     "test-farming_old": "npx hardhat run scripts/testVe/testFarming_old.ts --network hardhat",
+    "test-OneClick": "npx hardhat run scripts/testOneClick/testOneClick.ts --network hardhat",
     "test": "npx hardhat test --network hardhat",
     "compile": "npx hardhat compile"
   },
@@ -62,7 +63,7 @@
     "@openzeppelin/hardhat-upgrades": "^1.17.0",
     "@openzeppelin/test-helpers": "^0.5.15",
     "@pinata/sdk": "^1.1.23",
-    "@scalingparrots/uniswap-smart-routing": "^0.0.5",
+    "@scalingparrots/uniswap-smart-routing": "^0.2.1",
     "@typechain/ethers-v5": "^7.2.0",
     "@typechain/hardhat": "^2.3.1",
     "@types/chai": "^4.3.1",
@@ -70,9 +71,8 @@
     "@types/node": "^12.20.52",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
-    "@uniswap/sdk-core": "^3.1.1",
+    "@uniswap/sdk-core": "^3.1.0",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
-    "@uniswap/v3-periphery": "^1.4.3",
     "chai": "^4.3.6",
     "dotenv": "^16.0.1",
     "eslint": "^7.32.0",
@@ -98,7 +98,7 @@
     "web3": "^1.7.3"
   },
   "dependencies": {
-    "@uniswap/v3-sdk": "^3.9.0",
+    "@uniswap/v3-periphery": "^1.4.3",
     "ethereum-input-data-decoder": "^0.4.2"
   }
 }

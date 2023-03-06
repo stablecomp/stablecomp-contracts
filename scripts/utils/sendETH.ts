@@ -13,7 +13,7 @@ let account1 : SignerWithAddress;
 
 const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
-let accountToFound = "0xD1b261c4C515f85bDaC55c6e6F6da9fce277BfFa"
+let accountToFound = "0xaF297deC752c909092A117A932A8cA4AaaFF9795"
 async function main(): Promise<void> {
 
     await run('compile');

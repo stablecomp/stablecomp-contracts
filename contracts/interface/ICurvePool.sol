@@ -2,6 +2,8 @@
 pragma solidity ^0.8.13;
 
 interface ICurvePool {
+    function get_virtual_price() external view returns (uint256);
+
     function calc_token_amount(
         uint256[2] calldata _amounts,
         bool _isDeposit

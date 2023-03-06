@@ -15,7 +15,12 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   vyper: {
-    compilers: [{ version: "0.2.15" },{ version: "0.2.4" },{ version: "0.2.7" }, { version: "0.3.0" }],
+    compilers: [
+      { version: "0.2.15" },
+      { version: "0.2.4" },
+      { version: "0.2.7" },
+      { version: "0.3.0" },
+    ],
   },
   solidity: {
     compilers: [
@@ -26,8 +31,8 @@ const config: HardhatUserConfig = {
             runs: 200,
             enabled: true,
             details: {
-              yul: false
-            }
+              yul: false,
+            },
           },
         },
       },
@@ -38,8 +43,20 @@ const config: HardhatUserConfig = {
             runs: 200,
             enabled: true,
             details: {
-              yul: false
-            }
+              yul: false,
+            },
+          },
+        },
+      },
+      {
+        version: "0.7.6",
+        settings: {
+          optimizer: {
+            runs: 200,
+            enabled: true,
+            details: {
+              yul: false,
+            },
           },
         },
       },
@@ -50,19 +67,20 @@ const config: HardhatUserConfig = {
             runs: 200,
             enabled: true,
             details: {
-              yul: false
-            }
+              yul: false,
+            },
           },
         },
-      },{
+      },
+      {
         version: "0.5.5",
         settings: {
           optimizer: {
             runs: 200,
             enabled: true,
             details: {
-              yul: false
-            }
+              yul: false,
+            },
           },
         },
       },
@@ -73,29 +91,29 @@ const config: HardhatUserConfig = {
       url: "https://eth-mainnet.g.alchemy.com/v2/VA0iJJN6a26rGrc0GT4_qmHvuDu5_vWe",
       chainId: 1,
       accounts:
-          process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     bsc_mainnet: {
       url: "https://bsc-dataseed.binance.org/",
       chainId: 56,
       accounts:
-          process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     bsc_testnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
       accounts:
-          process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     matic_testnet: {
       chainId: 80001,
       url: "https://matic-mumbai.chainstacklabs.com",
       accounts:
-          process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     scaling_node: {
       chainId: 31337,
-      url: "http://104.248.142.30:8545",
+      url: "https://johnchain.org",
       accounts:
           process.env.PRIVATE_KEY !== undefined ? [
             process.env.PRIVATE_KEY,
@@ -156,7 +174,6 @@ const config: HardhatUserConfig = {
         //url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       }
     },
-
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
@@ -171,9 +188,6 @@ const config: HardhatUserConfig = {
     runOnCompile: true,
     strict: true,
   },
-
 };
-
-
 
 export default config;

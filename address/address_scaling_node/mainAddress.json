@@ -1,1 +1,72 @@
-{"sCompTokenContract":{"address":"0x05F6847ab9273366Ca4f18294efba0503513aFB7","args":{}},"veScompContract":{"address":"0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636","args":{"sCompTokenAddress":"0x05F6847ab9273366Ca4f18294efba0503513aFB7","nameVe":"Voting Escrow Scomp","symbolVe":"veScomp","versionVe":"veScomp1.0.0"}},"masterchefScomp":{"address":"0xF23600A3f47B1af186270fe056123Cd1Ea410864","args":{"sCompTokenAddress":"0x05F6847ab9273366Ca4f18294efba0503513aFB7","veScompAddress":"0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636","tokenPerBlock":{"type":"BigNumber","hex":"0x14d1120d7b160000"},"initialBlock":16750447}},"feeDistributionContract":{"address":"0x753fB727B2487fd22c8860167aCf01E20B69FbeA","args":{"veScompAddress":"0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636","startTimestamp":1677854631,"tokenAddress":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","admin":"0x2b276218D962dEEbF96C749ffB228601b2C7a587","emergencyReturn":"0x2b276218D962dEEbF96C749ffB228601b2C7a587"}},"surplusConverterV2Contract":{"address":"0x4CD5ecD5E0Dabb0b933657F4162dE4376326A536","args":{"rewardToken":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","feeDistributor":"0x753fB727B2487fd22c8860167aCf01E20B69FbeA","uniswapV2Address":"0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D","sushiswapAddress":"0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F","whitelisted":"0x2b276218D962dEEbF96C749ffB228601b2C7a587","governor":"0x2b276218D962dEEbF96C749ffB228601b2C7a587","guardians":["0x2b276218D962dEEbF96C749ffB228601b2C7a587","0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"]}},"sCompController":{"address":"0x23a4E57e64BD7dD71d7DbBB1628D40A36cdC0b56","args":{"governance":"0x2b276218D962dEEbF96C749ffB228601b2C7a587","strategist":"0x2b276218D962dEEbF96C749ffB228601b2C7a587","rewards":"0x2b276218D962dEEbF96C749ffB228601b2C7a587"}},"sCompTimelockController":{"address":"0x2d7077DD7686AabEa1700Ae2983eE47dbA0Fa136","args":{"minDelay":86400,"proposer":["0x2b276218D962dEEbF96C749ffB228601b2C7a587"],"executors":["0x2b276218D962dEEbF96C749ffB228601b2C7a587"]}}}
+{
+  "sCompTokenContract": {
+    "address": "0x05F6847ab9273366Ca4f18294efba0503513aFB7",
+    "args": {}
+  },
+  "veScompContract": {
+    "address": "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636",
+    "args": {
+      "sCompTokenAddress": "0x05F6847ab9273366Ca4f18294efba0503513aFB7",
+      "nameVe": "Voting Escrow Scomp",
+      "symbolVe": "veScomp",
+      "versionVe": "veScomp1.0.0"
+    }
+  },
+  "masterchefScomp": {
+    "address": "0xF23600A3f47B1af186270fe056123Cd1Ea410864",
+    "args": {
+      "sCompTokenAddress": "0x05F6847ab9273366Ca4f18294efba0503513aFB7",
+      "veScompAddress": "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636",
+      "tokenPerBlock": {
+        "type": "BigNumber",
+        "hex": "0x14d1120d7b160000"
+      },
+      "initialBlock": 16750447
+    }
+  },
+  "feeDistributionContract": {
+    "address": "0x753fB727B2487fd22c8860167aCf01E20B69FbeA",
+    "args": {
+      "veScompAddress": "0x2E5093E4Bb17bD3f6165Ed75E1BA0BF6aC49d636",
+      "startTimestamp": 1677854631,
+      "tokenAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "admin": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "emergencyReturn": "0x2b276218D962dEEbF96C749ffB228601b2C7a587"
+    }
+  },
+  "surplusConverterV2Contract": {
+    "address": "0x4CD5ecD5E0Dabb0b933657F4162dE4376326A536",
+    "args": {
+      "rewardToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "feeDistributor": "0x753fB727B2487fd22c8860167aCf01E20B69FbeA",
+      "uniswapV2Address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+      "sushiswapAddress": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
+      "whitelisted": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "governor": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "guardians": [
+        "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+        "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      ]
+    }
+  },
+  "sCompController": {
+    "address": "0x23a4E57e64BD7dD71d7DbBB1628D40A36cdC0b56",
+    "args": {
+      "governance": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "strategist": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "rewards": "0x2b276218D962dEEbF96C749ffB228601b2C7a587"
+    }
+  },
+  "sCompTimelockController": {
+    "address": "0x2d7077DD7686AabEa1700Ae2983eE47dbA0Fa136",
+    "args": {
+      "minDelay": 86400,
+      "proposer": [
+        "0x2b276218D962dEEbF96C749ffB228601b2C7a587"
+      ],
+      "executors": [
+        "0x2b276218D962dEEbF96C749ffB228601b2C7a587"
+      ]
+    }
+  }
+}
