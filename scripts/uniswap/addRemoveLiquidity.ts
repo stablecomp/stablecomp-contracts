@@ -3,106 +3,53 @@ import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {min} from "hardhat/internal/util/bigint";
 import price from "../utils/price";
+import {INonfungiblePositionManager} from "../../typechain";
 
-const { run, ethers, upgrades } = hardhat;
+const { run, ethers } = hardhat;
 
 // constant json
 const wethABI = require('../../abi/weth.json');
-const baseRewardPoolABI = require('../../abi/baseRewardPoolAbi.json');
-const boosterABI = require('../../abi/booster.json');
-const poolCurveABI = require('../../abi/poolCurve.json');
+const uniswapV3ABI = require('../../abi/uniswapV3ABI.json');
+const poolUniswapV3ABI = require('../../abi/poolUniswapV3.json');
+const nonFungiblePositionManagerABI = require('../../abi/nonFungiblePositionManager.json');
 
 // variable json
-const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
+const uniswapAddress = require('../../strategyInfo/address_mainnet/uniswapAddress.json');
+const tokenAddress = require('../../strategyInfo/address_mainnet/tokenAddress.json');
+const tokenDecimals = require('../../strategyInfo/address_mainnet/tokenDecimals.json');
 
 let deployer : SignerWithAddress;
-let governance : SignerWithAddress;
-let strategist : SignerWithAddress;
-let rewards : SignerWithAddress;
-let depositor : SignerWithAddress;
-let operatorBaseReward : SignerWithAddress;
-let depositAccount1 : SignerWithAddress;
-let depositAccount2 : SignerWithAddress;
-let depositAccount3 : SignerWithAddress;
-
-// contract deploy
-let sCompVault : Contract;
-let sCompTokenContract : Contract;
-let sCompController : Contract;
-let sCompStrategy : Contract;
-let sCompTimelockController : Contract;
+let account2 : SignerWithAddress;
+let accountWhale3Crv : any;
+let accountWhaleUsdc : any;
 
 // variable contract
-let curveSwapWrapped : Contract;
+let testSwap : Contract;
 let curveSwap : Contract;
-let wantContract: Contract;
-let tokenDepositContract: Contract;
+let usdcContract: Contract;
+let threeCrvContract: Contract;
 let token2: Contract;
-let tokenCompoundContract: Contract;
-let feeContract: Contract;
+let uniswapV3Contract: Contract;
+let poolUniswapV3Contract: Contract;
+let nonFungiblePositionManagerContract: Contract;
 let baseRewardPoolContract: Contract;
 
 // constant contract
-let cvxContract: Contract;
-let crvContract: Contract;
-let boosterContract: Contract;
-let feeDistributionContract: Contract;
-let surplusConverterV2Contract: Contract;
-let surplusConverterV3Contract: Contract;
-let veScompContract: Contract;
+let accountWhale3CrvAddress = "0x4486083589A063ddEF47EE2E4467B5236C508fDe";
+let accountWhaleUsdcAddress = "0xDa9CE944a37d218c3302F6B82a094844C6ECEb17";
 
-let poolCurveContract: Contract;
-
-// variable address
-let wantAddress = info.wantAddress; // **name** // 18 decimals
-let tokenCompoundAddress = info.tokenCompoundAddress; // **name** // 18 decimals
-let curveSwapAddress = info.curveSwapAddress; // pool **name pool** curve
-let tokenDepositAddress = info.tokenDepositAddress; // token deposit in pool curve // usdc 6 decimals
-let accountDepositAddress1 = info.accountDepositAddress1; // account have amount of token deposit
-let accountDepositAddress2 = info.accountDepositAddress2; // account have amount of token deposit
-let accountDepositAddress3 = info.accountDepositAddress3; // account have amount of token deposit
-let baseRewardPoolAddress = info.baseRewardPoolAddress; // address of baseRewardPool in convex
+let poolAddress = "0xb0d092380d89a6857cc3c57af9519f4ac5abc0be";
+let nonFungiblePositionManagerAddress = "0xc36442b4a4522e871399cd717abdd847ab11fe88";
 
 // constant address
-let crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
-let cvxAddress = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
-let boosterAddress = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31";
-let wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-let uniswapV2Address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-let uniswapV3Address = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
-let sushiswapAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F";
-
-// convex pool info
-let nameStrategy = info.nameStrategy
-let pidPool = info.pidPool;
-let nElementPool = info.nElementPool;
-let tokenCompoundPosition = info.tokenCompoundPosition;
-
-// fee config
-let feeGovernance = info.feeGovernance;
-let feeStrategist = info.feeStrategist;
-let feeWithdraw = info.feeWithdraw;
-let feeDeposit = info.feeDeposit;
-let minDelay = 86400
-
-// test config
-let maxUint = ethers.constants.MaxUint256;
+let uniswapV3Address = uniswapAddress.uniswapV3
 let blockOneDay: any = 7200;
 let blockTime: any = 13;
-let dayToMine: any = 7;
-let WEEK = 7 * 86400;
 
-let depositv1Value: any = [];
 let initialBalanceDepositPool: any = [];
-let blockFinishBaseReward: any;
-let amountToDepositLiquidity: any = ethers.utils.parseEther(info.amountToDepositLiquidity);
 let initialTimestamp: any;
 
-let name = "Voting Escrow Scomp"
-let symbol = "veScomp"
-let version = "veScomp1.0.0";
-
-let firstTokenTime : any;
+const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
 async function main(): Promise<void> {
   let blockNumber = await ethers.provider.getBlockNumber();
@@ -110,27 +57,36 @@ async function main(): Promise<void> {
   initialTimestamp = block.timestamp
 
   await run('compile');
-  [deployer, governance, strategist, rewards, depositor] = await ethers.getSigners();
+  [deployer, account2] = await ethers.getSigners();
+}
+
+async function setupUtilityContract(): Promise<void> {
+
+    let testSwapFactory = await ethers.getContractFactory("TestSwap");
+    testSwap = await testSwapFactory.deploy()
+    await testSwap.deployed();
+
+    console.log("Test swap deployed to: ", testSwap.address);
+
+    uniswapV3Contract = await new ethers.Contract(uniswapV3Address, uniswapV3ABI, ethers.provider);
+    poolUniswapV3Contract = await new ethers.Contract(poolAddress, poolUniswapV3ABI, ethers.provider);
+    nonFungiblePositionManagerContract = await new ethers.Contract(nonFungiblePositionManagerAddress, nonFungiblePositionManagerABI, ethers.provider);
+
+    threeCrvContract = await new ethers.Contract(tokenAddress.threeCrv, wethABI, ethers.provider);
+    usdcContract = await new ethers.Contract(tokenAddress.usdc, wethABI, ethers.provider);
 }
 
 async function impersonateAccount(): Promise<void> {
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress1],
-    });
-    depositAccount1 = await ethers.getSigner(accountDepositAddress1);
+    const provider = new ethers.providers.JsonRpcProvider(
+        "http://104.248.142.30:8545"
+    );
 
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress2],
-    });
-    depositAccount2 = await ethers.getSigner(accountDepositAddress2);
+    await provider.send("hardhat_impersonateAccount", [accountWhale3CrvAddress]);
+    accountWhale3Crv = await provider.getSigner(accountWhale3CrvAddress);
 
-    await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [accountDepositAddress3],
-    });
-    depositAccount3 = await ethers.getSigner(accountDepositAddress3);
+    await provider.send("hardhat_impersonateAccount", [accountWhaleUsdcAddress]);
+    accountWhaleUsdc = await provider.getSigner(accountWhaleUsdcAddress);
+
 }
 
 async function fundAccountETH(account: SignerWithAddress): Promise<void> {
@@ -141,52 +97,80 @@ async function fundAccountETH(account: SignerWithAddress): Promise<void> {
     });
 }
 
-async function addLiquidity(account: SignerWithAddress, index: any): Promise<void> {
-    initialBalanceDepositPool[index] = await tokenDepositContract.balanceOf(account.address);
-    console.log("add liquidity amount: ", ethers.utils.formatUnits(initialBalanceDepositPool[index], 6))
-
-    let txApprove = await tokenDepositContract.connect(account).approve(curveSwap.address, ethers.constants.MaxUint256);
-    await txApprove.wait();
-
-    let tx = await curveSwap.connect(account).add_liquidity([0, initialBalanceDepositPool[index]],0);
+async function fundAccountUSDC(): Promise<void> {
+    let balanceUsdc = await usdcContract.balanceOf(accountWhaleUsdc._address);
+    let tx = await usdcContract.connect(accountWhaleUsdc).transfer(accountWhale3Crv._address, balanceUsdc);
     await tx.wait();
 }
 
-async function setupUtilityContract(abiCurveSwap: any): Promise<void> {
+async function addLiquidity(account: any): Promise<void> {
 
-    // Get curve swap contract
-    curveSwap = await new ethers.Contract(curveSwapAddress, abiCurveSwap, ethers.provider);
+    // todo fix
+    let balanceOfBefore = await nonFungiblePositionManagerContract.balanceOf(account._address);
+    console.log("Balance of before: ", ethers.utils.formatUnits(balanceOfBefore, 0))
 
-    // get want contract
-    wantContract = await new ethers.Contract(wantAddress, wethABI, ethers.provider);
-
-    // get feeContract
-    tokenDepositContract = await new ethers.Contract(tokenDepositAddress, wethABI, ethers.provider);
-    token2 = await new ethers.Contract("0x853d955acef822db058eb8505911ed77f175b99e", wethABI, ethers.provider);
-
-    boosterContract = await new ethers.Contract(boosterAddress, boosterABI, ethers.provider);
-
-    tokenCompoundContract = await new ethers.Contract(tokenCompoundAddress, wethABI, ethers.provider);
-
-    baseRewardPoolContract = await new ethers.Contract(baseRewardPoolAddress, baseRewardPoolABI, ethers.provider);
+    let balance3Crv = await threeCrvContract.balanceOf(account._address);
+    let balanceUsdc = await usdcContract.balanceOf(account._address);
+    console.log("add liquidity 3crv amount: ", ethers.utils.formatUnits(balance3Crv, tokenDecimals.threeCrv))
+    console.log("add liquidity usdc amount: ", ethers.utils.formatUnits(balanceUsdc, tokenDecimals.usdc))
 
 
-    crvContract = await new ethers.Contract(crvAddress, wethABI, ethers.provider);
-    cvxContract = await new ethers.Contract(cvxAddress, wethABI, ethers.provider);
+    let txApprove3Crv = await threeCrvContract.connect(account).transfer(testSwap.address, balance3Crv);
+    await txApprove3Crv.wait();
+    let txApproveBusd = await usdcContract.connect(account).transfer(testSwap.address, balanceUsdc);
+    await txApproveBusd.wait();
 
-    feeContract = await new ethers.Contract(wethAddress, wethABI, ethers.provider);
+    let blockNumber = await ethers.provider.getBlockNumber();
+    let block = await ethers.provider.getBlock(blockNumber);
 
+    let deadline = block.timestamp + 30;
+
+    console.log("Siamo qui")
+    let tx = await testSwap.connect(account).addLiquidity(ethers.utils.parseUnits("10", tokenDecimals.threeCrv), ethers.utils.parseUnits("10", tokenDecimals.usdc));
+    await tx.wait();
+    console.log("Siamo qui2")
+
+    let balanceOf = await nonFungiblePositionManagerContract.balanceOf(account._address);
+    console.log("Balance of after: ", ethers.utils.formatUnits(balanceOf, 0))
+    /*
+    // Crea una nuova posizione non fungibile nella pool
+        INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
+            token0: _token,
+            token1: _weth,
+            fee: _fee,
+            tickLower: -887220,
+            tickUpper: -887200,
+            amount0Desired: amount0Desired,
+            amount1Desired: amount1Desired,
+            amount0Min: 0,
+            amount1Min: 0,
+            recipient: msg.sender,
+            deadline: block.timestamp + 300
+        });
+
+        uint256 tokenId = INonfungiblePositionManager(_nonfungiblePositionManager).mint(params);
+
+        // Aggiorna le quantità di token
+        IERC20(_token).transferFrom(msg.sender, address(this), amount0Desired);
+        IERC20(_weth).transferFrom(msg.sender, address(this), amount1Desired);
+
+        // Deposita la posizione nella pool
+        INonfungiblePositionManager(_nonfungiblePositionManager).safeTransferFrom(address(this), msg.sender, tokenId);
+    }
+}
+
+     */
 }
 
 async function removeLiquidity(account: SignerWithAddress, index: any): Promise<void> {
 
-    let balanceDepositBefore = await tokenDepositContract.balanceOf(account.address);
+    let balanceDepositBefore = await threeCrvContract.balanceOf(account.address);
     let balance2Before = await token2.balanceOf(account.address);
 
     let tx = await curveSwap.connect(account).remove_liquidity(ethers.utils.parseEther("100"), [0,0]);
     await tx.wait();
 
-    let balanceDepositAfter = await tokenDepositContract.balanceOf(account.address);
+    let balanceDepositAfter = await threeCrvContract.balanceOf(account.address);
     let balance2After = await token2.balanceOf(account.address);
 
     console.log("Balance token deposit: ", ethers.utils.formatUnits(balanceDepositAfter.sub(balanceDepositBefore), 6))
@@ -211,23 +195,21 @@ main()
             "function remove_liquidity_one_coin(uint amounts, int128 index, uint min_mint_amounts)",
         ];
 
-        await setupUtilityContract(abi);
+        await setupUtilityContract();
 
         await impersonateAccount();
 
-        await fundAccountETH(depositAccount1)
-        await fundAccountETH(depositAccount2)
-        await fundAccountETH(depositAccount3)
+        //await fundAccountETH(accountWhale3Crv)
+        //await fundAccountETH(accountWhaleUsdc)
+        await fundAccountUSDC()
 
-/*
-        await addLiquidity(depositAccount1, 0);
-        await addLiquidity(depositAccount2, 1);
-        await addLiquidity(depositAccount3, 2);
-*/
+        console.log("Dopo fund prima di add")
+        await addLiquidity(accountWhale3Crv);
+        //await addLiquidityThreeCrv(accountWhaleUsdc, 0);
 
-        await removeLiquidity(depositAccount1, 0);
-        await removeLiquidity(depositAccount2, 1);
-        await removeLiquidity(depositAccount3, 2);
+        //await removeLiquidity(accountWhale3Crv, 0);
+        //await removeLiquidity(accountWhaleBusd, 0);
+
 
         /*
 

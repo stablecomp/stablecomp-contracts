@@ -22,7 +22,7 @@ let account1 : SignerWithAddress;
 
 const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
-let accountToFund = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+let accountToFund = "0xD1b261c4C515f85bDaC55c6e6F6da9fce277BfFa"
 let amountToFund = ethers.utils.parseEther("500")
 
 let sCompAddress = "0x05F6847ab9273366Ca4f18294efba0503513aFB7"

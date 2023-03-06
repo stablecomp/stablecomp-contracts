@@ -242,6 +242,11 @@ TokenSwapPathRegistry
         _setSushiswapRouter(_router);
     }
 
+    function setQuoterUniswap(address _quoter) external {
+        _onlyGovernance();
+        _setQuoterUniswap(_quoter);
+    }
+
     /// ===== View Functions =====
     function version() external pure returns (string memory) {
         return "1.0";
@@ -396,6 +401,7 @@ TokenSwapPathRegistry
         if(crvToSell > 0)  {
             uint fee = _takeFeeAutoCompounded(crv, crvToSell);
             crvToSell = crvToSell.sub(fee);
+
             _makeSwap(crv, tokenCompoundAddress, crvToSell);
         }
 
@@ -403,6 +409,7 @@ TokenSwapPathRegistry
         if(cvxToSell > 0)  {
             uint fee = _takeFeeAutoCompounded(cvx, cvxToSell);
             cvxToSell = cvxToSell.sub(fee);
+
             _makeSwap(cvx, tokenCompoundAddress, cvxToSell);
         }
 

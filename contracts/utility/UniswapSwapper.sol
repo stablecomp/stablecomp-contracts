@@ -9,6 +9,7 @@ import "../interface/IUniswapRouterV2.sol";
 import "../interface/IUniswapV2Factory.sol";
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
+import '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol';
 import "./BaseSwapper.sol";
 
 /*
@@ -24,30 +25,37 @@ contract UniswapSwapper is BaseSwapper{
     address public uniswapV2; // Uniswap router
     address public sushiswap; // Sushiswap router
     address public uniswapV3; // Uniswapv3 router
+    address public quoterV3; // Quoter Uniswapv3
 
-    function _setUniswapV2Router(address router) internal {
-        uniswapV2 = router;
+    function _setUniswapV2Router(address _router) internal {
+        uniswapV2 = _router;
     }
 
-    function _setSushiswapRouter(address router) internal {
-        sushiswap = router;
+    function _setSushiswapRouter(address _router) internal {
+        sushiswap = _router;
     }
 
-    function _setUniswapV3Router(address router) internal {
-        uniswapV3 = router;
+    function _setUniswapV3Router(address _router) internal {
+        uniswapV3 = _router;
+    }
+
+    function _setQuoterUniswap(address _quoter) internal {
+        quoterV3 = _quoter;
     }
 
     // V2
     function _swapExactTokensForTokens(
         address router,
         address startToken,
-        uint256 balance,
+        uint256 amountIn,
         address[] memory path
     ) internal {
-        _safeApproveHelper(startToken, router, balance);
+        uint[] memory amountsOutMin = IUniswapRouterV2(router).getAmountsOut(amountIn, path);
+
+        _safeApproveHelper(startToken, router, amountIn);
         IUniswapRouterV2(router).swapExactTokensForTokens(
-            balance,
-            0,
+            amountIn,
+            amountsOutMin[amountsOutMin.length -1],
             path,
             address(this),
             block.timestamp
@@ -56,11 +64,13 @@ contract UniswapSwapper is BaseSwapper{
 
     function _swapExactETHForTokens(
         address router,
-        uint256 balance,
+        uint256 amountIn,
         address[] memory path
     ) internal {
-        IUniswapRouterV2(router).swapExactETHForTokens{value: balance}(
-            0,
+        uint[] memory amountsOutMin = IUniswapRouterV2(router).getAmountsOut(amountIn, path);
+
+        IUniswapRouterV2(router).swapExactETHForTokens{value: amountIn}(
+            amountsOutMin[amountsOutMin.length -1],
             path,
             address(this),
             block.timestamp
@@ -70,13 +80,15 @@ contract UniswapSwapper is BaseSwapper{
     function _swapExactTokensForETH(
         address router,
         address startToken,
-        uint256 balance,
+        uint256 amountIn,
         address[] memory path
     ) internal {
-        _safeApproveHelper(startToken, router, balance);
+        uint[] memory amountsOutMin = IUniswapRouterV2(router).getAmountsOut(amountIn, path);
+
+        _safeApproveHelper(startToken, router, amountIn);
         IUniswapRouterV2(router).swapExactTokensForETH(
-            balance,
-            0,
+            amountIn,
+            amountsOutMin[amountsOutMin.length -1],
             path,
             address(this),
             block.timestamp
@@ -138,22 +150,26 @@ contract UniswapSwapper is BaseSwapper{
     function _swapExactInputMultihop3(
         address router,
         address startToken,
-        uint256 balance,
+        uint256 amountIn,
         address[] memory path,
         uint24[] memory feePath
     ) internal {
+
+        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2], feePath[2], path[3]);
+        uint quote = _getQuoteExactInput(pathData, amountIn);
+
         ISwapRouter swapRouter = ISwapRouter(router);
 
         TransferHelper.safeApprove(startToken, address(swapRouter), 0);
-        TransferHelper.safeApprove(startToken, address(swapRouter), balance);
+        TransferHelper.safeApprove(startToken, address(swapRouter), amountIn);
 
         ISwapRouter.ExactInputParams memory params =
         ISwapRouter.ExactInputParams({
-        path: abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2], feePath[2], path[3]),
-        recipient: address(this),
-        deadline: block.timestamp,
-        amountIn: balance,
-        amountOutMinimum: 0
+            path: pathData,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: quote
         });
 
         // Executes the swap.
@@ -163,22 +179,26 @@ contract UniswapSwapper is BaseSwapper{
     function _swapExactInputMultihop2(
         address router,
         address startToken,
-        uint256 balance,
+        uint256 amountIn,
         address[] memory path,
         uint24[] memory feePath
     ) internal {
+        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2]);
+
+        uint quote = _getQuoteExactInput(pathData, amountIn);
+
         ISwapRouter swapRouter = ISwapRouter(router);
 
         TransferHelper.safeApprove(startToken, address(swapRouter), 0);
-        TransferHelper.safeApprove(startToken, address(swapRouter), balance);
+        TransferHelper.safeApprove(startToken, address(swapRouter), amountIn);
 
         ISwapRouter.ExactInputParams memory params =
         ISwapRouter.ExactInputParams({
-        path: abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2]),
-        recipient: address(this),
-        deadline: block.timestamp,
-        amountIn: balance,
-        amountOutMinimum: 0
+            path: pathData,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: quote
         });
 
         // Executes the swap.
@@ -188,26 +208,34 @@ contract UniswapSwapper is BaseSwapper{
     function _swapExactInputMultihop1(
         address router,
         address startToken,
-        uint256 balance,
+        uint256 amountIn,
         address[] memory path,
         uint24[] memory feePath
     ) internal {
+        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1]);
+        uint quote = _getQuoteExactInput(pathData, amountIn);
+
         ISwapRouter swapRouter = ISwapRouter(router);
 
         TransferHelper.safeApprove(startToken, address(swapRouter), 0);
-        TransferHelper.safeApprove(startToken, address(swapRouter), balance);
+        TransferHelper.safeApprove(startToken, address(swapRouter), amountIn);
 
         ISwapRouter.ExactInputParams memory params =
         ISwapRouter.ExactInputParams({
-        path: abi.encodePacked(path[0], feePath[0], path[1]),
-        recipient: address(this),
-        deadline: block.timestamp,
-        amountIn: balance,
-        amountOutMinimum: 0
+            path: pathData,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: quote
         });
 
         // Executes the swap.
         swapRouter.exactInput(params);
+    }
+
+    function _getQuoteExactInput(bytes memory _path, uint _amountIn) internal returns(uint) {
+        uint quote = IQuoter(quoterV3).quoteExactInput(_path, _amountIn);
+        return quote;
     }
 
 }

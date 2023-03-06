@@ -18,6 +18,8 @@ const curveAddress = require('../../strategyInfo/address_mainnet/curveAddress.js
 const routerAddress = require('../../strategyInfo/address_mainnet/routerAddress.json');
 const tokenAddress = require('../../strategyInfo/address_mainnet/tokenAddress.json');
 const tokenDecimals = require('../../strategyInfo/address_mainnet/tokenDecimals.json');
+const tokenInfo = require('../../strategyInfo/address_mainnet/tokenInfo.json');
+const uniswapAddress = require('../../strategyInfo/address_mainnet/uniswapAddress.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -75,6 +77,7 @@ let wethAddress = tokenAddress.weth;
 let uniswapV2Address = routerAddress.uniswapV2;
 let uniswapV3Address = routerAddress.uniswapV3;
 let sushiswapAddress = routerAddress.sushiswap;
+let quoterAddress = uniswapAddress.quoter;
 
 // convex pool info
 let nameStrategy = info.nameStrategy
@@ -139,12 +142,13 @@ async function setupContract(): Promise<void> {
 
 
     // set tokenSwapPath
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.crv, tokenAddress.tetherEur, [tokenAddress.crv, tokenAddress.tetherUsd, tokenAddress.tetherEur], [10000, 500], 2);
+    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.cvx, tokenAddress.tetherEur, [tokenAddress.cvx, tokenAddress.usdc, tokenAddress.tetherEur], [10000, 500], 2);
+
     await sCompStrategy.connect(governance).setUniswapV3Router(uniswapV3Address);
     await sCompStrategy.connect(governance).setUniswapV2Router(uniswapV2Address);
     await sCompStrategy.connect(governance).setSushiswapRouter(sushiswapAddress);
-
-    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.crv, tokenAddress.tetherEur, [tokenAddress.crv, tokenAddress.tetherUsd, tokenAddress.tetherEur], [10000, 500], 2);
-    await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.cvx, tokenAddress.tetherEur, [tokenAddress.cvx, tokenAddress.usdc, tokenAddress.tetherEur], [10000, 500], 2);
+    await sCompStrategy.connect(governance).setQuoterUniswap(quoterAddress);
 
     let typeRouter = await sCompStrategy.getTypeSwap(tokenAddress.crv, tokenAddress.tetherUsd);
     console.log("type router: ", typeRouter);
@@ -171,11 +175,11 @@ async function deployStableCompToken(): Promise<void> {
     await sCompTokenContract.deployed();
 
     console.log("SComp token deployed to: ", sCompTokenContract.address)
-
+/*
     let balanceOf = await sCompTokenContract.balanceOf(deployer.address);
     let tx = await sCompTokenContract.transfer(governance.address, balanceOf.div(2) );
     await tx.wait();
-
+*/
 }
 
 async function deployController(): Promise<void> {
@@ -283,9 +287,9 @@ async function deploySurplusConverter(): Promise<void> {
 }
 
 async function setSurplusConverterV2(): Promise<void> {
-    let tx = await surplusConverterV2Contract.addToken(crvAddress, [crvAddress, wethAddress], 1);
+    let tx = await surplusConverterV2Contract.addToken(tokenInfo.crv.address, [tokenInfo.crv.address, tokenInfo.weth.address], 1);
     await tx.wait();
-    tx = await surplusConverterV2Contract.addToken(cvxAddress, [cvxAddress, wethAddress], 1);
+    tx = await surplusConverterV2Contract.addToken(tokenInfo.cvx.address, [tokenInfo.cvx.address, tokenInfo.weth.address], 1);
     await tx.wait();
     tx = await surplusConverterV2Contract.unpause();
     await tx.wait();
@@ -430,10 +434,10 @@ async function setupUtilityContract(abiCurveSwap: any): Promise<void> {
     baseRewardPoolContract = await new ethers.Contract(baseRewardPoolAddress, baseRewardPoolABI, ethers.provider);
 
 
-    crvContract = await new ethers.Contract(crvAddress, wethABI, ethers.provider);
-    cvxContract = await new ethers.Contract(cvxAddress, wethABI, ethers.provider);
+    crvContract = await new ethers.Contract(tokenInfo.crv.address, wethABI, ethers.provider);
+    cvxContract = await new ethers.Contract(tokenInfo.cvx.address, wethABI, ethers.provider);
 
-    feeContract = await new ethers.Contract(wethAddress, wethABI, ethers.provider);
+    feeContract = await new ethers.Contract(tokenInfo.weth.address, wethABI, ethers.provider);
 
 }
 
@@ -492,13 +496,13 @@ async function deposit(account: SignerWithAddress, index: any): Promise<void> {
     let balanceLp = await wantContract.balanceOf(account.address);
     depositv1Value[index] = balanceLp;
 
-    console.log("deposit of account is : ", ethers.utils.formatEther(balanceLp))
+    //console.log("deposit of account is : ", ethers.utils.formatEther(balanceLp))
 
     await wantContract.connect(account).approve(sCompVault.address, maxUint)
     let tx = await sCompVault.connect(account).deposit(balanceLp);
     let txCompleted = await tx.wait();
     let feeDeposit = await price.getFeeTx(tx, txCompleted);
-    console.log("Fee transaction deposit is: ", ethers.utils.formatEther(feeDeposit));
+    //console.log("Fee transaction deposit is: ", ethers.utils.formatEther(feeDeposit));
 
     let balanceShare = await sCompVault.balanceOf(account.address);
     //console.log("Share balance after deposit: ", ethers.utils.formatEther(balanceShare));
@@ -606,6 +610,7 @@ async function withdraw(account: SignerWithAddress, index: any): Promise<void> {
 }
 
 async function earnMarkReward(): Promise<void> {
+    console.log("Earnmark reward...")
     await boosterContract.connect(governance).earmarkRewards(pidPool);
 }
 

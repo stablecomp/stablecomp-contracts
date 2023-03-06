@@ -18,6 +18,7 @@ const curveAddress = require('../../strategyInfo/address_mainnet/curveAddress.js
 const routerAddress = require('../../strategyInfo/address_mainnet/routerAddress.json');
 const tokenAddress = require('../../strategyInfo/address_mainnet/tokenAddress.json');
 const tokenDecimals = require('../../strategyInfo/address_mainnet/tokenDecimals.json');
+const uniswapAddress = require('../../strategyInfo/address_mainnet/uniswapAddress.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -75,6 +76,7 @@ let wethAddress = tokenAddress.weth;
 let uniswapV2Address = routerAddress.uniswapV2;
 let uniswapV3Address = routerAddress.uniswapV3;
 let sushiswapAddress = routerAddress.sushiswap;
+let quoterAddress = uniswapAddress.quoter;
 
 // convex pool info
 let nameStrategy = info.nameStrategy
@@ -140,9 +142,11 @@ async function setupContract(): Promise<void> {
     // set tokenSwapPath
     await sCompStrategy.connect(governance).setTokenSwapPathV2(tokenAddress.crv, tokenAddress.dola, [tokenAddress.crv, tokenAddress.weth, tokenAddress.dola], 0);
     await sCompStrategy.connect(governance).setTokenSwapPathV3(tokenAddress.cvx, tokenAddress.dola, [tokenAddress.cvx, tokenAddress.usdc, tokenAddress.dola], [10000, 3000], 2);
+
     await sCompStrategy.connect(governance).setUniswapV3Router(uniswapV3Address);
     await sCompStrategy.connect(governance).setUniswapV2Router(uniswapV2Address);
     await sCompStrategy.connect(governance).setSushiswapRouter(sushiswapAddress);
+    await sCompStrategy.connect(governance).setQuoterUniswap(quoterAddress);
 
     // set strategy and vault in controller
     await sCompController.connect(governance).approveStrategy(wantAddress, sCompStrategy.address);
@@ -729,6 +733,7 @@ main()
         await addLiquidity(depositAccount2, 1);
         await addLiquidity(depositAccount3, 2);
 
+        /*
         // change fee
         await proposeChangeFeeStrategy(feeGovernance/2);
         await mineBlock(2);
@@ -738,6 +743,7 @@ main()
         await mineBlock(2);
         await executeChangeFeeStrategy(feeGovernance);
 
+         */
         await deposit(depositAccount1, 0);
         await deposit(depositAccount2, 1);
         //await deposit(depositAccount3, 2);

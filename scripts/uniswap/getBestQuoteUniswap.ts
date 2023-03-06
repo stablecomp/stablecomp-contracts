@@ -265,9 +265,21 @@ async function getBestQuote(tokenIn: Token, tokenOut: Token, amountIn: any): Pro
             } else {
                 let poolContract = new ethers.Contract(
                     address,
-                    poolUniswapV2Abi,
+                    poolUniswapV3Abi,
                     ethers.provider
                 )
+                try {
+                    let fee = await poolContract.fee();
+                    console.log("Pool v3")
+                    console.log("Fee is: ", fee);
+                } catch (error: any) {
+                    console.log("Pool v2")
+                    poolContract = new ethers.Contract(
+                        address,
+                        poolUniswapV2Abi,
+                        ethers.provider
+                    )
+                }
                 let token0 = await poolContract.token0();
                 let token0Contract = new ethers.Contract(
                     token0,
@@ -473,20 +485,26 @@ main()
 
         console.log("\n")
 
-        await getBestQuoteTusd();
         //await getBestQuoteTetherUsd();
+        await getBestQuote3Crv();
+
+/*        await getBestQuoteAgEur();
+        await getBestQuoteTetherEur();
+        await getBestQuoteUsdd();
+        await getBestQuoteTusd();
+        await getBestQuoteMim();
+        await getBestQuoteEurs();
 
         //await getBestQuoteIbEur();
-        /*
         await getBestQuoteEuroC();
         await getBestQuoteEurt();
         await getBestQuoteEuroC();
-        //await getBestQuoteIbEur();
         await getBestQuoteSEur();
+
+ */
         console.log("\n")
 
 
-         */
         process.exit(0)
     })
     .catch((error: Error) => {

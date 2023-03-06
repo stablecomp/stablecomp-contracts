@@ -255,7 +255,9 @@ contract Farm is Ownable {
             .mul(pool.accERC20PerShare)
             .div(1e36)
             .sub(user.rewardDebt);
-        erc20Transfer(msg.sender, pendingAmount);
+        if(pendingAmount > 0) {
+            erc20Transfer(msg.sender, pendingAmount);
+        }
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accERC20PerShare).div(1e36);
         pool.lpToken.safeTransfer(address(msg.sender), _amount);

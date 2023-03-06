@@ -13,6 +13,8 @@ let deployer : SignerWithAddress;
 // contract deploy
 let sCompController : Contract;
 
+let wantAddress = "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859";
+
 async function main(): Promise<void> {
 
     await run('compile');
@@ -30,9 +32,9 @@ async function getContractController(): Promise<void> {
   main()
     .then(async () => {
         await getContractController();
-        let vaultAddress = await sCompController.vaults("0x70fc957eb90E37Af82ACDbd12675699797745F68");
+        let vaultAddress = await sCompController.vaults(wantAddress);
         console.log("Vault address: ", vaultAddress)
-        let strategyAddress = await sCompController.strategies("0x70fc957eb90E37Af82ACDbd12675699797745F68");
+        let strategyAddress = await sCompController.strategies(wantAddress);
         console.log("Strategy address: ", strategyAddress)
 
         process.exit(0)
