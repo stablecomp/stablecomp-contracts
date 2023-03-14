@@ -645,10 +645,11 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 decimalDiff10 *
                 10) / totalSupply;
             _amountOutMin[i] =
-                (percent *
+                (((percent *
                     _amountOut *
                     ICurvePool(_poolAddress).get_virtual_price()) /
-                (decimalDiff10 * 1e19);
+                    (decimalDiff10 * 1e19)) * 99) /
+                100;
         }
     }
 
@@ -676,10 +677,11 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 decimalDiff10 *
                 10) / totalSupply;
             _amountOutMin[i] =
-                (percent *
+                (((percent *
                     _amountOut *
                     ICurvePool(_poolAddress).get_virtual_price()) /
-                (decimalDiff10 * 1e19);
+                    (decimalDiff10 * 1e19)) * 99) /
+                100;
         }
     }
 
@@ -707,10 +709,11 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
                 decimalDiff10 *
                 10) / totalSupply;
             _amountOutMin[i] =
-                (percent *
+                (((percent *
                     _amountOut *
                     ICurvePool(_poolAddress).get_virtual_price()) /
-                (decimalDiff10 * 1e19);
+                    (decimalDiff10 * 1e19)) * 99) /
+                100;
         }
     }
 
@@ -882,9 +885,7 @@ contract OneClickV3 is Ownable, ReentrancyGuard {
         // If the input token deposit in equal parts to the pool
         else {
             require(
-                _routev2.length <= _poolTokens.length ||
-                    _routev3.length <= _poolTokens.length ||
-                    _routev2.length + _routev3.length <= _poolTokens.length,
+                _routev2.length + _routev3.length <= _poolTokens.length,
                 "OneClick: route path not match"
             );
             address[][] memory ruotev2 = _routev2;
