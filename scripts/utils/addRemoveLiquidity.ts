@@ -7,13 +7,13 @@ import price from "../utils/price";
 const { run, ethers, upgrades } = hardhat;
 
 // constant json
-const wethABI = require('../../abi/weth.json');
-const baseRewardPoolABI = require('../../abi/baseRewardPoolAbi.json');
-const boosterABI = require('../../abi/booster.json');
-const poolCurveABI = require('../../abi/poolCurve.json');
+const wethABI = require('../../info/abi/weth.json');
+const baseRewardPoolABI = require('../../info/abi/baseRewardPoolAbi.json');
+const boosterABI = require('../../info/abi/booster.json');
+const poolCurveABI = require('../../info/abi/poolCurve.json');
 
 // variable json
-const info = require('../../strategyInfo/infoPool/3eur.json');
+const info = require('../../info/infoPool/3eur.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;

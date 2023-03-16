@@ -5,8 +5,8 @@ import {deploy} from "@openzeppelin/hardhat-upgrades/dist/utils";
 
 const { run, ethers, upgrades } = hardhat;
 
-const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
-const mainnetAddress = require('../../address/address_scaling_node/mainAddress.json');
+const info = require('../../info/infoPool/fraxUsdc.json');
+const mainnetAddress = require('../../info/deploy_address/address_scaling_node/mainAddress.json');
 
 let deployer : SignerWithAddress;
 

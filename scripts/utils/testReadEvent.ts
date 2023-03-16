@@ -6,7 +6,7 @@ import InputDataDecoder from 'ethereum-input-data-decoder';
 
 const { run, ethers, upgrades } = hardhat;
 
-const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
+const info = require('../../info/infoPool/fraxUsdc.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;
@@ -71,9 +71,6 @@ async function test(): Promise<void> {
     let contract = new Contract(tokenAddress, abi, ethers.provider);
     let response = await contract.filters.Transfer("vault", "account") //withdraw
     response = await contract.filters.Transfer("account", "vault") // deposit
-
-    response = await contract.filters.Transfer("zapper", "account") // withdraw
-    response = await contract.filters.Transfer("accout", "zapper") // deposit
 
     let listTransfer = await contract.queryFilter(response)
     console.log("Event transfer in contract: ", listTransfer.length);

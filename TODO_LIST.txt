@@ -1,5 +1,1 @@
-1 ) add time lock in fee -> ok
-2 ) create contract ridistribuzione fee
-3 ) Capire la questione checkpoint settimanale da che giorno parte
-4 ) Capire le pool presenti solo su uniswap v3 come gestirle
-5 ) add fee manager
+1 ) Capire la questione checkpoint settimanale da che giorno parte

@@ -5,13 +5,13 @@ const fs = require('fs');
 
 const { run, ethers } = hardhat;
 
-const info = require('../../../../strategyInfo/infoPool/euroc3Crv.json');
-const euroC3CrvAddress = require('../../../../address/address_scaling_node/strategies/EuroC3Crv/EuroC3Crv.json');
-const mainnetAddress = require('../../../../address/address_scaling_node/mainAddress.json');
-const curveAddress = require('../../../../strategyInfo/address_mainnet/curveAddress.json');
-const routerAddress = require('../../../../strategyInfo/address_mainnet/routerAddress.json');
-const tokenAddress = require('../../../../strategyInfo/address_mainnet/tokenAddress.json');
-const tokenDecimals = require('../../../../strategyInfo/address_mainnet/tokenDecimals.json');
+const info = require('../../../../info/infoPool/euroc3Crv.json');
+const euroC3CrvAddress = require('../../../../info/deploy_address/address_scaling_node/strategies/EuroC3Crv/EuroC3Crv.json');
+const mainnetAddress = require('../../../../info/deploy_address/address_scaling_node/mainAddress.json');
+const curveAddress = require('../../../../info/address_mainnet/curveAddress.json');
+const routerAddress = require('../../../../info/address_mainnet/routerAddress.json');
+const tokenAddress = require('../../../../info/address_mainnet/tokenAddress.json');
+const tokenDecimals = require('../../../../info/address_mainnet/tokenDecimals.json');
 
 let deployer : SignerWithAddress;
 

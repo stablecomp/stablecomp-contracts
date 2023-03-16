@@ -7,17 +7,17 @@ import {BigNumber} from "ethers";
 
 const { run, ethers, upgrades } = hardhat;
 
-const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
+const info = require('../../info/infoPool/fraxUsdc.json');
 
 let deployer : SignerWithAddress;
 let account1 : SignerWithAddress;
 
 const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
-let accountsToFund = ["0x55B4FE600db6984e9C7bD218924970e48b323961"]
+let accountsToFund = ["0xB0865d5A2073952f8887281675d852B4Fc1434C0"]
 let amountToFund = ethers.utils.parseEther("10000")
 
-const mainAddress = require('../../address/address_scaling_node/mainAddress.json');
+const mainAddress = require('../../info/deploy_address/address_scaling_node/mainAddress.json');
 
 let sCompAddress = mainAddress.sCompTokenContract.address;
 let sCompContract : Contract;

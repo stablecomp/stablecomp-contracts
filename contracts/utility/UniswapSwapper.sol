@@ -17,7 +17,7 @@ import "./BaseSwapper.sol";
     - ETH in and ETH out Variants
     - Sushiswap support in addition to Uniswap
 */
-contract UniswapSwapper is BaseSwapper{
+contract UniswapSwapper is BaseSwapper {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -154,14 +154,13 @@ contract UniswapSwapper is BaseSwapper{
         address[] memory path,
         uint24[] memory feePath
     ) internal {
-
-        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2], feePath[2], path[3]);
-        uint quote = _getQuoteExactInput(pathData, amountIn);
-
         ISwapRouter swapRouter = ISwapRouter(router);
 
         TransferHelper.safeApprove(startToken, address(swapRouter), 0);
         TransferHelper.safeApprove(startToken, address(swapRouter), amountIn);
+
+        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2], feePath[2], path[3]);
+        uint quote = _getQuoteExactInput(pathData, amountIn);
 
         ISwapRouter.ExactInputParams memory params =
         ISwapRouter.ExactInputParams({
@@ -183,14 +182,14 @@ contract UniswapSwapper is BaseSwapper{
         address[] memory path,
         uint24[] memory feePath
     ) internal {
-        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2]);
-
-        uint quote = _getQuoteExactInput(pathData, amountIn);
-
         ISwapRouter swapRouter = ISwapRouter(router);
 
         TransferHelper.safeApprove(startToken, address(swapRouter), 0);
         TransferHelper.safeApprove(startToken, address(swapRouter), amountIn);
+
+        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1], feePath[1], path[2]);
+
+        uint quote = _getQuoteExactInput(pathData, amountIn);
 
         ISwapRouter.ExactInputParams memory params =
         ISwapRouter.ExactInputParams({
@@ -212,13 +211,13 @@ contract UniswapSwapper is BaseSwapper{
         address[] memory path,
         uint24[] memory feePath
     ) internal {
-        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1]);
-        uint quote = _getQuoteExactInput(pathData, amountIn);
-
         ISwapRouter swapRouter = ISwapRouter(router);
 
         TransferHelper.safeApprove(startToken, address(swapRouter), 0);
         TransferHelper.safeApprove(startToken, address(swapRouter), amountIn);
+
+        bytes memory pathData = abi.encodePacked(path[0], feePath[0], path[1]);
+        uint quote = _getQuoteExactInput(pathData, amountIn);
 
         ISwapRouter.ExactInputParams memory params =
         ISwapRouter.ExactInputParams({

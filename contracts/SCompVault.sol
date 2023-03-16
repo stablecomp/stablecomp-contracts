@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interface/IController.sol";
 
+import "hardhat/console.sol";
+
 contract SCompVault is ERC20 {
     using SafeERC20 for IERC20;
     using Address for address;

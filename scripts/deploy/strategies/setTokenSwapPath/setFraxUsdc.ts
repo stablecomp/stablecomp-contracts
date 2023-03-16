@@ -5,13 +5,13 @@ const fs = require('fs');
 
 const { run, ethers } = hardhat;
 
-const info = require('../../../../strategyInfo/infoPool/fraxUsdc.json');
-const fraxUsdcAddress = require('../../../../address/address_scaling_node/strategies/FraxUsdc/FraxUsdc.json');
-const mainnetAddress = require('../../../../address/address_scaling_node/mainAddress.json');
-const curveAddress = require('../../../../strategyInfo/address_mainnet/curveAddress.json');
-const routerAddress = require('../../../../strategyInfo/address_mainnet/routerAddress.json');
-const tokenAddress = require('../../../../strategyInfo/address_mainnet/tokenAddress.json');
-const tokenDecimals = require('../../../../strategyInfo/address_mainnet/tokenDecimals.json');
+const info = require('../../../../info/infoPool/fraxUsdc.json');
+const fraxUsdcAddress = require('../../../../info/deploy_address/address_scaling_node/strategies/FraxUsdc/FraxUsdc.json');
+const mainnetAddress = require('../../../../info/deploy_address/address_scaling_node/mainAddress.json');
+const curveAddress = require('../../../../info/address_mainnet/curveAddress.json');
+const routerAddress = require('../../../../info/address_mainnet/routerAddress.json');
+const tokenAddress = require('../../../../info/address_mainnet/tokenAddress.json');
+const tokenDecimals = require('../../../../info/address_mainnet/tokenDecimals.json');
 
 let deployer : SignerWithAddress;
 

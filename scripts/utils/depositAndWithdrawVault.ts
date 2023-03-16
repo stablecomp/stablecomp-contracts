@@ -5,7 +5,7 @@ import {deploy} from "@openzeppelin/hardhat-upgrades/dist/utils";
 
 const { run, ethers, upgrades } = hardhat;
 
-const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
+const info = require('../../info/infoPool/fraxUsdc.json');
 
 let deployer : SignerWithAddress;
 let governance : SignerWithAddress;

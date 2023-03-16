@@ -4,7 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const { run, ethers, upgrades } = hardhat;
 
-const mainAddress = require('../../address/address_scaling_node/mainAddress.json');
+const mainAddress = require('../../info/deploy_address/address_scaling_node/mainAddress.json');
 
 let deployer : SignerWithAddress;
 

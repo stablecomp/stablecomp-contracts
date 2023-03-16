@@ -8,15 +8,15 @@ import {sign} from "crypto";
 
 const { run, ethers, upgrades } = hardhat;
 
-const busd3crvInfo = require('../../address/address_scaling_node/strategies/Busd3crv/Busd3crv.json');
-const dola3crvInfo = require('../../address/address_scaling_node/strategies/Dola3crv/Dola3crv.json');
-const frax3crvInfo = require('../../address/address_scaling_node/strategies/Frax3crv/Frax3crv.json');
-const fraxusdcInfo = require('../../address/address_scaling_node/strategies/FraxUsdc/FraxUsdc.json');
-const ibEurInfo = require('../../address/address_scaling_node/strategies/ibEURsEUR/ibEURsEUR.json');
-const mim3crvInfo = require('../../address/address_scaling_node/strategies/Mim3crv/Mim3crv.json');
-const tusd3crvInfo = require('../../address/address_scaling_node/strategies/Tusd3crv/Tusd3crv.json');
-const tokenAddress = require('../../strategyInfo/address_mainnet/tokenAddress.json');
-const tokenDecimals = require('../../strategyInfo/address_mainnet/tokenDecimals.json');
+const busd3crvInfo = require('../../info/deploy_address/address_scaling_node/strategies/Busd3crv/Busd3crv.json');
+const dola3crvInfo = require('../../info/deploy_address/address_scaling_node/strategies/Dola3crv/Dola3crv.json');
+const frax3crvInfo = require('../../info/deploy_address/address_scaling_node/strategies/Frax3crv/Frax3crv.json');
+const fraxusdcInfo = require('../../info/deploy_address/address_scaling_node/strategies/FraxUsdc/FraxUsdc.json');
+const ibEurInfo = require('../../info/deploy_address/address_scaling_node/strategies/ibEURsEUR/ibEURsEUR.json');
+const mim3crvInfo = require('../../info/deploy_address/address_scaling_node/strategies/Mim3crv/Mim3crv.json');
+const tusd3crvInfo = require('../../info/deploy_address/address_scaling_node/strategies/Tusd3crv/Tusd3crv.json');
+const tokenAddress = require('../../info/address_mainnet/tokenAddress.json');
+const tokenDecimals = require('../../info/address_mainnet/tokenDecimals.json');
 
 let deployer : SignerWithAddress;
 let account1 : SignerWithAddress;
@@ -24,7 +24,7 @@ let account1 : SignerWithAddress;
 
 const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
-let accountToFund = "0xD1b261c4C515f85bDaC55c6e6F6da9fce277BfFa"
+let accountToFund = "0xB0865d5A2073952f8887281675d852B4Fc1434C0"
 let amountToFund = ethers.utils.parseUnits("500", tokenDecimals.wbtc)
 
 let sCompAddress = "0x05F6847ab9273366Ca4f18294efba0503513aFB7"

@@ -6,7 +6,7 @@ import {start} from "repl";
 
 const { run, ethers } = hardhat;
 
-const info = require('../../strategyInfo/infoPool/fraxUsdc.json');
+const info = require('../../info/infoPool/fraxUsdc.json');
 
 
 async function main(): Promise<void> {
