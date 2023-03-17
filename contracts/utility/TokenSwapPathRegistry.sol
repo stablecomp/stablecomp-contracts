@@ -17,7 +17,6 @@ contract TokenSwapPathRegistry {
 
     event TokenSwapPathV2Set(address tokenIn, address tokenOut, address[] path);
     event TokenSwapPathV3Set(address tokenIn, address tokenOut, address[] tokenSwapPaths, uint24[] feeSwapPaths, uint nPool);
-    event TokenSwapPathMixedSet(address tokenIn, address tokenOut, address[] tokenSwapPaths, uint24[] feeSwapPaths, uint[] stepSwapPaths);
 
     function getTokenSwapPath(address _tokenIn, address _tokenOut) public view returns (address[] memory) {
         return tokenSwapPaths[_tokenIn][_tokenOut];
@@ -70,25 +69,6 @@ contract TokenSwapPathRegistry {
         typeSwapPath[_tokenIn][_tokenOut] = 1;
         typeRouterAddress[_tokenIn][_tokenOut] = 2;
         emit TokenSwapPathV3Set(_tokenIn, _tokenOut, _coinPath, _feePath, _nPool);
-    }
-
-    /**
-    Set path swap for tokenIn vs tokenOut
-    @dev _stepSwapPath it's only for mixed type swap, indicate the order of swap between v2 and v3
-    */
-    function _setTokenSwapPathMixed(
-        address _tokenIn,
-        address _tokenOut,
-        address[] memory _coinPath,
-        uint24[] memory _feePath,
-        uint[] memory _stepSwapPath
-    ) internal {
-        // todo
-        tokenSwapPaths[_tokenIn][_tokenOut] = _coinPath;
-        feeSwapPaths[_tokenIn][_tokenOut] = _feePath;
-        stepSwapPaths[_tokenIn][_tokenOut] = _stepSwapPath;
-        typeSwapPath[_tokenIn][_tokenOut] = 2;
-        emit TokenSwapPathMixedSet(_tokenIn, _tokenOut, _coinPath, _feePath, _stepSwapPath);
     }
 
 }

@@ -105,7 +105,7 @@ let WEEK = 7 * 86400;
 let depositv1Value: any = [];
 let initialBalanceDepositPool: any = [];
 let blockFinishBaseReward: any;
-let amountToDepositLiquidity: any = ethers.utils.parseEther(info.amountToDepositLiquidity);
+let amountToDepositLiquidity: any = ethers.utils.parseEther(info.pathAddLiquidityCurve);
 let amountToDepositVault: any = ethers.utils.parseEther("1000");
 let initialTimestamp: any;
 

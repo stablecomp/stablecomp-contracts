@@ -1,11 +1,8 @@
-import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-const { run, ethers } = hardhat;
 let deployer : SignerWithAddress;
 
 const info = require('../../../info/infoPool/3eur.json');
-const tokenInfo = require('../../../info/address_mainnet/tokenInfo.json');
 const mainnetAddress = require('../../../info/deploy_address/address_scaling_node/mainAddress.json');
 import {deployScompTask, strategyTask} from "../../01_task/sCompTask";
 
@@ -14,8 +11,6 @@ let sCompVault : Contract;
 let sCompStrategy : Contract;
 
 async function main(): Promise<void> {
-  await run('compile');
-  [deployer] = await ethers.getSigners();
 }
 
 main()

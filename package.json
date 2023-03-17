@@ -16,6 +16,7 @@
     "sendLP": "npx hardhat run scripts/utils/sendLP.ts --network scaling_node",
     "testSandwitchAttack": "npx hardhat run scripts/utils/testSandwitchAttack.ts --network hardhat",
 
+    "sendToken": "npx hardhat run scripts/utils/sendToken.ts --network scaling_node",
     "testAddLiquidityUniswap": "npx hardhat run scripts/uniswap/addRemoveLiquidity.ts --network scaling_node",
     "testSwapUniversalRouter": "npx hardhat run scripts/uniswap/testSwapUniversalRouter.ts --network hardhat",
     "testSwapUniswapV3": "npx hardhat run scripts/uniswap/sdk/testSwap.ts --network hardhat",

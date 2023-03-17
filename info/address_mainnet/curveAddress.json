@@ -1,7 +1,7 @@
 {
   "boosterAddress": "0xF403C135812408BFbE8713b5A23a04b3D48AAE31",
   "pool": {
-    "3eur": "0xb9446c4Ef5EBE66268dA6700D26f96273DE3d571",
+    "threeEur": "0xb9446c4Ef5EBE66268dA6700D26f96273DE3d571",
     "busd3crv": "0x4807862AA8b2bF68830e4C8dc86D0e9A998e085a",
     "dola3crv": "0xAA5A67c256e27A5d80712c51971408db3370927D",
     "euroc3crv": "0xe84f5b1582ba325fdf9ce6b0c1f087ccfc924e54",
@@ -9,9 +9,65 @@
     "frax3crv": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
     "fraxUsdc": "0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2",
     "ibEurSEur": "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859",
-    "mim3crv": "0x99d8a9c45b2eca8864373a26d1459e3dff1e17f3",
+    "mim3crv": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
     "tricrypto": "0x3993d34e7e99Abf6B6f367309975d1360222D446",
     "tusdc3crv": "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1",
-    "usd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea"
+    "usdd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea"
+  },
+  "lp": {
+    "threeEur": "0xb9446c4Ef5EBE66268dA6700D26f96273DE3d571",
+    "busd3crv": "0x4807862AA8b2bF68830e4C8dc86D0e9A998e085a",
+    "dola3crv": "0xAA5A67c256e27A5d80712c51971408db3370927D",
+    "euroc3crv": "0x70fc957eb90E37Af82ACDbd12675699797745F68",
+    "europool": "0xe7A3b38c39F97E977723bd1239C3470702568e7B",
+    "frax3crv": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+    "fraxUsdc": "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC",
+    "ibEurSEur": "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859",
+    "mim3crv": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
+    "tricrypto": "0xc4ad29ba4b3c580e6d59105fff484999997675ff",
+    "tusdc3crv": "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1",
+    "usdd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea"
+  },
+  "baseRewardPool": {
+    "threeEur": "0x4a9b7eDD67f58654a2c33B587f98c5709AC7d482",
+    "busd3crv": "0xbD223812d360C9587921292D0644D18aDb6a2ad0",
+    "dola3crv": "0x835f69e58087E5B6bffEf182fe2bf959Fe253c3c",
+    "euroc3crv": "0x7d955C7076566550f6B35357E7cdDF95272333F5",
+    "europool": "0x14F02f3b47B407A7a0cdb9292AA077Ce9E124803",
+    "frax3crv": "0xB900EF131301B307dB5eFcbed9DBb50A3e209B2e",
+    "fraxUsdc": "0x7e880867363A7e321f5d260Cade2B0Bb2F717B02",
+    "ibEurSEur": "0xCd0559ADb6fAa2fc83aB21Cf4497c3b9b45bB29f",
+    "mim3crv": "0xFd5AbF66b003881b88567EB9Ed9c651F14Dc4771",
+    "tricrypto": "0x9D5C5E364D81DaB193b72db9E9BE9D8ee669B652",
+    "tusdc3crv": "0x308b48F037AAa75406426dACFACA864ebd88eDbA",
+    "usdd3crv": "0x7D475cc8A5E0416f0e63042547aDB94ca7045A5b"
+  },
+  "pid": {
+    "threeEur": 60,
+    "busd3crv": 34,
+    "dola3crv": 62,
+    "euroc3crv": 110,
+    "europool": 112,
+    "frax3crv": 32,
+    "fraxUsdc": 100,
+    "ibEurSEur": 45,
+    "mim3crv": 40,
+    "tricrypto": 38,
+    "tusdc3crv": 31,
+    "usdd3crv": 96
+  },
+  "nCoins": {
+    "threeEur": 3,
+    "busd3crv": 2,
+    "dola3crv": 2,
+    "euroc3crv": 2,
+    "europool": 3,
+    "frax3crv": 2,
+    "fraxUsdc": 2,
+    "ibEurSEur": 2,
+    "mim3crv": 2,
+    "tricrypto": 3,
+    "tusdc3crv": 2,
+    "usdd3crv": 2
   }
 }

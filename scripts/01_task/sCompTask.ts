@@ -16,8 +16,6 @@ async function deploySCompToken(): Promise<Contract> {
     let factory = await ethers.getContractFactory("StableCompToken");
     let contract = await factory.deploy();
 
-    console.log("StableCompToken deployed to address: ", contract.address);
-
     // Verifying contracts
     if (
         hardhat.network.name !== "hardhat" &&
@@ -55,8 +53,6 @@ async function deployVe(sCompTokenAddress: string): Promise<Contract> {
 
     let factory = await ethers.getContractFactory("veScomp");
     let contract = await factory.deploy(sCompTokenAddress, nameVe, symbolVe, versionVe);
-
-    console.log("Voting escrow contract deployed to address: ", contract.address);
 
     const [deployer] = await ethers.getSigners();
     contract = await ethers.getContractAt("IVotingEscrow", contract.address, deployer);
@@ -162,8 +158,6 @@ async function deployFeeDistribution(sCompTokenAddress: string, veAddress: strin
         emergencyReturn
     )
 
-    console.log("Fee distribution contract deploy to: ", feeDistributionContract.address);
-
     const [deployer] = await ethers.getSigners();
     feeDistributionContract = await ethers.getContractAt("IFeeDistributorFront", feeDistributionContract.address, deployer);
 
@@ -219,8 +213,6 @@ async function deploySurplusConverterV2(feeDistributionAddress: string, whitelis
         governor,
         guardians
     )
-
-    console.log("Surplus converter v2 contract deploy to: ", surplusConverterV2Contract.address);
 
     // Write json
     if (
@@ -309,8 +301,6 @@ async function deployController(governance: string, strategist: string, rewards:
     );
     await sCompController.deployed();
 
-    console.log("Controller deployed to: ", sCompController.address)
-
     // Write json && Verifying contracts
     if (
         hardhat.network.name !== "hardhat" &&
@@ -360,8 +350,6 @@ async function deployTimeLockController(proposer: string[], executor: string[]):
     );
     await sCompTimelockController.deployed();
 
-    console.log("Timelock controller deployed to: ", sCompTimelockController.address)
-
     // Write json && Verifying contracts
     if (
         hardhat.network.name !== "hardhat" &&
@@ -409,9 +397,6 @@ async function deployVault(controllerAddress: string, wantAddress: string, treas
         feeDeposit
     );
     await sCompVault.deployed();
-
-    console.log("Vault deployed to: ", sCompVault.address)
-
 
     // Write json
     if (
@@ -483,8 +468,6 @@ async function deployStrategy(nameStrategy: string, governanceAddress: string, s
         {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool}
     );
     await sCompStrategy.deployed();
-
-    console.log("Strategy deployed to: ", sCompStrategy.address)
 
     // Write json
     if (
@@ -595,7 +578,7 @@ async function writeAddressInJson(folder: string, nameFile: string, jsonData: an
 }
 
 // STRATEGIES FUNCTION
-async function setTokenSwapPath(strategyAddress: string, namePath: string): Promise<void> {
+async function setTokenSwapPathConfig(strategyAddress: string, namePath: string): Promise<void> {
     let strategy: Contract = await getStrategy(strategyAddress)
 
     const [deployer] = await ethers.getSigners();
@@ -603,13 +586,9 @@ async function setTokenSwapPath(strategyAddress: string, namePath: string): Prom
     let infoSwap = require("../../info/bestQuote/"+namePath+".json");
 
     if (infoSwap.versionProtocol == "V2") {
-        await strategy.connect(deployer).setTokenSwapPathV2(
+        let tx = await strategy.connect(deployer).setTokenSwapPathV2(
             infoSwap.coinPath[0], infoSwap.coinPath[infoSwap.coinPath.length -1],
-            [infoSwap.coinPath], 0);
-
-        let tx = await strategy.connect(deployer).setTokenSwapPathV3(
-            infoSwap.coinPath[0], infoSwap.coinPath[infoSwap.coinPath.length -1],
-            infoSwap.coinPath, infoSwap.feePath, infoSwap.feePath.length);
+            infoSwap.coinPath, infoSwap.routerIndex);
         await tx.wait();
     } else {
         let tx = await strategy.connect(deployer).setTokenSwapPathV3(
@@ -657,9 +636,7 @@ async function harvest(strategyAddress: string): Promise<void> {
     await tx.wait();
 }
 
-async function proposeChangeFeeStrategy(timeLockController: Contract, strategyAddress: string, newFeeGovernance:any): Promise<void> {
-    let minDelay = 86400
-
+async function proposeChangeFeeGovernance(timeLockController: Contract, strategyAddress: string, newFeeGovernance:any, minDelay: number): Promise<void> {
     let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
     let data = factoryStrategy.interface.encodeFunctionData("setPerformanceFeeGovernance", [newFeeGovernance]);
 
@@ -783,7 +760,7 @@ export const deployScompTask = {
 
 export const strategyTask = {
     setTokenSwapPathConfig: async function (strategyAddress: string, namePath: string): Promise<void>{
-        return await setTokenSwapPath(strategyAddress, namePath);
+        return await setTokenSwapPathConfig(strategyAddress, namePath);
     },
     setTokenSwapPathManual: async function (strategyAddress: string, coinPath: string[], feePath: any[], versionProtocol: any, routerIndex: number): Promise<void>{
         return await setTokenSwapPathManual(strategyAddress, coinPath, feePath, versionProtocol, routerIndex);
@@ -791,8 +768,8 @@ export const strategyTask = {
     harvest: async function (strategyAddress: string): Promise<void>{
         return await harvest(strategyAddress);
     },
-    proposeChangeFeeStrategy: async function (timeLockController: Contract, strategyAddress: string, newFeeGovernance:any): Promise<void>{
-        return await proposeChangeFeeStrategy(timeLockController, strategyAddress, newFeeGovernance);
+    proposeChangeFeeStrategy: async function (timeLockController: Contract, strategyAddress: string, newFeeGovernance:any, minDelay: number): Promise<void>{
+        return await proposeChangeFeeGovernance(timeLockController, strategyAddress, newFeeGovernance, minDelay);
     },
     executeChangeFeeStrategy: async function (timeLockController: Contract, strategyAddress: string, newFeeGovernance:any): Promise<void>{
         return await executeChangeFeeStrategy(timeLockController, strategyAddress, newFeeGovernance);

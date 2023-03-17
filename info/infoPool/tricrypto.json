@@ -17,6 +17,6 @@
   "feeGovernance": 0,
   "feeStrategist": 0,
   "feeWithdraw": 0,
-  "amountToDepositLiquidity": "100",
+  "pathAddLiquidityCurve": "100",
   "routerIndex": 0
 }
