@@ -36,7 +36,7 @@ const USDC_whale = "0x55FE002aefF02F77364de339a1292923A15844B8";
 const WBTC_whale = "0x0aaeFad51c8Cd1303aA3054b87BdD6f9A356DfC8";
 
 /* ------------------------------ Vault Address ----------------------------- */
-const sComp = "0x494d51A38ACEEBcc1D6b8e6A1EE8D8d489052033";
+const sComp = "0x785621aeC18af65B8C6998CCfFA7e035e75DbFF7";
 
 /* -------------------------------------------------------------------------- */
 /*             impersonate account and transfer to owner (hardhat)            */
@@ -96,7 +96,7 @@ async function main() {
     account
   );
 
-  await OneClickOut(WBTC, "2500", sComp, false, 0, OneClick, account);
+  await OneClickOut(WBTC, "2000", sComp, false, 0, OneClick, account);
 }
 
 main().catch((error) => {
