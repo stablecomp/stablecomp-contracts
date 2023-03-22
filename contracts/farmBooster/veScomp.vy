@@ -370,26 +370,6 @@ def checkpoint():
     """
     self._checkpoint(ZERO_ADDRESS, empty(LockedBalance), empty(LockedBalance))
 
-
-@external
-@nonreentrant('lock')
-def deposit_for(_addr: address, _value: uint256):
-    """
-    @notice Deposit `_value` tokens for `_addr` and add to the lock
-    @dev Anyone (even a smart contract) can deposit for someone else, but
-         cannot extend their locktime and deposit for a brand new user
-    @param _addr User's wallet address
-    @param _value Amount to add to user's lock
-    """
-    _locked: LockedBalance = self.locked[_addr]
-
-    assert _value > 0  # dev: need non-zero value
-    assert _locked.amount > 0, "No existing lock found"
-    assert _locked.end > block.timestamp, "Cannot add to expired lock. Withdraw"
-
-    self._deposit_for(_addr, _value, 0, self.locked[_addr], DEPOSIT_FOR_TYPE)
-
-
 @external
 @nonreentrant('lock')
 def create_lock(_value: uint256, _unlock_time: uint256):

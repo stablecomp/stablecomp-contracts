@@ -1,5 +1,4 @@
 import hardhat from 'hardhat';
-import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {deployScompTask, strategyTask, vaultTask} from "../../01_task/sCompTask";
 import {utilsTask} from "../../01_task/standard/utilsTask";
@@ -7,9 +6,7 @@ import {poolCurveTask} from "../../01_task/curve/curveTask";
 import {erc20Task} from "../../01_task/standard/erc20Task";
 const { ethers } = hardhat;
 
-const boosterABI = require('../../../info/abi/booster.json');
 const tokenInfo = require('../../../info/address_mainnet/tokenInfo.json');
-const routerInfo = require('../../../info/address_mainnet/routerAddress.json');
 const curveInfo = require('../../../info/address_mainnet/curveAddress.json');
 
 async function setupContractBase(config: any): Promise<any> {
@@ -103,7 +100,7 @@ async function addLiquidity(accounts: SignerWithAddress[], config: any): Promise
 async function depositVault(accounts: SignerWithAddress[], vaultAddress: string, config: any): Promise<void> {
     for (let i = 0; i < accounts.length; i++) {
         await erc20Task.approve(config.wantAddress, accounts[i], vaultAddress, ethers.constants.MaxUint256);
-        await vaultTask.deposit(vaultAddress, config.wantAddress, accounts[i], config.amountToDepositVault)
+        await vaultTask.deposit(vaultAddress, accounts[i], config.amountToDepositVault)
     }
 }
 
@@ -114,7 +111,6 @@ async function withdrawVault(accounts: SignerWithAddress[], vaultAddress: string
 
     }
 }
-
 
 async function getConfig(name: string): Promise<any> {
     if (name == "3eur" ) {

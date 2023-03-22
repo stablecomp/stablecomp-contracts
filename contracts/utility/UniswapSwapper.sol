@@ -95,57 +95,6 @@ contract UniswapSwapper is BaseSwapper {
         );
     }
 
-    function _getPair(
-        address router,
-        address token0,
-        address token1
-    ) internal view returns (address) {
-        address factory = IUniswapRouterV2(router).factory();
-        return IUniswapV2Factory(factory).getPair(token0, token1);
-    }
-
-    /// @notice Add liquidity to uniswap for specified token pair, utilizing the maximum balance possible
-    function _addMaxLiquidity(
-        address router,
-        address token0,
-        address token1
-    ) internal {
-        uint256 _token0Balance =
-        IERC20(token0).balanceOf(address(this));
-        uint256 _token1Balance =
-        IERC20(token1).balanceOf(address(this));
-
-        _safeApproveHelper(token0, router, _token0Balance);
-        _safeApproveHelper(token1, router, _token1Balance);
-
-        IUniswapRouterV2(router).addLiquidity(
-            token0,
-            token1,
-            _token0Balance,
-            _token1Balance,
-            0,
-            0,
-            address(this),
-            block.timestamp
-        );
-    }
-
-    function _addMaxLiquidityEth(address router, address token0) internal {
-        uint256 _token0Balance =
-        IERC20(token0).balanceOf(address(this));
-        uint256 _ethBalance = address(this).balance;
-
-        _safeApproveHelper(token0, router, _token0Balance);
-        IUniswapRouterV2(router).addLiquidityETH{value: _ethBalance}(
-            token0,
-            _token0Balance,
-            0,
-            0,
-            address(this),
-            block.timestamp
-        );
-    }
-
     // V3
     function _swapExactInputMultihop3(
         address router,

@@ -418,6 +418,9 @@ TokenSwapPathRegistry
         uint256 wantGained;
 
         if (tokenCompoundToDeposit > 0) {
+
+            // todo amount minMintAmount
+
             // Add liquidity
             _add_liquidity_single_coin(
                 curvePool.swap,

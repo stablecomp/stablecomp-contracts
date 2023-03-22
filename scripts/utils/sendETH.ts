@@ -1,19 +1,12 @@
-import hardhat, {network} from 'hardhat';
-import {Contract} from "@ethersproject/contracts";
+import hardhat from 'hardhat';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {deploy} from "@openzeppelin/hardhat-upgrades/dist/utils";
-import {start} from "repl";
 
-const { run, ethers, upgrades } = hardhat;
-
-const info = require('../../info/infoPool/fraxUsdc.json');
+const { run, ethers } = hardhat;
 
 let deployer : SignerWithAddress;
 let account1 : SignerWithAddress;
 
-const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
-
-let accountToFound = "0xB0865d5A2073952f8887281675d852B4Fc1434C0"
+let accountToFound = "0x5ed48b2D93487C55b7eC6C5e033Cc1B81D737E1e"
 async function main(): Promise<void> {
 
     await run('compile');
@@ -27,7 +20,7 @@ async function main(): Promise<void> {
 
         let tx = await account1.sendTransaction({
             to: accountToFound,
-            value: ethers.utils.parseEther("15.0"), // Sends exactly 1.0 ether
+            value: ethers.utils.parseEther("1.0"), // Sends exactly 1.0 ether
         });
         await tx.wait();
         console.log("Send eth completed")

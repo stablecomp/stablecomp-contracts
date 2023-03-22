@@ -11,6 +11,12 @@ async function getSymbol(tokenAddress: string): Promise<string> {
     return await contract.symbol();
 }
 
+async function transfer(tokenAddress: string, accountFrom: SignerWithAddress, accountTo: string, amount: any): Promise<void> {
+    let contract = await getErc20(tokenAddress);
+    let tx = await contract.connect(accountFrom).transfer(accountTo, amount);
+    await tx.wait()
+}
+
 async function approve(tokenAddress: string, accountFrom: SignerWithAddress, accountTo: string, amount: any): Promise<void> {
     let contract = await getErc20(tokenAddress);
     let tx = await contract.connect(accountFrom).approve(accountTo, amount);
@@ -37,7 +43,10 @@ export const erc20Task = {
     getSymbol: async function (tokenAddress: string): Promise<string> {
         return await getSymbol(tokenAddress);
     },
-    approve: async function (tokenAddress: string, accountFrom: any, accountTo: string, amount: any): Promise<void> {
+    transfer: async function (tokenAddress: string, accountFrom: SignerWithAddress, accountTo: string, amount: any): Promise<void> {
+        return await transfer(tokenAddress, accountFrom, accountTo, amount);
+    },
+    approve: async function (tokenAddress: string, accountFrom: SignerWithAddress, accountTo: string, amount: any): Promise<void> {
         return await approve(tokenAddress, accountFrom, accountTo, amount);
     },
     readEventTransfer: async function (tokenAddress: string, accountToCheck: string): Promise<any> {

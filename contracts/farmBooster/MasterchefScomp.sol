@@ -104,7 +104,7 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         address _veContract,
         uint _tokenPerBlock,
         uint _startBlock
-    ) public {
+    ) {
         TOKEN = _TOKEN;
         veContract = IVotingEscrow(_veContract);
         tokenPerBlock = _tokenPerBlock;
@@ -230,7 +230,7 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
             uint256 lpSupply = pool.totalBoostedShare;
 
             if (lpSupply > 0 && totalAllocPoint > 0) {
-                uint256 multiplier = block.number.sub(pool.lastRewardBlock);
+                uint256 multiplier = lastBlock.sub(pool.lastRewardBlock);
                 uint256 tokenReward = multiplier.mul(tokenPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
                 pool.accTokenPerShare = pool.accTokenPerShare.add((tokenReward.mul(ACC_TOKEN_PRECISION).div(lpSupply)));
             }
@@ -437,9 +437,7 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
     function _safeTransfer(address _to, uint256 _amount) internal {
         if (_amount > 0) {
             uint256 balance = TOKEN.balanceOf(address(this));
-            if (balance < _amount) {
-                _amount = balance;
-            }
+            require(balance >= _amount, "insufficient balance in contract");
             TOKEN.safeTransfer(_to, _amount);
         }
     }

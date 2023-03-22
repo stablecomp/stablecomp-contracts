@@ -2,7 +2,6 @@ import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import fs from "fs";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {utilsTask} from "./standard/utilsTask";
 import {erc20Task} from "./standard/erc20Task";
 const { run, ethers } = hardhat;
 
@@ -673,7 +672,7 @@ async function getStrategy(strategyAddress: string): Promise<Contract> {
 }
 
 // VAULT FUNCTION
-async function deposit(vaultAddress: string, wantAddress: string, accountOperator: SignerWithAddress, amountDeposit: any): Promise<void> {
+async function deposit(vaultAddress: string, accountOperator: SignerWithAddress, amountDeposit: any): Promise<void> {
     let vault = await getVault(vaultAddress);
     let tx = await vault.connect(accountOperator).deposit(amountDeposit);
     await tx.wait();
@@ -777,8 +776,8 @@ export const strategyTask = {
 };
 
 export const vaultTask = {
-    deposit: async function (vaultAddress: string, wantAddress: string, accountOperator: SignerWithAddress, amountDeposit: any): Promise<void>{
-        return await deposit(vaultAddress, wantAddress, accountOperator, amountDeposit);
+    deposit: async function (vaultAddress: string, accountOperator: SignerWithAddress, amountDeposit: any): Promise<void>{
+        return await deposit(vaultAddress, accountOperator, amountDeposit);
     },
     depositFor: async function (vaultAddress: string, wantAddress: string, accountOperator: SignerWithAddress, accountReceiver: string, amountDeposit: any): Promise<void>{
         return await depositFor(vaultAddress, wantAddress, accountOperator, accountReceiver, amountDeposit);

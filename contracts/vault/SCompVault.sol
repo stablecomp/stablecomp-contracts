@@ -8,11 +8,10 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "./interface/IController.sol";
+import "../interface/IController.sol";
+import "./ERC20SCompVault.sol";
 
-import "hardhat/console.sol";
-
-contract SCompVault is ERC20 {
+contract SCompVault is ERC20SCompVault {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -32,10 +31,12 @@ contract SCompVault is ERC20 {
     event Deposit(address indexed _receiver, uint _amount, uint256 _timestamp);
     event Withdraw(address indexed _receiver, uint _amount, uint256 _timestamp);
 
+    uint public constant MINIMUM_LIQUIDITY = 10**3;
+
     constructor(address _token, address _controller, address _treasuryFee, uint _depositFee)
-    ERC20(
-        string(abi.encodePacked("sComp ", ERC20(_token).name())),
-        string(abi.encodePacked("s", ERC20(_token).symbol()))
+    ERC20SCompVault(
+        string(abi.encodePacked("sComp ", ERC20SCompVault(_token).name())),
+        string(abi.encodePacked("s", ERC20SCompVault(_token).symbol()))
     )
     {
         token = IERC20(_token);
@@ -43,6 +44,7 @@ contract SCompVault is ERC20 {
         controller = _controller;
         depositFee = _depositFee;
         treasuryFee = _treasuryFee;
+
     }
 
     function balance() public view returns (uint256) {
@@ -99,7 +101,8 @@ contract SCompVault is ERC20 {
         _amount = _after.sub(_before); // Additional check for deflationary tokens
         uint256 shares = 0;
         if (totalSupply() == 0) {
-            shares = _amount;
+            shares = _amount - MINIMUM_LIQUIDITY;
+            _mint(address(0), MINIMUM_LIQUIDITY);
         } else {
             shares = (_amount.mul(totalSupply())).div(_pool);
         }
