@@ -7,12 +7,12 @@ const { run, ethers } = hardhat;
 let deployer : SignerWithAddress;
 let account1 : SignerWithAddress;
 
-let accountsToFund = ["0x5ed48b2D93487C55b7eC6C5e033Cc1B81D737E1e"]
+let accountsToFund = ["0x5ed48b2D93487C55b7eC6C5e033Cc1B81D737E1e", "0xb928F09222e5dA8edbDf98570372FAEF56822F9D", "0x3054f2e2Aa021B7Ce60f5775d398207Cb0d1ff04", "0x7f899aF73f9bC15E0c9Ab93636701AB4a7ceE07e", "0x8c28c750E8a4902fc82b076016158cE2F8674ceF"]
 let amountToFund = ethers.utils.parseEther("10000")
 
-const mainAddress = require('../../info/deploy_address/address_scaling_node/mainAddress.json');
+const tokenJson = require('../../info/deploy_address/scaling_node/token/sCompTokenContract.json');
 
-let sCompAddress = mainAddress.sCompTokenContract.address;
+let sCompAddress = tokenJson.sCompTokenContract.address;
 let sCompContract : Contract;
 
 async function main(): Promise<void> {
@@ -25,7 +25,6 @@ async function main(): Promise<void> {
 }
 
 async function setupContract(): Promise<void> {
-
     console.log("Scomp token address is: ", sCompAddress)
     let factorySComp = await ethers.getContractFactory("StableCompToken");
     sCompContract = await factorySComp.attach(sCompAddress);

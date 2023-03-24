@@ -4,19 +4,20 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const { run, ethers } = hardhat;
 
-const mainnetAddress = require('../../info/deploy_address/address_scaling_node/mainAddress.json');
-
 let deployer : SignerWithAddress;
 
-// contract deploy
-let masterchefScomp : Contract;
-let masterchefScompAddress = mainnetAddress.masterchefScomp.address
-let sCompTokenContract : Contract;
-let sCompAddress = mainnetAddress.sCompTokenContract.address;
+// contract deploy json
+const masterchefJson = require('../../info/deploy_address/scaling_node/farming/masterchefScompContract.json');
+const tokenJson = require('../../info/deploy_address/scaling_node/token/sCompTokenContract.json');
+const busd3Crv = require('../../info/deploy_address/scaling_node/vault/sCompVault_BUSD3CRV-f.json')
+const dola3Crv = require('../../info/deploy_address/scaling_node/vault/sCompVault_DOLA3POOL3CRV-f.json')
+const fraxusdc = require('../../info/deploy_address/scaling_node/vault/sCompVault_crvFRAX.json')
 
-const busd3Crv = require('../../info/deploy_address/address_scaling_node/strategies/Busd3crv/Busd3crv.json')
-const dola3crv = require('../../info/deploy_address/address_scaling_node/strategies/Dola3crv/Dola3crv.json')
-const fraxusdc = require('../../info/deploy_address/address_scaling_node/strategies/FraxUsdc/FraxUsdc.json')
+let masterchefScomp : Contract;
+let masterchefScompAddress = masterchefJson.masterchefScomp.address
+
+let sCompTokenContract : Contract;
+let sCompAddress = tokenJson.sCompTokenContract.address
 
 let fundAmountToMasterchef = ethers.utils.parseEther("100000");
 
@@ -54,7 +55,7 @@ main()
         await fundContract();
         await addPool(busd3Crv.sCompVault.address)
         console.log("Pool busd3crv added")
-        await addPool(dola3crv.sCompVault.address)
+        await addPool(dola3Crv.sCompVault.address)
         console.log("Pool dola3crv added")
         await addPool(fraxusdc.sCompVault.address)
         console.log("Pool fraxusdc added")

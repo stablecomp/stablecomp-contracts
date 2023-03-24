@@ -7,6 +7,7 @@ import {boosterTask, deployScompTask, strategyTask, vaultTask} from "../../01_ta
 import {feeDistributionTask, surplusConverterTask} from "../../01_task/feeTask";
 import {erc20Task} from "../../01_task/standard/erc20Task";
 import {testStrategyTask} from "../01_task/testStrategyTask";
+import {oracleRouterTask} from "../../01_task/oracle/oracleRouterTask";
 
 const { run, ethers } = hardhat;
 
@@ -15,6 +16,7 @@ let config: any;
 
 // json constant
 const tokenInfo = require('../../../info/address_mainnet/tokenInfo.json');
+const oracleInfo = require('../../../info/address_mainnet/oracleAddress.json');
 
 // account
 let deployer : SignerWithAddress;
@@ -38,7 +40,7 @@ let storelLpAccount: any = [];
 async function main(): Promise<void> {
   await run('compile');
   [deployer] = await ethers.getSigners();
-  config = await testStrategyTask.getConfig(nameConfig)
+  config = await deployScompTask.getConfig(nameConfig)
 }
 
 async function buyBackConverter(): Promise<void> {
@@ -126,7 +128,7 @@ main()
     .then(async () => {
         // INITIAL ACTION
         console.log(" ----- SETUP CONTRACT")
-        const {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, vault, strategy} =
+        const {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, oracleRouter, vault, strategy} =
             await testStrategyTask.setupContractBase(config);
 
         feeDistributionContract = feeDistribution;
@@ -135,6 +137,7 @@ main()
 
         await testStrategyTask.setTokenSwapPath(strategy.address, config);
 
+        await testStrategyTask.addFeed(oracleRouter.address, config)
 
         console.log(" ----- SETUP ACCOUNT")
         const {acc1, acc2, acc3} = await testStrategyTask.impersonateAccount(config);

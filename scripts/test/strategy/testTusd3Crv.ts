@@ -38,7 +38,7 @@ let storelLpAccount: any = [];
 async function main(): Promise<void> {
     await run('compile');
     [deployer] = await ethers.getSigners();
-    config = await testStrategyTask.getConfig(nameConfig)
+    config = await deployScompTask.getConfig(nameConfig)
 }
 
 async function buyBackConverter(): Promise<void> {

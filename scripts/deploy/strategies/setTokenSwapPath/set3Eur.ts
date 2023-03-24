@@ -1,6 +1,6 @@
 import {strategyTask} from "../../../01_task/sCompTask";
 
-const threeEur = require('../../../../info/deploy_address/address_scaling_node/strategies/3Eur/3Eur.json');
+const threeEur = require('../../../../info/deploy_address/scaling_node/strategies/3Eur/3Eur.json');
 
 async function main(): Promise<void> {
 }

@@ -1,0 +1,10 @@
+{
+  "sCompController": {
+    "address": "0x0a1da14519309eCEa6E19DC940D95A7Fc850a911",
+    "args": {
+      "governance": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "strategist": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "rewards": "0x2b276218D962dEEbF96C749ffB228601b2C7a587"
+    }
+  }
+}

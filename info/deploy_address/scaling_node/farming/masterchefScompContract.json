@@ -1,0 +1,1 @@
+{"masterchefScomp":{"address":"0x313677961FE817f982bc9bE57f33c526EAA11C06","args":{"sCompTokenAddress":"0xDf371d2d4b4736082A5b7e87Dc2f35cfe9d7bfa5","veScompAddress":"0x6862a40fDdDafc8EC77FD82697Ea5c9872433d1F","tokenPerBlock":{"type":"BigNumber","hex":"0x14d1120d7b160000"},"initialBlock":16898935}}}

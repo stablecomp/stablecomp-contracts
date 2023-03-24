@@ -1,0 +1,24 @@
+{
+  "sCompStrategy": {
+    "address": "0xf62944973786D1E01db7d9dB987C881d9AeB369D",
+    "args": {
+      "nameStrategy": "FraxUsdc",
+      "governance": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "strategist": "0xb0781Ee70D9CF4823Fa47C0D630B534ABA9d9529",
+      "controller": "0x0a1da14519309eCEa6E19DC940D95A7Fc850a911",
+      "want": "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC",
+      "tokenCompound": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "pid": 100,
+      "feeConfig": [
+        500,
+        500,
+        20
+      ],
+      "curvePool": {
+        "swap": "0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2",
+        "tokenCompoundPosition": 1,
+        "numElements": 2
+      }
+    }
+  }
+}

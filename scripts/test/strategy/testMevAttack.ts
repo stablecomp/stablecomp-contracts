@@ -25,7 +25,7 @@ let surplusConverterV2Contract: Contract;
 async function main(): Promise<void> {
     await run('compile');
     [deployer, attacker, victim] = await ethers.getSigners();
-    config = await testStrategyTask.getConfig(nameConfig)
+    config = await deployScompTask.getConfig(nameConfig)
 }
 
 main()
@@ -51,13 +51,14 @@ main()
         await testERC20Deployed.mint(attacker.address, ethers.utils.parseEther("100000000000"));
         await testERC20Deployed.mint(victim.address, ethers.utils.parseEther("100000000000"));
 
+        let oracleRouter = await deployScompTask.deployOracleRouter();
 
         let vault = await deployScompTask.deployVault(controller.address, testERC20Deployed.address, deployer.address, config.feeDeposit);
 
         let strategy = await deployScompTask.deployStrategy(
-            config.nameStrategy, deployer.address, surplusConverterV2.address, controller.address,
+            config.nameStrategy, deployer.address, surplusConverterV2.address, controller.address, oracleRouter.address,
             testERC20Deployed.address, config.tokenCompoundAddress, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
-            config.curveSwapAddress, config.nElementPool, timelockController.address
+            config.curveSwapAddress, config.nElementPool, timelockController.address, config.versionStrategy
         );
 
         feeDistributionContract = feeDistribution;

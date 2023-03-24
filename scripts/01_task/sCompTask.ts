@@ -8,6 +8,7 @@ const { run, ethers } = hardhat;
 const tokenInfo = require('../../info/address_mainnet/tokenInfo.json');
 const routerInfo = require('../../info/address_mainnet/routerAddress.json');
 const curveInfo = require('../../info/address_mainnet/curveAddress.json');
+const oracleInfo = require('../../info/address_mainnet/oracleAddress.json');
 const boosterABI = require('../../info/abi/booster.json');
 
 // DEPLOY FUNCTION
@@ -104,8 +105,6 @@ async function deployMasterchef(sCompTokenAddress: string, veAddress: string): P
         tokenPerBlock,
         initialBlock
     );
-
-    console.log("Masterchef contract deployed to address: ", masterchefScomp.address);
 
     // Write json && Verifying contracts
     if (
@@ -386,6 +385,40 @@ async function deployTimeLockController(proposer: string[], executor: string[]):
     return sCompTimelockController;
 }
 
+async function deployOracleRouter(): Promise<Contract> {
+    let factory = await ethers.getContractFactory("OracleRouter")
+    let oracleRouter = await factory.deploy();
+    await oracleRouter.deployed();
+
+    // Write json && Verifying contracts
+    if (
+        hardhat.network.name !== "hardhat" &&
+        hardhat.network.name !== "localhost"
+    ) {
+        let jsonData = {
+            oracleRouter: {
+                address: oracleRouter.address,
+                args: {}
+            },
+        }
+        await writeAddressInJson("oracle", "oracleRouter", jsonData)
+
+        if (
+            hardhat.network.name !== "scaling_node"
+        ) {
+            // Wait 30 seconds
+            await new Promise(resolve => setTimeout(resolve, 30000));
+
+            await run("verify:verify", {
+                address: oracleRouter.address,
+                constructorArguments: [],
+            });
+        }
+    }
+
+    return oracleRouter;
+}
+
 async function deployVault(controllerAddress: string, wantAddress: string, treasuryFeeAddress: string, feeDeposit: any): Promise<Contract> {
     // deploy
     let factoryVault = await ethers.getContractFactory("SCompVault")
@@ -449,12 +482,18 @@ async function deployVault(controllerAddress: string, wantAddress: string, treas
 }
 
 async function deployStrategy(nameStrategy: string, governanceAddress: string, surplusConverterV2Address: string,
-                              controllerAddress: string, wantAddress: string, tokenCompoundAddress: string,
+                              controllerAddress: string, oracleRouterAddress: string, wantAddress: string, tokenCompoundAddress: string,
                               tokenCompoundPosition: number, pidPool: number, feeGovernance: number, feeStrategist: number,
                               feeWithdraw: number, curveSwapAddress: string, nElementPool: number ,
-                              timeLockControllerAddress: string): Promise<Contract> {
+                              timeLockControllerAddress: string, versionStrategy: string): Promise<Contract> {
 
-    let factoryStrategy = await ethers.getContractFactory("SCompStrategyV1")
+    let factoryStrategy;
+    if (versionStrategy == "1.1") {
+        factoryStrategy = await ethers.getContractFactory("SCompStrategyV1_1")
+    } else {
+        factoryStrategy = await ethers.getContractFactory("SCompStrategyV1_0")
+    }
+
     let sCompStrategy = await factoryStrategy.deploy(
         nameStrategy,
         governanceAddress,
@@ -501,8 +540,7 @@ async function deployStrategy(nameStrategy: string, governanceAddress: string, s
     await sCompStrategy.connect(deployer).setUniswapV3Router(routerInfo.uniswapV3);
     await sCompStrategy.connect(deployer).setUniswapV2Router(routerInfo.uniswapV2);
     await sCompStrategy.connect(deployer).setSushiswapRouter(routerInfo.sushiswap);
-    await sCompStrategy.connect(deployer).setQuoterUniswap(routerInfo.quoter);
-
+    await sCompStrategy.connect(deployer).setOracleRouter(oracleRouterAddress);
 
     // set strategy in controller
     let sCompControllerFactory = await ethers.getContractFactory("SCompController");
@@ -548,20 +586,25 @@ async function deployStrategy(nameStrategy: string, governanceAddress: string, s
 
 async function writeAddressInJson(folder: string, nameFile: string, jsonData: any): Promise<void> {
 
-    let addressPath = "./address/"
+    let infoPath = "./info/"
+    if (!fs.existsSync(infoPath)) {
+        fs.mkdirSync(infoPath);
+    }
+
+    let addressPath = infoPath + "./deploy_address/"
     if (!fs.existsSync(addressPath)) {
         fs.mkdirSync(addressPath);
     }
 
-    let networkPath = "./address/"+ hardhat.network.name
+    let networkPath = addressPath + hardhat.network.name
     if (!fs.existsSync(networkPath)) {
         fs.mkdirSync(networkPath);
     }
 
-    let folderPath = "./address/"+ hardhat.network.name +"/"+ folder +"/"
+    let folderPath = networkPath + "/" + folder +"/"
     if (!fs.existsSync(folderPath)){
         await fs.mkdirSync(folderPath);
-        let folderPathBackup = "./address/"+ hardhat.network.name +"/"+folder+"/backup"
+        let folderPathBackup = folderPath + "/backup/"
         await fs.mkdirSync(folderPathBackup);
     }
 
@@ -584,17 +627,13 @@ async function setTokenSwapPathConfig(strategyAddress: string, namePath: string)
 
     let infoSwap = require("../../info/bestQuote/"+namePath+".json");
 
-    if (infoSwap.versionProtocol == "V2") {
-        let tx = await strategy.connect(deployer).setTokenSwapPathV2(
-            infoSwap.coinPath[0], infoSwap.coinPath[infoSwap.coinPath.length -1],
-            infoSwap.coinPath, infoSwap.routerIndex);
-        await tx.wait();
-    } else {
-        let tx = await strategy.connect(deployer).setTokenSwapPathV3(
-            infoSwap.coinPath[0], infoSwap.coinPath[infoSwap.coinPath.length -1],
-            infoSwap.coinPath, infoSwap.feePath, infoSwap.feePath.length);
-        await tx.wait();
-    }
+    let isSwapV2 = infoSwap.versionProtocol == "V2"
+
+    let tx = await strategy.connect(deployer).setTokenSwapPath(
+        infoSwap.coinPath[0], infoSwap.coinPath[infoSwap.coinPath.length -1],
+        infoSwap.coinPath, infoSwap.feePath, infoSwap.routerIndex, isSwapV2);
+    await tx.wait();
+
 }
 
 
@@ -667,7 +706,7 @@ async function executeChangeFeeStrategy(timeLockController: Contract, strategyAd
 }
 
 async function getStrategy(strategyAddress: string): Promise<Contract> {
-    let factory = await ethers.getContractFactory("SCompStrategyV1");
+    let factory = await ethers.getContractFactory("SCompStrategyV1_0");
     return factory.attach(strategyAddress);
 }
 
@@ -720,8 +759,273 @@ async function getBoosterContract(): Promise<Contract> {
 
 }
 
+async function getConfig(name: string): Promise<any> {
+    if (name == "3eur" ) {
+        return {
+            nameStrategy: "3Eur",
+            wantAddress: curveInfo.lp.threeEur,
+            tokenCompoundAddress: tokenInfo.tetherEur.address,
+            tokenCompoundPosition: 1,
+            curveSwapAddress: curveInfo.pool.threeEur,
+            tokenDepositAddress: tokenInfo.tetherEur.address,
+            accountDepositAddress1: "0x8ff006ECdD4867F9670e8d724243f7E0619ABb66",
+            accountDepositAddress2: "0xc6fBD88378cF798f90B66084350fA38eed6a8645",
+            accountDepositAddress3: "0x103090A6141ae2F3cB1734F2D0D2D8f8924b3A5d",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("0", 18), ethers.utils.parseUnits("1000", tokenInfo.tetherEur.decimals), ethers.utils.parseUnits("0", 18)],
+            baseRewardPoolAddress: curveInfo.baseRewardPool.threeEur,
+            pidPool: curveInfo.pid.threeEur,
+            nElementPool: curveInfo.nCoins.threeEur,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_eurT",
+            cvxSwapPath: "cvx_eurT",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.tetherEur_usd,
+            versionStrategy: "1.0"
+        }
+    }
+    else if (name == "busd3crv" ) {
+        return {
+            nameStrategy: "Busd3Crv",
+            wantAddress: curveInfo.lp.busd3crv,
+            tokenCompoundAddress: tokenInfo.busd.address,
+            tokenCompoundPosition: 0,
+            curveSwapAddress: curveInfo.pool.busd3crv,
+            tokenDepositAddress: tokenInfo.busd.address,
+            accountDepositAddress1: "0xf6deeb3fd7f9ab00b8ba2b0428611bebb4740aab",
+            accountDepositAddress2: "0xf9211FfBD6f741771393205c1c3F6D7d28B90F03",
+            accountDepositAddress3: "0x0c01e95c161c3025d1874b5734c250449036b32a",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.busd.decimals), ethers.utils.parseUnits("0", 18)],
+            baseRewardPoolAddress: curveInfo.baseRewardPool.busd3crv,
+            pidPool: curveInfo.pid.busd3crv,
+            nElementPool: curveInfo.nCoins.busd3crv,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_busd",
+            cvxSwapPath: "cvx_busd",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.busd_usd,
+            versionStrategy: "1.0"
+        }
+    }
+    else if (name == "dola3crv" ) {
+        return {
+            nameStrategy: "Dola3Crv",
+            wantAddress: curveInfo.lp.dola3crv,
+            tokenCompoundAddress: tokenInfo.dola.address,
+            tokenCompoundPosition: 0,
+            curveSwapAddress: curveInfo.pool.dola3crv,
+            tokenDepositAddress: tokenInfo.dola.address,
+            accountDepositAddress1: "0x16ec2aea80863c1fb4e13440778d0c9967fc51cb",
+            accountDepositAddress2: "0x35Ba260cED73d3d8A880BF6B0912EdFB87BfA04C",
+            accountDepositAddress3: "0x1ef6d167a6c03cad53a3451fd526a5f434e70b91",
+            baseRewardPoolAddress: curveInfo.baseRewardPool.dola3crv,
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.dola.decimals), ethers.utils.parseUnits("0", 18)],
+            pidPool: curveInfo.pid.dola3crv,
+            nElementPool: curveInfo.nCoins.dola3crv,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_dola",
+            cvxSwapPath: "cvx_dola",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.dola_usd,
+            versionStrategy: "1.0"
+        }
+    }
+    else if (name == "euroc3crv" ) {
+        return {
+            nameStrategy: "EuroC3Crv",
+            wantAddress: curveInfo.lp.euroc3crv,
+            tokenCompoundAddress: tokenInfo.euroC.address,
+            curveSwapAddress: curveInfo.pool.euroc3crv,
+            tokenDepositAddress: tokenInfo.euroC.address,
+            accountDepositAddress1: "0x23a8f11291462aa71a7cf104c1b7894c77047493",
+            accountDepositAddress2: "0xffc78585108382a7ad1a6786512a3b53847c7c74",
+            accountDepositAddress3: "0x0697FDd0b945e327882d787C8eD8afB5a8565A7d",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.euroC.decimals), ethers.utils.parseUnits("0", 18)],
+            baseRewardPoolAddress: curveInfo.baseRewardPool.euroc3crv,
+            pidPool: curveInfo.pid.euroc3crv,
+            nElementPool: curveInfo.nCoins.euroc3crv,
+            tokenCompoundPosition: 0,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_euroC",
+            cvxSwapPath: "cvx_euroC",
+            amountToDepositVault: ethers.utils.parseEther("250"),
+            feedAddress: oracleInfo.euroC_usd,
+            versionStrategy: "1.1"
+        }
+    }
+    else if (name == "frax3crv" ) {
+        return {
+            nameStrategy: "Frax3Crv",
+            wantAddress: curveInfo.lp.frax3crv,
+            tokenCompoundAddress: tokenInfo.frax.address,
+            curveSwapAddress: curveInfo.pool.frax3crv,
+            tokenDepositAddress: tokenInfo.frax.address,
+            accountDepositAddress1: "0x0Ad1763dDDd2Aa9284b3828C19eED0A1960F362b",
+            accountDepositAddress2: "0x4C569Fcdd8b9312B8010Ab2c6D865c63C4De5609",
+            accountDepositAddress3: "0xcC46564Eb2063B60cd457da49d09dcA9544dfeAE",
+            baseRewardPoolAddress: curveInfo.baseRewardPool.frax3crv,
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.frax.decimals), ethers.utils.parseUnits("0", 18)],
+            pidPool: curveInfo.pid.frax3crv,
+            nElementPool: curveInfo.nCoins.frax3crv,
+            tokenCompoundPosition: 0,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_frax",
+            cvxSwapPath: "cvx_frax",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.frax_usd,
+            versionStrategy: "1.0"
+        }
+    }
+    else if (name == "fraxusdc" ) {
+        return {
+            nameStrategy: "FraxUsdc",
+            wantAddress: curveInfo.lp.fraxUsdc,
+            tokenCompoundAddress: tokenInfo.usdc.address,
+            curveSwapAddress: curveInfo.pool.fraxUsdc,
+            tokenDepositAddress: tokenInfo.usdc.address,
+            accountDepositAddress1: "0x1F376c00176b4Af9F0143067D58e135d05D65C81",
+            accountDepositAddress2: "0x3B2A1234378745f53Cf8cC0Aa1f53786c8709B78",
+            accountDepositAddress3: "0xeb26a7F7a356C0A96DA7157501eC372cBbe98f6D",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("0", 18), ethers.utils.parseUnits("1000", tokenInfo.usdc.decimals)],
+            baseRewardPoolAddress: curveInfo.baseRewardPool.fraxUsdc,
+            pidPool: curveInfo.pid.fraxUsdc,
+            nElementPool: curveInfo.nCoins.fraxUsdc,
+            tokenCompoundPosition: 1,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_usdc",
+            cvxSwapPath: "cvx_usdc",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.usdc_usd,
+            versionStrategy: "1.0"
+        }
+    }
+    else if (name == "ibeurseur" ) {
+        return {
+            nameStrategy: "ibEurSEur",
+            wantAddress: curveInfo.lp.ibEurSEur,
+            tokenCompoundAddress: tokenInfo.ibEur.address,
+            curveSwapAddress: curveInfo.pool.ibEurSEur,
+            tokenDepositAddress: tokenInfo.ibEur.address,
+            accountDepositAddress1: "0x07b01E611D9f51d08e4d6D08249413AFde2BcFd8",
+            accountDepositAddress2: "0xA049801Ae55847eEb67DB8E1D7F9b6747d307e4E",
+            accountDepositAddress3: "0x2B774AE83B165BFc48f91004c4AE146189d249aa",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.ibEur.decimals), ethers.utils.parseUnits("0", 18)],
+            baseRewardPoolAddress: curveInfo.baseRewardPool.ibEurSEur,
+            pidPool: curveInfo.pid.ibEurSEur,
+            nElementPool: curveInfo.nCoins.ibEurSEur,
+            tokenCompoundPosition: 0,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_ibEur",
+            cvxSwapPath: "cvx_ibEur",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.ibEur_usd,
+            versionStrategy: "1.0"
+        }
+    }
+    else if (name == "mim3crv" ) {
+        return {
+            nameStrategy: "Mim3Crv",
+            wantAddress: curveInfo.lp.mim3crv,
+            tokenCompoundAddress: tokenInfo.mim.address,
+            curveSwapAddress: curveInfo.pool.mim3crv,
+            tokenDepositAddress: tokenInfo.mim.address,
+            accountDepositAddress1: "0xd7efcbb86efdd9e8de014dafa5944aae36e817e4",
+            accountDepositAddress2: "0x2bbdca89491e6f0c0f49412d38d893aea394fd02",
+            accountDepositAddress3: "0x25431341A5800759268a6aC1d3CD91C029D7d9CA",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.mim.decimals), ethers.utils.parseUnits("0", 18)],
+            baseRewardPoolAddress: curveInfo.baseRewardPool.mim3crv,
+            pidPool: curveInfo.pid.mim3crv,
+            nElementPool: curveInfo.nCoins.mim3crv,
+            tokenCompoundPosition: 0,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_mim",
+            cvxSwapPath: "cvx_mim",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.mim_usd,
+            versionStrategy: "1.0"
+        }
+    }
+    else if (name == "tusd3crv" ) {
+        return {
+            nameStrategy: "Tusd3Crv",
+            wantAddress: curveInfo.lp.tusdc3crv,
+            tokenCompoundAddress: tokenInfo.tusd.address,
+            curveSwapAddress: curveInfo.pool.tusdc3crv,
+            tokenDepositAddress: tokenInfo.tusd.address,
+            accountDepositAddress1: "0x270cd0b43f6fE2512A32597C7A05FB01eE6ec8E1",
+            accountDepositAddress2: "0x662353d1A53C88c85E546d7C4A72CE8fE1018e72",
+            accountDepositAddress3: "0x5aC8D87924255A30FEC53793c1e976E501d44c78",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.tusd.decimals), ethers.utils.parseUnits("0", 18)],
+            baseRewardPoolAddress: curveInfo.baseRewardPool.tusdc3crv,
+            pidPool: curveInfo.pid.tusdc3crv,
+            nElementPool: curveInfo.nCoins.tusdc3crv,
+            tokenCompoundPosition: 0,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_tusd",
+            cvxSwapPath: "cvx_tusd",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.tusd_usd,
+            versionStrategy: "1.0"
+        }
+    }
+    else if (name == "usdd3crv" ) {
+        return {
+            nameStrategy: "Usdd3Crv",
+            wantAddress: curveInfo.lp.usdd3crv,
+            tokenCompoundAddress: tokenInfo.usdd.address,
+            curveSwapAddress: curveInfo.pool.usdd3crv,
+            tokenDepositAddress: tokenInfo.usdd.address,
+            accountDepositAddress1: "0x611F97d450042418E7338CBDd19202711563DF01",
+            accountDepositAddress2: "0xee5B5B923fFcE93A870B3104b7CA09c3db80047A",
+            accountDepositAddress3: "0x44aa0930648738B39a21d66C82f69E45B2ce3B47",
+            baseRewardPoolAddress: curveInfo.baseRewardPool.usdd3crv,
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.mim.decimals), ethers.utils.parseUnits("0", 18)],
+            pidPool: curveInfo.pid.usdd3crv,
+            nElementPool: curveInfo.nCoins.usdd3crv,
+            tokenCompoundPosition: 0,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            crvSwapPath: "crv_usdd",
+            cvxSwapPath: "cvx_usdd",
+            amountToDepositVault: ethers.utils.parseEther("500"),
+            feedAddress: oracleInfo.usdd_usd,
+            versionStrategy: "1.0"
+        }
+    }
+}
 
 export const deployScompTask = {
+    getConfig: async function (name: string): Promise<Contract> {
+        return await getConfig(name);
+    },
     deploySCompToken: async function (): Promise<Contract>{
         return await deploySCompToken();
     },
@@ -743,17 +1047,20 @@ export const deployScompTask = {
     deployTimeLockController: async function (proposer: string[], executor: string[]): Promise<Contract>{
         return await deployTimeLockController(proposer, executor);
     },
+    deployOracleRouter: async function (): Promise<Contract>{
+        return await deployOracleRouter();
+    },
     deployVault: async function (controllerAddress: string, wantAddress: string, treasuryFee: string, feeDeposit: any): Promise<Contract>{
         return await deployVault(controllerAddress, wantAddress, treasuryFee, feeDeposit);
     },
     deployStrategy: async function (nameStrategy: string, governanceAddress: string, surplusConverterV2Address: string,
-                                    controllerAddress: string, wantAddress: string, tokenCompoundAddress: string,
+                                    controllerAddress: string, oracleRouterAddress: string, wantAddress: string, tokenCompoundAddress: string,
                                     tokenCompoundPosition: number, pidPool: number, feeGovernance: number, feeStrategist: number,
                                     feeWithdraw: number, curveSwapAddress: string, nElementPool: number ,
-                                    timeLockControllerAddress: string): Promise<Contract> {
-        return await deployStrategy(nameStrategy, governanceAddress, surplusConverterV2Address, controllerAddress, wantAddress, tokenCompoundAddress,
+                                    timeLockControllerAddress: string, versionStrategy: string): Promise<Contract> {
+        return await deployStrategy(nameStrategy, governanceAddress, surplusConverterV2Address, controllerAddress, oracleRouterAddress, wantAddress, tokenCompoundAddress,
                                     tokenCompoundPosition, pidPool, feeGovernance, feeStrategist, feeWithdraw, curveSwapAddress, nElementPool,
-                                    timeLockControllerAddress);
+                                    timeLockControllerAddress, versionStrategy);
     },
 };
 

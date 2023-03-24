@@ -38,7 +38,7 @@ let storelLpAccount: any = [];
 async function main(): Promise<void> {
     await run('compile');
     [deployer] = await ethers.getSigners();
-    config = await testStrategyTask.getConfig(nameConfig)
+    config = await deployScompTask.getConfig(nameConfig)
 }
 
 async function buyBackConverter(): Promise<void> {
@@ -126,7 +126,7 @@ main()
     .then(async () => {
         // INITIAL ACTION
         console.log(" ----- SETUP CONTRACT")
-        const {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, vault, strategy} =
+        const {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, oracleRouter, vault, strategy} =
             await testStrategyTask.setupContractBase(config);
 
         feeDistributionContract = feeDistribution;

@@ -4,77 +4,54 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "../abstract/BaseStrategy.sol";
-
-import "../utility/CurveSwapper.sol";
+import "../utility/CurveSwapper_V1_0.sol";
 import "../utility/TokenSwapPathRegistry.sol";
 import "../utility/UniswapSwapper.sol";
-
 import "../interface/IBooster.sol";
-
 import "../interface/IBaseRewardsPool.sol";
+import "../utility/StableMath.sol";
+import "../oracle/OracleRouter.sol";
+import "../interface/IBasicToken.sol";
 
 import "hardhat/console.sol";
 
 pragma experimental ABIEncoderV2;
 
+
 /*
-    === Deposit ===
-    Deposit & Stake underlying asset into appropriate convex vault (deposit + stake is atomic)
-
-    === Tend ===
-
-    == Stage 1: Realize gains from all positions ==
-    Harvest CRV and CVX from core vault rewards pool
-    Harvest CVX and SUSHI from CVX/ETH LP
-    Harvest CVX and SUSHI from cvxCRV/CRV LP
-
-    Harvested coins:
-    CRV
-    CVX
-    SUSHI
-
-    == Stage 2: Deposit all gains into staked positions ==
-    Zap all CRV -> cvxCRV/CRV
-    Zap all CVX -> CVX/ETH
-    Stake Sushi
-
-    Position coins:
-    cvxCRV/CRV
-    CVX/ETH
-    xSushi
-
-    These position coins will be distributed on harvest
-
-
-    Changelog:
-
-    V1.1
-    * Implemented the _exchange function from the CurveSwapper library to perform the CRV -> cvxCRV and vice versa
-    swaps through curve instead of Sushiswap.
-    * It now swaps 3CRV into CRV instead of cvxCRV. If enough is aquired, it swaps this CRV for wBTC directly and, if not,
-    it swaps some cvxCRV for CRV to compensate.
-    * Removed some unused functions and variables such as the `addExtraRewardsToken` and `removeExtraRewardsToken` functions
-    as well as the obsolete swapping paths.
-    V1.2
-    * Removed unused Code
-    * Changed to purchase bveCVX via Curve Factory Pool
-
-    sComp updated:
-    v1.0
-    - Remove keeper
+Version 1.0:
+    - Lp price calculated with virtual_price function in curve pool
 */
-contract SCompStrategyV1 is
+contract SCompStrategyV1_0 is
 BaseStrategy,
-CurveSwapper,
+CurveSwapper_V1_0,
 UniswapSwapper,
 TokenSwapPathRegistry
 {
+
+    /**
+    The default conditions for a rewards token are:
+    - Collect rewards token
+    - Distribute 100% via Tree to users
+
+    === Harvest Config ===
+    - autoCompoundingBps: Sell this % of rewards for underlying asset.
+    - autoCompoundingPerfFee: Of the auto compounded portion, take this % as a performance fee.
+    - treeDistributionPerfFee: Of the remaining portion (everything not distributed or converted via another mehcanic is distributed via the tree), take this % as a performance fee.
+
+    === Tend Config ===
+    - tendConvertTo: On tend, convert some of this token into another asset. By default with value as address(0), skip this step.
+    - tendConvertBps: Convert this portion of balance into another asset.
+     */
+
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using StableMath for uint256;
 
     // ===== Token Registry =====
     address public constant crv = 0xD533a949740bb3306d119CC777fa900bA034cd52;
@@ -96,20 +73,7 @@ TokenSwapPathRegistry
     address public tokenCompoundAddress;
     IERC20 public tokenCompound;
 
-    /**
-    The default conditions for a rewards token are:
-    - Collect rewards token
-    - Distribute 100% via Tree to users
-
-    === Harvest Config ===
-    - autoCompoundingBps: Sell this % of rewards for underlying asset.
-    - autoCompoundingPerfFee: Of the auto compounded portion, take this % as a performance fee.
-    - treeDistributionPerfFee: Of the remaining portion (everything not distributed or converted via another mehcanic is distributed via the tree), take this % as a performance fee.
-
-    === Tend Config ===
-    - tendConvertTo: On tend, convert some of this token into another asset. By default with value as address(0), skip this step.
-    - tendConvertBps: Convert this portion of balance into another asset.
-     */
+    uint256 public maxSlippage = 3e16; // 3%
 
     struct CurvePoolConfig {
         address swap;
@@ -216,15 +180,10 @@ TokenSwapPathRegistry
 
     }
 
-    function setTokenSwapPathV2(address _tokenIn, address _tokenOut, address[] memory _path, uint _typeRouter) external {
+    function setTokenSwapPath(address _tokenIn, address _tokenOut, address[] memory _pathAddress, uint24[] memory _pathFee, uint _routerIndex, bool _isSwapV2) external {
         _onlyGovernance();
-        require(_typeRouter < 2, "SCompStrategy: router can be only 0 or 1");
-        _setTokenSwapPathV2(_tokenIn, _tokenOut, _path, _typeRouter);
-    }
-
-    function setTokenSwapPathV3(address _tokenIn, address _tokenOut, address[] memory _coinPathCrv, uint24[] memory _feePathCrv, uint _nPoolCrv) external {
-        _onlyGovernance();
-        _setTokenSwapPathV3(_tokenIn, _tokenOut, _coinPathCrv, _feePathCrv, _nPoolCrv);
+        require(_routerIndex < 3, "SCompStrategy: router can be only 0, 1 or 2");
+        _addToken(_tokenIn, _tokenOut, _pathAddress, _pathFee, _routerIndex, _isSwapV2);
     }
 
     function setUniswapV3Router(address _router) external {
@@ -242,9 +201,14 @@ TokenSwapPathRegistry
         _setSushiswapRouter(_router);
     }
 
-    function setQuoterUniswap(address _quoter) external {
+    function setOracleRouter(address _router) external {
         _onlyGovernance();
-        _setQuoterUniswap(_quoter);
+        _setOracleRouter(_router);
+    }
+
+    function setMaxSlippage(uint _maxSlippage) external {
+        _onlyGovernance();
+        maxSlippage = _maxSlippage;
     }
 
     /// ===== View Functions =====
@@ -419,25 +383,13 @@ TokenSwapPathRegistry
 
         if (tokenCompoundToDeposit > 0) {
 
-            // todo amount minMintAmount
+            _addLiquidityCurve(tokenCompoundToDeposit);
 
-            // Add liquidity
-            _add_liquidity_single_coin(
-                curvePool.swap,
-                tokenCompoundAddress,
-                tokenCompoundToDeposit,
-                curvePool.tokenCompoundPosition,
-                curvePool.numElements,
-                0
-            );
-            wantGained = IERC20(want).balanceOf(address(this)).sub(
-                idleWant
-            );
+            wantGained = IERC20(want).balanceOf(address(this)).sub(idleWant);
         }
 
         // Deposit remaining want (including idle want) into strategy position
-        uint256 wantToDeposited =
-        IERC20(want).balanceOf(address(this));
+        uint256 wantToDeposited = IERC20(want).balanceOf(address(this));
 
         if (wantToDeposited > 0) {
             _deposit(wantToDeposited);
@@ -451,34 +403,50 @@ TokenSwapPathRegistry
     }
 
     function getRouterAddress(address _tokenIn, address _tokenOut) public view returns(address) {
-        if(getTypeRouterAddress(_tokenIn, _tokenOut) == 0){
+        if(swapPaths[_tokenIn][_tokenOut].routerIndex == 0){
             return uniswapV2;
         }
-        if(getTypeRouterAddress(_tokenIn, _tokenOut) == 1){
+        if(swapPaths[_tokenIn][_tokenOut].routerIndex == 1){
             return sushiswap;
         } else {
             return uniswapV3;
         }
     }
 
+    function _addLiquidityCurve(uint _amount) internal {
+        uint8 assetDecimals = IBasicToken(tokenCompoundAddress).decimals();
+        uint256 virtualPrice = ICurveFi_V1_0(curvePool.swap).get_virtual_price();
+        uint256 depositValue = _amount.scaleBy(18, assetDecimals).divPrecisely(virtualPrice);
+        uint256 minLPOutput = depositValue.mulTruncate(uint256(1e18) - maxSlippage);
+
+        _add_liquidity_single_coin(
+            curvePool.swap,
+            tokenCompoundAddress,
+            _amount,
+            curvePool.tokenCompoundPosition,
+            curvePool.numElements,
+            minLPOutput
+        );
+    }
+
     function _makeSwap(address _tokenIn, address _tokenOut, uint _amountIn) internal {
+        uint amountOutMin = _getAmountOutMin(_tokenIn, _tokenOut, _amountIn);
         address router = getRouterAddress(_tokenIn, _tokenOut);
-
-        if(getTypeSwap(_tokenIn, _tokenOut) == 0){
-            _swapExactTokensForTokens(router, _tokenIn, _amountIn, getTokenSwapPath(_tokenIn, _tokenOut));
-        } else if(getTypeSwap(_tokenIn, _tokenOut) == 1) {
-            if(getNPool(_tokenIn, _tokenOut) == 1) {
-                _swapExactInputMultihop1(router, _tokenIn, _amountIn, getTokenSwapPath(_tokenIn, _tokenOut), getFeeSwapPath(_tokenIn, _tokenOut));
-            } else if(getNPool(_tokenIn, _tokenOut) == 2) {
-                _swapExactInputMultihop2(router, _tokenIn, _amountIn, getTokenSwapPath(_tokenIn, _tokenOut), getFeeSwapPath(_tokenIn, _tokenOut));
-            } else if(getNPool(_tokenIn, _tokenOut) == 3) {
-                _swapExactInputMultihop3(router, _tokenIn, _amountIn, getTokenSwapPath(_tokenIn, _tokenOut), getFeeSwapPath(_tokenIn, _tokenOut));
-            }
+        if(swapPaths[_tokenIn][_tokenOut].isSwapV2) {
+            _swapExactTokensForTokens(router, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathAddress);
         } else {
-            // todo mixed
-
+            _swapExactInputMultihop(router, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathData);
         }
+    }
 
+    function _getAmountOutMin(address _tokenIn, address _tokenOut, uint _amountIn) public view returns(uint){
+        uint tokenInPrice = OracleRouter(oracleRouter).price(_tokenIn);
+        uint tokenOutPrice = OracleRouter(oracleRouter).price(_tokenOut);
+        if(tokenOutPrice == 0 ) {
+            return 0;
+        }
+        uint amountOutMin = _amountIn * uint(tokenInPrice) / uint(tokenOutPrice);
+        return amountOutMin.mulTruncate(uint(1e18) - maxSlippage);
     }
 
 }

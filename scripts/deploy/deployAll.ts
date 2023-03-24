@@ -16,6 +16,7 @@ let feeDistributionContract : Contract;
 let surplusConverterV2Contract : Contract;
 let sCompControllerContract : Contract;
 let sCompTimelockControllerContract : Contract;
+let oracleRouterContract : Contract;
 
 async function main(): Promise<void> {
 
@@ -39,6 +40,7 @@ main()
         surplusConverterV2Contract = await deployScompTask.deploySurplusConverterV2(feeDistributionContract.address, deployer.address, deployer.address, [deployer.address, deployer.address])
         sCompControllerContract = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address);
         sCompTimelockControllerContract = await deployScompTask.deployTimeLockController([deployer.address], [deployer.address]);
+        oracleRouterContract = await deployScompTask.deployOracleRouter();
 
         let finalBalance:any = await deployer.getBalance();
         let totalFee = initialBalance.sub(finalBalance);

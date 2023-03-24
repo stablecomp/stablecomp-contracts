@@ -58,7 +58,11 @@ async function getBestQuoteSwap(tokenInInfo: any, tokenOutInfo: any, amountIn: a
 }
 
 async function writeBestQuoteUniswap(nameQuote: string, coinPath: string[], feePath: string[], versionProtocol: string): Promise<any> {
-    let quotePath = "./info/bestQuote/"
+    let infoPath = "./info"
+    if (!fs.existsSync(infoPath)) {
+        fs.mkdirSync(infoPath);
+    }
+    let quotePath = infoPath+"/bestQuote/"
     if (!fs.existsSync(quotePath)) {
         fs.mkdirSync(quotePath);
     }

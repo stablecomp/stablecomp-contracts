@@ -1,16 +1,10 @@
-import hardhat, {network} from 'hardhat';
-import {Contract} from "@ethersproject/contracts";
+import hardhat from 'hardhat';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {deploy} from "@openzeppelin/hardhat-upgrades/dist/utils";
-import {start} from "repl";
 
-const { run, ethers, upgrades } = hardhat;
-
-const info = require('../../info/infoPool/fraxUsdc.json');
+const { run, ethers } = hardhat;
 
 let deployer : SignerWithAddress;
 
-//const provider = new ethers.providers.JsonRpcProvider("https://104.248.142.30:8545")
 const provider = new ethers.providers.JsonRpcProvider("https://johnchain.org/")
 
 async function main(): Promise<void> {

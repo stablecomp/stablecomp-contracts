@@ -1,0 +1,24 @@
+{
+  "sCompStrategy": {
+    "address": "0x93025945b71eEF30D4299a8a0007d59F6b5BfDD0",
+    "args": {
+      "nameStrategy": "Dola3Crv",
+      "governance": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
+      "strategist": "0xb0781Ee70D9CF4823Fa47C0D630B534ABA9d9529",
+      "controller": "0x0a1da14519309eCEa6E19DC940D95A7Fc850a911",
+      "want": "0xAA5A67c256e27A5d80712c51971408db3370927D",
+      "tokenCompound": "0x865377367054516e17014CcdED1e7d814EDC9ce4",
+      "pid": 62,
+      "feeConfig": [
+        500,
+        500,
+        20
+      ],
+      "curvePool": {
+        "swap": "0xAA5A67c256e27A5d80712c51971408db3370927D",
+        "tokenCompoundPosition": 0,
+        "numElements": 2
+      }
+    }
+  }
+}

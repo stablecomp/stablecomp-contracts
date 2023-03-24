@@ -8,67 +8,58 @@ pragma solidity ^0.8.13;
     - Sushiswap support in addition to Uniswap
 */
 contract TokenSwapPathRegistry {
-    mapping(address => mapping(address => address[])) public tokenSwapPaths;
-    mapping(address => mapping(address => uint24[])) public feeSwapPaths;
-    mapping(address => mapping(address => uint[])) public stepSwapPaths; // only for mixed swap, 0 => v2, 1 => v3
-    mapping(address => mapping(address => uint)) public nPoolPath;
-    mapping(address => mapping(address => uint)) public typeSwapPath; // 0 => uniswapv2, 1 => uniswapv3 v2, 2 => mixed
-    mapping(address => mapping(address => uint)) public typeRouterAddress; // 0 => uniswapV2, 1 => sushiswap, 2 => uniswapV3
-
-    event TokenSwapPathV2Set(address tokenIn, address tokenOut, address[] path);
-    event TokenSwapPathV3Set(address tokenIn, address tokenOut, address[] tokenSwapPaths, uint24[] feeSwapPaths, uint nPool);
-
-    function getTokenSwapPath(address _tokenIn, address _tokenOut) public view returns (address[] memory) {
-        return tokenSwapPaths[_tokenIn][_tokenOut];
+    struct SwapPathStruct {
+        bytes pathData;
+        address[] pathAddress;
+        uint routerIndex;  // 0 == uniswapv2, 1 == sushiswap, 2 == uniswapv3
+        bool isSwapV2; // true == v2 - false == v3
     }
 
-    function getFeeSwapPath(address _tokenIn, address _tokenOut) public view returns (uint24[] memory) {
-        return feeSwapPaths[_tokenIn][_tokenOut];
+    mapping(address => mapping(address => SwapPathStruct)) public swapPaths;
+    event PathUpdated(address indexed tokenIn, address indexed tokenOut, bytes newPath);
+    event TokenRevoked(address indexed tokenIn, address indexed tokenOut);
+
+    /// @notice Adds a token to support with this contract
+    /// @param _tokenIn Token in to add to this contract
+    /// @param _tokenOut Token out to add to this contract
+    /// @param _pathAddress Addresses used (in order) for the swap
+    /// @param _pathFees Fees used (in order) to get the path for the pool to use for the swap
+
+    /// @param _routerIndex indicate router when the swap will be executed - 0 == uniswapv2 / 1 == sushiswap / 2 == uniswapv3
+    /// @param _isSwapV2 indicate type version of swap - true == v2 / false == v3
+    /// @dev This function can be called to change the path for a token or to add a new supported
+    /// token
+    function _addToken(address _tokenIn, address _tokenOut, address[] memory _pathAddress, uint24[] memory _pathFees, uint _routerIndex, bool _isSwapV2) internal {
+        require(_tokenIn != address(0) && _tokenOut != address(0), "token address cannot be address(0)");
+        require(_pathAddress.length >= 2, "error address length");
+        require((_pathAddress.length == _pathFees.length + 1) || _isSwapV2, "error path length");
+        require(_pathAddress[0] == _tokenIn && _pathAddress[_pathAddress.length - 1] == _tokenOut, "error path address position");
+        require(_routerIndex >= 0 && _routerIndex <= 2, "error router index");
+
+        bytes memory path;
+        if(!_isSwapV2) {
+            for (uint256 i = 0; i < _pathFees.length; i++) {
+                require(_pathAddress[i] != address(0) && _pathAddress[i + 1] != address(0), "error path address position with address(0)");
+                path = abi.encodePacked(path, _pathAddress[i], _pathFees[i]);
+            }
+            path = abi.encodePacked(path, _pathAddress[_pathFees.length]);
+        }
+
+        SwapPathStruct memory swapPathStruct;
+        swapPathStruct.pathData = path;
+        swapPathStruct.pathAddress = _pathAddress;
+        swapPathStruct.routerIndex = _routerIndex;
+        swapPathStruct.isSwapV2 = _isSwapV2;
+
+        swapPaths[_tokenIn][_tokenOut] = swapPathStruct;
+        emit PathUpdated(_tokenIn, _tokenOut, swapPathStruct.pathData);
     }
 
-    function getNPool(address _tokenIn, address _tokenOut) public view returns (uint) {
-        return nPoolPath[_tokenIn][_tokenOut];
+    /// @notice Revokes a token supported by this contract
+    /// @param _tokenIn Token in to add to this contract
+    /// @param _tokenOut Token out to add to this contract
+    function _revokeToken(address _tokenIn, address _tokenOut) internal {
+        delete swapPaths[_tokenIn][_tokenOut];
+        emit TokenRevoked(_tokenIn, _tokenOut);
     }
-
-    function getTypeSwap(address _tokenIn, address _tokenOut) public view returns (uint) {
-        return typeSwapPath[_tokenIn][_tokenOut];
-    }
-
-    function getTypeRouterAddress(address _tokenIn, address _tokenOut) public view returns (uint) {
-        return typeRouterAddress[_tokenIn][_tokenOut];
-    }
-
-    /**
-      Set path swap for tokenIn vs tokenOut
-    */
-    function _setTokenSwapPathV2(
-        address _tokenIn,
-        address _tokenOut,
-        address[] memory _path,
-        uint _typeRouter
-    ) internal {
-        tokenSwapPaths[_tokenIn][_tokenOut] = _path;
-        typeSwapPath[_tokenIn][_tokenOut] = 0;
-        typeRouterAddress[_tokenIn][_tokenOut] = _typeRouter;
-        emit TokenSwapPathV2Set(_tokenIn, _tokenOut, _path);
-    }
-
-    /**
-      Set path swap for tokenIn vs tokenOut
-    */
-    function _setTokenSwapPathV3(
-        address _tokenIn,
-        address _tokenOut,
-        address[] memory _coinPath,
-        uint24[] memory _feePath,
-        uint _nPool
-    ) internal {
-        tokenSwapPaths[_tokenIn][_tokenOut] = _coinPath;
-        feeSwapPaths[_tokenIn][_tokenOut] = _feePath;
-        nPoolPath[_tokenIn][_tokenOut] = _nPool;
-        typeSwapPath[_tokenIn][_tokenOut] = 1;
-        typeRouterAddress[_tokenIn][_tokenOut] = 2;
-        emit TokenSwapPathV3Set(_tokenIn, _tokenOut, _coinPath, _feePath, _nPool);
-    }
-
 }

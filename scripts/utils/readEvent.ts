@@ -1,16 +1,12 @@
-import hardhat, {network} from 'hardhat';
+import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {deploy} from "@openzeppelin/hardhat-upgrades/dist/utils";
-import {start} from "repl";
-import price from "./price";
 import {BigNumber} from "ethers";
 
-const { run, ethers, upgrades } = hardhat;
+const { run, ethers } = hardhat;
 
 let deployer : SignerWithAddress;
 
-const provider = new ethers.providers.JsonRpcProvider("http://104.248.142.30:8545")
 
 let vaultAddress = "0x937A459c8F282abA432f5D5e14bD801ff848A1E3";
 let zapperAddress = "0x937A459c8F282abA432f5D5e14bD801ff848A1E3";
@@ -25,8 +21,6 @@ async function main(): Promise<void> {
     [deployer] = await ethers.getSigners();
     console.log("Deployer addresss: ", deployer.address)
 }
-
-
 
 async function getContract(): Promise<void> {
 
@@ -157,6 +151,29 @@ async function readEventZapper(): Promise<void> {
 
     console.log("Total withdraw zapper is: ", ethers.utils.formatEther(totalWithdrawZapper))
 
+}
+
+async function readTransferERC20(tokenAddress: string): Promise<void> {
+
+    let abi = [
+        "event Transfer(address indexed from, address indexed to, uint val)"
+    ];
+
+    let contract = new Contract(tokenAddress, abi, ethers.provider);
+    let response = await contract.filters.Transfer("vault", "account") //withdraw
+    response = await contract.filters.Transfer("account", "vault") // deposit
+
+    let listTransfer = await contract.queryFilter(response)
+    console.log("Event transfer in contract: ", listTransfer.length);
+    console.log("events")
+    console.log(listTransfer[0])
+
+    let args:any = listTransfer[0].args;
+    let fromAddress = args[0];
+    let toAddress = args[1];
+    let amount = args[2];
+
+    console.log("Transfer from: ", fromAddress, " to: ", toAddress, " amount: ", ethers.utils.formatEther(amount))
 }
 
   main()

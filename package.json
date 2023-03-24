@@ -1,45 +1,23 @@
 {
   "name": "contracts-stablecompv1",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "readParam-scaling_node": "npx hardhat run scripts/utils/readParam.ts --network scaling_node",
-    "depositFarming-scaling_node": "npx hardhat run scripts/utils/depositFarming.ts --network scaling_node",
-    "deploy-hardhat": "npx hardhat run scripts/deploy/deploy_local.ts --network hardhat",
-    "deploy-local_node": "npx hardhat run scripts/deploy/deploy.ts --network local_node",
-    "deploy-scaling_node": "npx hardhat run scripts/deploy/deploy.ts --network scaling_node",
-    "impersonate-scaling_node": "npx hardhat run scripts/deploy/impersonateAccount.ts --network scaling_node",
-    "deposit-scaling_node": "npx hardhat run scripts/deploy/test_deploy.ts --network scaling_node",
-    "deploy-hardhat_node": "npx hardhat run scripts/deploy/deploy.ts --network hardhat",
-    "deploy-fraxusdc": "npx hardhat run scripts/deploy/strategies/deployFraxUsdc.ts --network mainnet_eth",
-    "sendLP": "npx hardhat run scripts/utils/sendLP.ts --network scaling_node",
-    "testSandwitchAttack": "npx hardhat run scripts/utils/testSandwitchAttack.ts --network hardhat",
-
-    "sendToken": "npx hardhat run scripts/utils/sendToken.ts --network scaling_node",
-    "testAddLiquidityUniswap": "npx hardhat run scripts/uniswap/addRemoveLiquidity.ts --network scaling_node",
-    "testSwapUniversalRouter": "npx hardhat run scripts/uniswap/testSwapUniversalRouter.ts --network hardhat",
-    "testSwapUniswapV3": "npx hardhat run scripts/uniswap/sdk/testSwap.ts --network hardhat",
-    "getBestQuoteUniswap": "npx hardhat run scripts/uniswap/updateAllQuoteUniswap.ts --network hardhat",
-    "testSwapV3": "npx hardhat run scripts/uniswap/testSwapV3.ts --network hardhat",
-    "testAddRemoveLiquidity": "npx hardhat run scripts/uniswap/addRemoveLiquidity.ts --network hardhat",
-
-    "test-euroc3crv": "npx hardhat run scripts/test/strategy/testEuroc3Crv.ts --network hardhat",
-    "test-ibEURsEUR": "npx hardhat run scripts/test/strategy/testibEURsEUR.ts --network hardhat",
     "test-3eur": "npx hardhat run scripts/test/strategy/test3eur.ts --network hardhat",
-    "test-usdd3crv": "npx hardhat run scripts/test/strategy/testUsdd3Crv.ts --network hardhat",
     "test-busd3crv": "npx hardhat run scripts/test/strategy/testBusd3Crv.ts --network hardhat",
     "test-dola3crv": "npx hardhat run scripts/test/strategy/testDola3Crv.ts --network hardhat",
-    "test-tusd3crv": "npx hardhat run scripts/test/strategy/testTusd3Crv.ts --network hardhat",
-    "test-mim3crv": "npx hardhat run scripts/test/strategy/testMim3Crv.ts --network hardhat",
-    "test-fraxusdc": "npx hardhat run scripts/test/strategy/testFraxUsdc.ts --network hardhat",
+    "test-euroc3crv": "npx hardhat run scripts/test/strategy/testEuroc3Crv.ts --network hardhat",
     "test-frax3crv": "npx hardhat run scripts/test/strategy/testFrax3Crv.ts --network hardhat",
-    "test-OneClick_mim3crv": "npx hardhat run scripts/test/oneClick/testOneClickMim3Crv.ts --network hardhat",
-    "test-checkpoint": "npx hardhat run scripts/test/votingEscrow/testCheckpoint.ts --network hardhat",
+    "test-fraxusdc": "npx hardhat run scripts/test/strategy/testFraxUsdc.ts --network hardhat",
+    "test-ibEURsEUR": "npx hardhat run scripts/test/strategy/testibEURsEUR.ts --network hardhat",
+    "test-mim3crv": "npx hardhat run scripts/test/strategy/testMim3Crv.ts --network hardhat",
+    "test-tusd3crv": "npx hardhat run scripts/test/strategy/testTusd3Crv.ts --network hardhat",
+    "test-usdd3crv": "npx hardhat run scripts/test/strategy/testUsdd3Crv.ts --network hardhat",
+
     "test-veScomp": "npx hardhat run scripts/test/votingEscrow/testVeScomp.ts --network hardhat",
     "test-farming": "npx hardhat run scripts/test/farming/testFarming.ts --network hardhat",
-    "test-farming_old": "npx hardhat run scripts/test/votingEscrow/testFarming_old.ts --network hardhat",
-    "test-OneClick": "npx hardhat run scripts/test/oneClick/testOneClick.ts --network hardhat",
+
     "test": "npx hardhat test --network hardhat",
     "compile": "npx hardhat compile"
   },
@@ -100,6 +78,7 @@
   },
   "dependencies": {
     "@uniswap/v3-periphery": "^1.4.3",
-    "ethereum-input-data-decoder": "^0.4.2"
+    "ethereum-input-data-decoder": "^0.4.2",
+    "@chainlink/contracts": "^0.4.2"
   }
 }

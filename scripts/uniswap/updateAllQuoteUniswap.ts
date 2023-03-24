@@ -62,10 +62,6 @@ main()
         await saveBestQuote("crv_agEur", tokenInfo.crv, tokenInfo.agEur, amountInNumber);
         await saveBestQuote("cvx_agEur", tokenInfo.cvx, tokenInfo.agEur, amountInNumber);
 
-        // eurT
-        await saveBestQuote("crv_eurT", tokenInfo.crv, tokenInfo.eurT, amountInNumber);
-        await saveBestQuote("cvx_eurT", tokenInfo.cvx, tokenInfo.eurT, amountInNumber);
-
         // BUSD
         await saveBestQuote("crv_busd", tokenInfo.crv, tokenInfo.busd, amountInNumber);
         await saveBestQuote("cvx_busd", tokenInfo.cvx, tokenInfo.busd, amountInNumber);
