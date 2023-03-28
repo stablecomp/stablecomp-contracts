@@ -1,11 +1,9 @@
 import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {poolCurveTask} from "../../01_task/curve/curveTask";
 import {utilsTask} from "../../01_task/standard/utilsTask";
 import {boosterTask, deployScompTask, strategyTask, vaultTask} from "../../01_task/sCompTask";
 import {feeDistributionTask, surplusConverterTask} from "../../01_task/feeTask";
-import {erc20Task} from "../../01_task/standard/erc20Task";
 import {testStrategyTask} from "../01_task/testStrategyTask";
 
 const { run, ethers } = hardhat;
@@ -126,7 +124,7 @@ main()
     .then(async () => {
         // INITIAL ACTION
         console.log(" ----- SETUP CONTRACT")
-        const {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, vault, strategy} =
+        const {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, oracleRouter, vault, strategy} =
             await testStrategyTask.setupContractBase(config);
 
         feeDistributionContract = feeDistribution;
@@ -136,6 +134,8 @@ main()
         console.log(" ----- SET TOKEN SWAP PATH")
         await testStrategyTask.setTokenSwapPath(strategy.address, config);
 
+        console.log(" ----- SET FEED ORACLE")
+        await testStrategyTask.addFeed(oracleRouter.address, config)
 
         console.log(" ----- SETUP ACCOUNT")
         const {acc1, acc2, acc3} = await testStrategyTask.impersonateAccount(config);

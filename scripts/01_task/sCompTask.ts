@@ -783,6 +783,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_eurT",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.tetherEur_usd,
+            priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
     }
@@ -809,6 +810,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_busd",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.busd_usd,
+            priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
     }
@@ -820,8 +822,8 @@ async function getConfig(name: string): Promise<any> {
             tokenCompoundPosition: 0,
             curveSwapAddress: curveInfo.pool.dola3crv,
             tokenDepositAddress: tokenInfo.dola.address,
-            accountDepositAddress1: "0x16ec2aea80863c1fb4e13440778d0c9967fc51cb",
-            accountDepositAddress2: "0x35Ba260cED73d3d8A880BF6B0912EdFB87BfA04C",
+            accountDepositAddress1: "0xc5d4ec9300be6dA89a3db305C415C7cD3cBB7E8E",
+            accountDepositAddress2: "0x18C6cF266b3fE58078e201C849e57Bc355EfDCc9",
             accountDepositAddress3: "0x1ef6d167a6c03cad53a3451fd526a5f434e70b91",
             baseRewardPoolAddress: curveInfo.baseRewardPool.dola3crv,
             pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.dola.decimals), ethers.utils.parseUnits("0", 18)],
@@ -835,6 +837,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_dola",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.dola_usd,
+            priceAdmin: ethers.utils.parseUnits("1", 8),
             versionStrategy: "1.0"
         }
     }
@@ -861,6 +864,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_euroC",
             amountToDepositVault: ethers.utils.parseEther("250"),
             feedAddress: oracleInfo.euroC_usd,
+            priceAdmin: ethers.utils.parseUnits("1.08", 8),
             versionStrategy: "1.1"
         }
     }
@@ -887,6 +891,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_frax",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.frax_usd,
+            priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
     }
@@ -913,6 +918,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_usdc",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.usdc_usd,
+            priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
     }
@@ -939,6 +945,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_ibEur",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.ibEur_usd,
+            priceAdmin: ethers.utils.parseUnits("1.10", 8),
             versionStrategy: "1.0"
         }
     }
@@ -965,6 +972,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_mim",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.mim_usd,
+            priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
     }
@@ -991,6 +999,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_tusd",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.tusd_usd,
+            priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
     }
@@ -1017,6 +1026,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_usdd",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.usdd_usd,
+            priceAdmin: ethers.utils.parseUnits("0.99", 8),
             versionStrategy: "1.0"
         }
     }

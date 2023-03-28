@@ -16,8 +16,6 @@ import "../utility/StableMath.sol";
 import "../oracle/OracleRouter.sol";
 import "../interface/IBasicToken.sol";
 
-import "hardhat/console.sol";
-
 pragma experimental ABIEncoderV2;
 
 
@@ -413,6 +411,19 @@ TokenSwapPathRegistry
         }
     }
 
+    function _getAmountOutMin(address _tokenIn, address _tokenOut, uint _amountIn) public view returns(uint){
+        uint tokenInPrice = OracleRouter(oracleRouter).price(_tokenIn);
+        uint tokenOutPrice = OracleRouter(oracleRouter).price(_tokenOut);
+
+        // sanitary check
+        if(tokenOutPrice == 0 ) {
+            return 0;
+        }
+
+        uint amountOutMin = _amountIn * uint(tokenInPrice) / uint(tokenOutPrice);
+        return amountOutMin.mulTruncate(uint(1e18) - maxSlippage);
+    }
+
     function _addLiquidityCurve(uint _amount) internal {
         uint8 assetDecimals = IBasicToken(tokenCompoundAddress).decimals();
         uint256 virtualPrice = ICurveFi_V1_0(curvePool.swap).get_virtual_price();
@@ -438,15 +449,4 @@ TokenSwapPathRegistry
             _swapExactInputMultihop(router, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathData);
         }
     }
-
-    function _getAmountOutMin(address _tokenIn, address _tokenOut, uint _amountIn) public view returns(uint){
-        uint tokenInPrice = OracleRouter(oracleRouter).price(_tokenIn);
-        uint tokenOutPrice = OracleRouter(oracleRouter).price(_tokenOut);
-        if(tokenOutPrice == 0 ) {
-            return 0;
-        }
-        uint amountOutMin = _amountIn * uint(tokenInPrice) / uint(tokenOutPrice);
-        return amountOutMin.mulTruncate(uint(1e18) - maxSlippage);
-    }
-
 }

@@ -1,13 +1,10 @@
 import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {poolCurveTask} from "../../01_task/curve/curveTask";
 import {utilsTask} from "../../01_task/standard/utilsTask";
 import {boosterTask, deployScompTask, strategyTask, vaultTask} from "../../01_task/sCompTask";
 import {feeDistributionTask, surplusConverterTask} from "../../01_task/feeTask";
-import {erc20Task} from "../../01_task/standard/erc20Task";
 import {testStrategyTask} from "../01_task/testStrategyTask";
-import {oracleRouterTask} from "../../01_task/oracle/oracleRouterTask";
 
 const { run, ethers } = hardhat;
 
@@ -16,7 +13,6 @@ let config: any;
 
 // json constant
 const tokenInfo = require('../../../info/address_mainnet/tokenInfo.json');
-const oracleInfo = require('../../../info/address_mainnet/oracleAddress.json');
 
 // account
 let deployer : SignerWithAddress;
@@ -135,8 +131,10 @@ main()
         surplusConverterV2Contract = surplusConverterV2;
         strategyContract = strategy;
 
+        console.log(" ----- SET TOKEN SWAP PATH")
         await testStrategyTask.setTokenSwapPath(strategy.address, config);
 
+        console.log(" ----- SET FEED ORACLE")
         await testStrategyTask.addFeed(oracleRouter.address, config)
 
         console.log(" ----- SETUP ACCOUNT")
