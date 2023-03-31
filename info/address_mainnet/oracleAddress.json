@@ -1,22 +1,82 @@
 {
-  "crv_usd": "0xCd627aA160A6fA45Eb793D19Ef54f5062F20f33f",
-  "cvx_usd": "0xd962fC30A72A84cE50161031391756Bf2876Af5D",
-  "agEur_usd": "",
-  "busd_usd": "0x833D8Eb16D306ed1FbB5D7A2E019e106B960965A",
-  "dai_usd": "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9",
-  "dola_usd": "",
-  "euroC_usd": "",
-  "eurs_usd": "",
-  "frax_usd": "0xB9E1E3A9feFf48998E45Fa90847ed4D467E8BcfD",
-  "ibEur_usd": "",
-  "mim_usd": "0x7A364e8770418566e3eb2001A96116E6138Eb32F",
-  "sEur_usd": "",
-  "tetherEur_usd": "0x01D391A48f4F7339aC64CA2c83a07C22F95F587a",
-  "tetherUsd_usd": "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D",
-  "threeCrv_usd": "",
-  "tusd_usd": "0xec746eCF986E2927Abd291a2A1716c940100f8Ba",
-  "usdc_usd": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6",
-  "usdd_usd": "",
-  "btc_usd": "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c",
-  "eth_usd": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+  "crv_usd": {
+    "address": "0xCd627aA160A6fA45Eb793D19Ef54f5062F20f33f",
+    "timeUpdate": 86424
+  },
+  "cvx_usd": {
+    "address": "0xd962fC30A72A84cE50161031391756Bf2876Af5D",
+    "timeUpdate": 86424
+  },
+  "agEur_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "busd_usd": {
+    "address": "0x833D8Eb16D306ed1FbB5D7A2E019e106B960965A",
+    "timeUpdate": 86424
+  },
+  "dai_usd": {
+    "address": "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9",
+    "timeUpdate": 3624
+  },
+  "dola_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "euroC_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "eurs_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "frax_usd": {
+    "address": "0xB9E1E3A9feFf48998E45Fa90847ed4D467E8BcfD",
+    "timeUpdate": 3624
+  },
+  "ibEur_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "mim_usd": {
+    "address": "0x7A364e8770418566e3eb2001A96116E6138Eb32F",
+    "timeUpdate": 86424
+  },
+  "sEur_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "tetherEur_usd": {
+    "address": "0x01D391A48f4F7339aC64CA2c83a07C22F95F587a",
+    "timeUpdate": 86424
+  },
+  "tetherUsd_usd": {
+    "address": "0x3e7d1eab13ad0104d2750b8863b489d65364e32d",
+    "timeUpdate": 86424
+  },
+  "threeCrv_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "tusd_usd": {
+    "address": "0xec746eCF986E2927Abd291a2A1716c940100f8Ba",
+    "timeUpdate": 86424
+  },
+  "usdc_usd": {
+    "address": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6",
+    "timeUpdate": 86424
+  },
+  "usdd_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "btc_usd": {
+    "address": "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c",
+    "timeUpdate": 3624
+  },
+  "eth_usd": {
+    "address": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+    "timeUpdate": 3624
+  }
 }

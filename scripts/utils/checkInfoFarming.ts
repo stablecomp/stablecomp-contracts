@@ -4,7 +4,9 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const { run, ethers, upgrades } = hardhat;
 
-const mainAddress = require('../../info/deploy_address/address_scaling_node/mainAddress.json');
+const controllerInfo = require('../../info/deploy_address/scaling_node/controller/sCompControllerContract.json');
+const masterchefInfo = require('../../info/deploy_address/scaling_node/farming/masterchefScompContract.json');
+const tokenInfo = require('../../info/deploy_address/scaling_node/token/sCompTokenContract.json');
 
 let deployer : SignerWithAddress;
 
@@ -21,13 +23,13 @@ async function main(): Promise<void> {
 
   const balance = await deployer.getBalance();
   let sCompControllerFactory = await ethers.getContractFactory("SCompController");
-  sCompController = sCompControllerFactory.attach(mainAddress.sCompController.address)
+  sCompController = sCompControllerFactory.attach(controllerInfo.sCompController.address)
 
   let sCompFarmFactory = await ethers.getContractFactory("MasterChefScomp");
-  sCompFarm = sCompFarmFactory.attach(mainAddress.masterchefScomp.address);
+  sCompFarm = sCompFarmFactory.attach(masterchefInfo.masterchefScomp.address);
 
   let sCompTokenFactory = await ethers.getContractFactory("GenericERC20");
-  sCompToken = sCompTokenFactory.attach(mainAddress.sCompTokenContract.address);
+  sCompToken = sCompTokenFactory.attach(tokenInfo.sCompTokenContract.address);
 
   console.log("Get contract ok...")
 }
@@ -39,7 +41,10 @@ async function checkInfoFarming(): Promise<void> {
   console.log("Actual block blockchain is: ", actualBlock);
 
   let endBlock = await sCompFarm.endBlock();
-  console.log("End block farm is: ", ethers.utils.formatUnits(endBlock, 0));
+  console.log("End block farm is: " + endBlock);
+
+  let startBlock = await sCompFarm.startBlock();
+  console.log("Start block farm is: " +  startBlock);
 
   let tokenPerBlock = await sCompFarm.tokenPerBlock();
   console.log("Token per block is: ", ethers.utils.formatEther(tokenPerBlock))

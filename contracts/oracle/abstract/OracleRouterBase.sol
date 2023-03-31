@@ -15,7 +15,7 @@ abstract contract OracleRouterBase is IOracle {
      * @return uint price set by admin
      * @return bool if asset is stablecoin
      */
-    function feed(address _asset) internal view virtual returns (address, uint, bool);
+    function getFeed(address _asset) internal view virtual returns (address, uint, uint, bool);
 
     /**
      * @notice Returns the total price in 8 digit USD for a given asset.
@@ -23,16 +23,21 @@ abstract contract OracleRouterBase is IOracle {
      * @return uint256 USD price of 1 of the asset, in 8 decimal fixed
      */
     function price(address _asset) external view virtual override returns (uint256) {
-        (address feed, uint priceAdmin, bool isStablecoin) = feed(_asset);
+        (address feed, uint priceAdmin, uint heartbeat, bool isStablecoin) = getFeed(_asset);
         if(feed == address(0)) {
             return priceAdmin;
         }
-        (, int256 _iprice, , , ) = AggregatorV3Interface(feed).latestRoundData();
-        uint256 _price = uint256(_iprice);
+        (, int256 iPrice, uint startedAt, uint updatedAt, ) = AggregatorV3Interface(feed).latestRoundData();
+        require(verifyTimestampRound(startedAt, heartbeat), "feed price is not updated");
+        uint256 priceRoundData = uint256(iPrice);
         if (isStablecoin) {
-            require(_price <= MAX_DRIFT, "Oracle: Price exceeds max");
-            require(_price >= MIN_DRIFT, "Oracle: Price under min");
+            require(priceRoundData <= MAX_DRIFT, "Oracle: Price exceeds max");
+            require(priceRoundData >= MIN_DRIFT, "Oracle: Price under min");
         }
-        return _price;
+        return priceRoundData;
+    }
+
+    function verifyTimestampRound(uint _timestampRound, uint _heartbeat) public view returns (bool) {
+        return (block.timestamp - _timestampRound) <= _heartbeat;
     }
 }

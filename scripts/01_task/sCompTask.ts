@@ -783,6 +783,7 @@ async function getConfig(name: string): Promise<any> {
             cvxSwapPath: "cvx_eurT",
             amountToDepositVault: ethers.utils.parseEther("500"),
             feedAddress: oracleInfo.tetherEur_usd,
+            timeUpdate: oracleInfo.tetherEur_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
@@ -809,7 +810,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_busd",
             cvxSwapPath: "cvx_busd",
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feedAddress: oracleInfo.busd_usd,
+            feedAddress: oracleInfo.busd_usd.address,
+            timeUpdate: oracleInfo.busd_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
@@ -836,7 +838,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_dola",
             cvxSwapPath: "cvx_dola",
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feedAddress: oracleInfo.dola_usd,
+            feedAddress: oracleInfo.dola_usd.address,
+            timeUpdate: oracleInfo.dola_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("1", 8),
             versionStrategy: "1.0"
         }
@@ -863,7 +866,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_euroC",
             cvxSwapPath: "cvx_euroC",
             amountToDepositVault: ethers.utils.parseEther("250"),
-            feedAddress: oracleInfo.euroC_usd,
+            feedAddress: oracleInfo.euroC_usd.address,
+            timeUpdate: oracleInfo.euroC_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("1.08", 8),
             versionStrategy: "1.1"
         }
@@ -890,7 +894,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_frax",
             cvxSwapPath: "cvx_frax",
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feedAddress: oracleInfo.frax_usd,
+            feedAddress: oracleInfo.frax_usd.address,
+            timeUpdate: oracleInfo.frax_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
@@ -917,7 +922,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_usdc",
             cvxSwapPath: "cvx_usdc",
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feedAddress: oracleInfo.usdc_usd,
+            feedAddress: oracleInfo.usdc_usd.address,
+            timeUpdate: oracleInfo.usdc_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
@@ -944,7 +950,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_ibEur",
             cvxSwapPath: "cvx_ibEur",
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feedAddress: oracleInfo.ibEur_usd,
+            feedAddress: oracleInfo.ibEur_usd.address,
+            timeUpdate: oracleInfo.ibEur_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("1.10", 8),
             versionStrategy: "1.0"
         }
@@ -971,7 +978,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_mim",
             cvxSwapPath: "cvx_mim",
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feedAddress: oracleInfo.mim_usd,
+            feedAddress: oracleInfo.mim_usd.address,
+            timeUpdate: oracleInfo.mim_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
@@ -979,7 +987,7 @@ async function getConfig(name: string): Promise<any> {
     else if (name == "tusd3crv" ) {
         return {
             nameStrategy: "Tusd3Crv",
-            wantAddress: curveInfo.lp.tusdc3crv,
+            wantAddress: curveInfo.lp.tusd3crv,
             tokenCompoundAddress: tokenInfo.tusd.address,
             curveSwapAddress: curveInfo.pool.tusdc3crv,
             tokenDepositAddress: tokenInfo.tusd.address,
@@ -998,7 +1006,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_tusd",
             cvxSwapPath: "cvx_tusd",
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feedAddress: oracleInfo.tusd_usd,
+            feedAddress: oracleInfo.tusd_usd.address,
+            timeUpdate: oracleInfo.tusd_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
         }
@@ -1025,7 +1034,8 @@ async function getConfig(name: string): Promise<any> {
             crvSwapPath: "crv_usdd",
             cvxSwapPath: "cvx_usdd",
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feedAddress: oracleInfo.usdd_usd,
+            feedAddress: oracleInfo.usdd_usd.address,
+            timeUpdate: oracleInfo.usdd_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0.99", 8),
             versionStrategy: "1.0"
         }

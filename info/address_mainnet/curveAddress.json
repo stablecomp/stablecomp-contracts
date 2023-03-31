@@ -11,7 +11,7 @@
     "ibEurSEur": "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859",
     "mim3crv": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
     "tricrypto": "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46",
-    "tusdc3crv": "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1",
+    "tusd3crv": "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1",
     "usdd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea"
   },
   "lp": {
@@ -25,7 +25,7 @@
     "ibEurSEur": "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859",
     "mim3crv": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
     "tricrypto": "0xc4ad29ba4b3c580e6d59105fff484999997675ff",
-    "tusdc3crv": "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1",
+    "tusd3crv": "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1",
     "usdd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea"
   },
   "baseRewardPool": {
@@ -39,7 +39,7 @@
     "ibEurSEur": "0xCd0559ADb6fAa2fc83aB21Cf4497c3b9b45bB29f",
     "mim3crv": "0xFd5AbF66b003881b88567EB9Ed9c651F14Dc4771",
     "tricrypto": "0x9D5C5E364D81DaB193b72db9E9BE9D8ee669B652",
-    "tusdc3crv": "0x308b48F037AAa75406426dACFACA864ebd88eDbA",
+    "tusd3crv": "0x308b48F037AAa75406426dACFACA864ebd88eDbA",
     "usdd3crv": "0x7D475cc8A5E0416f0e63042547aDB94ca7045A5b"
   },
   "pid": {
@@ -53,7 +53,7 @@
     "ibEurSEur": 45,
     "mim3crv": 40,
     "tricrypto": 38,
-    "tusdc3crv": 31,
+    "tusd3crv": 31,
     "usdd3crv": 96
   },
   "nCoins": {
@@ -67,7 +67,7 @@
     "ibEurSEur": 2,
     "mim3crv": 2,
     "tricrypto": 3,
-    "tusdc3crv": 2,
+    "tusd3crv": 2,
     "usdd3crv": 2
   }
 }

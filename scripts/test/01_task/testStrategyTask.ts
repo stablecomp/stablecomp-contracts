@@ -85,10 +85,10 @@ async function setTokenSwapPath(strategyAddress: string, config: any): Promise<a
 }
 
 async function addFeed(oracleRouterAddress: string, config: any): Promise<any> {
-
-    await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.crv.address, oracleInfo.crv_usd, 0, false)
-    await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.cvx.address, oracleInfo.cvx_usd, 0, false)
-    await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompoundAddress, config.feedAddress, config.priceAdmin, true)
+    let timeUpdate = 100000000
+    await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.crv.address, oracleInfo.crv_usd.address, 0, timeUpdate, false)
+    await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.cvx.address, oracleInfo.cvx_usd.address, 0, timeUpdate,false)
+    await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompoundAddress, config.feedAddress, config.priceAdmin, timeUpdate, true)
 }
 
 async function impersonateAccount(config: any): Promise<any> {

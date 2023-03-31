@@ -17,14 +17,16 @@ contract OracleRouter is OracleRouterBase, Ownable {
     struct FeedStruct {
         address feedAddress;
         uint priceAdmin;
+        uint heartbeat;
         bool isStablecoin;
     }
     mapping(address => FeedStruct) public assetToFeed;
 
-    function setFeed(address _asset, address _feed, uint _priceAdmin, bool _isStablecoin) external {
+    function setFeed(address _asset, address _feed, uint _priceAdmin, uint _heartbeat, bool _isStablecoin) external {
         require(_feed == address(0) || _priceAdmin == 0, "cannot set feed and priceAdmin at same time");
         assetToFeed[_asset].feedAddress = _feed;
         assetToFeed[_asset].priceAdmin = _priceAdmin;
+        assetToFeed[_asset].heartbeat = _heartbeat;
         assetToFeed[_asset].isStablecoin = _isStablecoin;
     }
 
@@ -32,7 +34,7 @@ contract OracleRouter is OracleRouterBase, Ownable {
      * @dev The price feed contract to use for a particular asset and if is a stablecoin.
      * @param _asset address of the asset
      */
-    function feed(address _asset) internal view override returns (address, uint, bool) {
-        return (assetToFeed[_asset].feedAddress, assetToFeed[_asset].priceAdmin, assetToFeed[_asset].isStablecoin);
+    function getFeed(address _asset) internal view override returns (address, uint, uint, bool) {
+        return (assetToFeed[_asset].feedAddress, assetToFeed[_asset].priceAdmin, assetToFeed[_asset].heartbeat, assetToFeed[_asset].isStablecoin);
     }
 }

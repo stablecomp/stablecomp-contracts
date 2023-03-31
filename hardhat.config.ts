@@ -88,32 +88,14 @@ const config: HardhatUserConfig = {
     },
     networks: {
         eth_mainnet: {
-            url: "https://eth-mainnet.g.alchemy.com/v2/VA0iJJN6a26rGrc0GT4_qmHvuDu5_vWe",
+            url: process.env.ETH_MAINNET_URL,
             chainId: 1,
-            accounts:
-                process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-        },
-        bsc_mainnet: {
-            url: "https://bsc-dataseed.binance.org/",
-            chainId: 56,
-            accounts:
-                process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-        },
-        bsc_testnet: {
-            url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-            chainId: 97,
-            accounts:
-                process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-        },
-        matic_testnet: {
-            chainId: 80001,
-            url: "https://matic-mumbai.chainstacklabs.com",
             accounts:
                 process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
         },
         scaling_node: {
             chainId: 1000,
-            url: "https://johnchain.org",
+            url: process.env.SCALING_NODE_URL,
             accounts:
                 process.env.PRIVATE_KEY !== undefined ? [
                     process.env.PRIVATE_KEY,
@@ -166,11 +148,7 @@ const config: HardhatUserConfig = {
         },
         hardhat: {
             forking: {
-                url: "https://mainnet.infura.io/v3/899c81095bc24dc2b06d43b6c2b65b8a",
-                //url: "https://eth-mainnet.g.alchemy.com/v2/VA0iJJN6a26rGrc0GT4_qmHvuDu5_vWe",
-                //url: "https://eth-mainnet.nodereal.io/v1/375a16da699343ee9e7cd67d8a5690d8",
-                //url: "https://red-lively-flower.quiknode.pro/d9fdbf99be306441445a56cd45479a6e5a277759/",
-                //url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+                url: process.env.ETH_MAINNET_URL !== undefined ? process.env.ETH_MAINNET_URL : "",
             }
         },
     },
