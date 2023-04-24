@@ -24,8 +24,8 @@
     "timeUpdate": 100
   },
   "euroC_usd": {
-    "address": "",
-    "timeUpdate": 100
+    "address": "0x01D391A48f4F7339aC64CA2c83a07C22F95F587a",
+    "timeUpdate": 86424
   },
   "eurs_usd": {
     "address": "",
@@ -78,5 +78,25 @@
   "eth_usd": {
     "address": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
     "timeUpdate": 3624
+  },
+  "gusd_usd": {
+    "address": "0xa89f5d2365ce98B3cD68012b6f503ab1416245Fc",
+    "timeUpdate": 3624
+  },
+  "alUsd_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "ousd_usd": {
+    "address": "",
+    "timeUpdate": 100
+  },
+  "usdp_usd": {
+    "address": "0x09023c0DA49Aaf8fc3fA3ADF34C6A7016D38D5e3",
+    "timeUpdate": 3624
+  },
+  "eusd_usd": {
+    "address": "",
+    "timeUpdate": 100
   }
 }

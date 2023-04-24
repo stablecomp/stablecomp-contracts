@@ -6,7 +6,7 @@ const controllerJson = require('../../../info/deploy_address/scaling_node/contro
 const surplusConverterJson = require('../../../info/deploy_address/scaling_node/manageFee/surplusConverterV2.json');
 const oracleRouterJson = require('../../../info/deploy_address/scaling_node/oracle/oracleRouter.json');
 const timeLockControllerJson = require('../../../info/deploy_address/scaling_node/timelock/sCompTimeLockControllerContract.json');
-import {deployScompTask, strategyTask} from "../../01_task/sCompTask";
+import {ConfigStrategy, deployScompTask, strategyTask} from "../../01_task/sCompTask";
 import {ethers} from "hardhat";
 
 // contract deploy
@@ -14,7 +14,7 @@ let sCompVault : Contract;
 let sCompStrategy : Contract;
 
 let nameConfig = "usdd3crv"
-let config: any;
+let config: ConfigStrategy;
 
 async function main(): Promise<void> {
     [deployer] = await ethers.getSigners();
@@ -24,11 +24,11 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-        sCompVault = await deployScompTask.deployVault(controllerJson.sCompController.address, config.wantAddress, deployer.address, config.feeDeposit);
-        sCompStrategy = await deployScompTask.deployStrategy(config.nameStrategy, deployer.address,
+        sCompVault = await deployScompTask.deployVault(controllerJson.sCompController.address, config.want, deployer.address, config.feeDeposit);
+        sCompStrategy = await deployScompTask.deployStrategy(config.name, deployer.address,
             surplusConverterJson.surplusConverterV2Contract.address, controllerJson.sCompController.address, oracleRouterJson.oracleRouter.address,
-            config.wantAddress, config.tokenCompoundAddress, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
-            config.curveSwapAddress, config.nElementPool, timeLockControllerJson.sCompTimelockController.address, config.versionStrategy,
+            config.want, config.tokenCompound, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
+            config.curveSwap, config.nElementPool, timeLockControllerJson.sCompTimelockController.address, config.versionStrategy,
         );
 
         await strategyTask.setTokenSwapPathConfig(sCompStrategy.address, "crv_usdd")

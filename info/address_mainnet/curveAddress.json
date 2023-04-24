@@ -12,7 +12,20 @@
     "mim3crv": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
     "tricrypto": "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46",
     "tusd3crv": "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1",
-    "usdd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea"
+    "usdd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea",
+    "eurt3crv": "0x9838eccc42659fa8aa7daf2ad134b53984c9427b",
+    "threePool": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+    "alUsd3crv": "0x43b4fdfd4ff969587185cdb6f0bd875c5fc83f8c",
+    "gusd3crv": "0x4f062658EaAF2C1ccf8C8e36D6824CDf41167956",
+    "ousd3crv": "0x87650d7bbfc3a9f10587d7778206671719d9910d",
+    "usdcEurs": "0x98a7f18d4e56cfe84e3d081b40001b3d5bd3eb8b",
+    "usdp3crv": "0xc270b3b858c335b6ba5d5b10e2da8a09976005ad",
+    "eusdfraxbp": "0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F",
+    "dolafraxbp": "0xe57180685e3348589e9521aa53af0bcd497e884d",
+    "agEurEuroC": "0xba3436fd341f2c8a928452db3c5a3670d1d5cc73",
+    "ibEurUsdc": "0x1570af3df649fc74872c5b8f280a162a3bdd4eb6",
+    "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571"
+
   },
   "lp": {
     "threeEur": "0xb9446c4Ef5EBE66268dA6700D26f96273DE3d571",
@@ -26,7 +39,20 @@
     "mim3crv": "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
     "tricrypto": "0xc4ad29ba4b3c580e6d59105fff484999997675ff",
     "tusd3crv": "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1",
-    "usdd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea"
+    "usdd3crv": "0xe6b5CC1B4b47305c58392CE3D359B10282FC36Ea",
+    "eurt3crv": "0x3b6831c0077a1e44ed0a21841c3bc4dc11bce833",
+    "threePool": "0x6c3f90f043a72fa612cbac8115ee7e52bde6e490",
+    "alUsd3crv": "0x43b4fdfd4ff969587185cdb6f0bd875c5fc83f8c",
+    "gusd3crv": "0xd2967f45c4f384deea880f807be904762a3dea07",
+    "ousd3crv": "0x87650d7bbfc3a9f10587d7778206671719d9910d",
+    "usdcEurs": "0x3d229e1b4faab62f621ef2f6a610961f7bd7b23b",
+    "usdp3crv": "0xc270b3b858c335b6ba5d5b10e2da8a09976005ad",
+    "eusdfraxbp": "0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F",
+    "dolafraxbp": "0xe57180685e3348589e9521aa53af0bcd497e884d",
+    "agEurEuroC": "0xba3436fd341f2c8a928452db3c5a3670d1d5cc73",
+    "ibEurUsdc": "0x8682fbf0cbf312c891532ba9f1a91e44f81ad7df",
+    "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571"
+
   },
   "baseRewardPool": {
     "threeEur": "0x4a9b7eDD67f58654a2c33B587f98c5709AC7d482",
@@ -40,9 +66,22 @@
     "mim3crv": "0xFd5AbF66b003881b88567EB9Ed9c651F14Dc4771",
     "tricrypto": "0x9D5C5E364D81DaB193b72db9E9BE9D8ee669B652",
     "tusd3crv": "0x308b48F037AAa75406426dACFACA864ebd88eDbA",
-    "usdd3crv": "0x7D475cc8A5E0416f0e63042547aDB94ca7045A5b"
+    "usdd3crv": "0x7D475cc8A5E0416f0e63042547aDB94ca7045A5b",
+    "eurt3crv": "0xD2B756Af4E345A8657C0656C148aDCD3000C97A4",
+    "threePool": "0x689440f2Ff927E1f24c72F1087E1FAF471eCe1c8",
+    "alUsd3crv": "0x02E2151D4F351881017ABdF2DD2b51150841d5B3",
+    "gusd3crv": "0x7A7bBf95C44b144979360C3300B54A7D34b44985",
+    "ousd3crv": "0x7D536a737C13561e0D2Decf1152a653B4e615158",
+    "usdcEurs": "0xb0c1B7b83Baae51284B8BbBa02Ec37742440199d",
+    "usdp3crv": "0x500E169c15961DE8798Edb52e0f88a8662d30EC5",
+    "eusdfraxbp": "0xB468dB2E478885B87D7ce0C8DA1D4373A756C138",
+    "dolafraxbp": "0x0404d05F3992347d2f0dC3a97bdd147D77C85c1c",
+    "agEurEuroC": "0xA91fccC1ec9d4A2271B7A86a7509Ca05057C1A98",
+    "ibEurUsdc": "0xAab7202D93B5633eB7FB3b80873C817B240F6F44",
+    "agEurEurtEurs": "0x4a9b7eDD67f58654a2c33B587f98c5709AC7d482"
   },
   "pid": {
+    "cDaicUsdc": 0,
     "threeEur": 60,
     "busd3crv": 34,
     "dola3crv": 62,
@@ -54,7 +93,19 @@
     "mim3crv": 40,
     "tricrypto": 38,
     "tusd3crv": 31,
-    "usdd3crv": 96
+    "usdd3crv": 96,
+    "eurt3crv": 55,
+    "threePool": 9,
+    "alUsd3crv": 36,
+    "gusd3crv": 10,
+    "ousd3crv": 56,
+    "usdcEurs": 54,
+    "usdp3crv": 57,
+    "eusdfraxbp": 156,
+    "dolafraxbp": 115,
+    "agEurEuroC": 113,
+    "ibEurUsdc": 86,
+    "agEurEurtEurs": 60
   },
   "nCoins": {
     "threeEur": 3,
@@ -68,6 +119,18 @@
     "mim3crv": 2,
     "tricrypto": 3,
     "tusd3crv": 2,
-    "usdd3crv": 2
+    "usdd3crv": 2,
+    "eurt3crv": 2,
+    "threePool": 3,
+    "alUsd3crv": 2,
+    "gusd3crv": 2,
+    "ousd3crv": 2,
+    "usdcEurs": 2,
+    "usdp3crv": 4,
+    "eusdfraxbp": 2,
+    "dolafraxbp": 2,
+    "agEurEuroC": 2,
+    "ibEurUsdc": 2,
+    "agEurEurtEurs": 3
   }
 }

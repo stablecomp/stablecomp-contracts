@@ -95,7 +95,7 @@ const config: HardhatUserConfig = {
         },
         scaling_node: {
             chainId: 1000,
-            url: process.env.SCALING_NODE_URL,
+            url: process.env.SCALING_NODE_URL !== undefined ? process.env.SCALING_NODE_URL: "",
             accounts:
                 process.env.PRIVATE_KEY !== undefined ? [
                     process.env.PRIVATE_KEY,

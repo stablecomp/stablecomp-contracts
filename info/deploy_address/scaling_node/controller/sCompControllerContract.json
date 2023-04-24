@@ -1,10 +1,1 @@
-{
-  "sCompController": {
-    "address": "0x0a1da14519309eCEa6E19DC940D95A7Fc850a911",
-    "args": {
-      "governance": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
-      "strategist": "0x2b276218D962dEEbF96C749ffB228601b2C7a587",
-      "rewards": "0x2b276218D962dEEbF96C749ffB228601b2C7a587"
-    }
-  }
-}
+{"sCompController":{"address":"0x753fB727B2487fd22c8860167aCf01E20B69FbeA","args":{"governance":"0x2b276218D962dEEbF96C749ffB228601b2C7a587","strategist":"0x2b276218D962dEEbF96C749ffB228601b2C7a587","rewards":"0x2b276218D962dEEbF96C749ffB228601b2C7a587"}}}

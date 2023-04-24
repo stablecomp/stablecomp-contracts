@@ -4,19 +4,45 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test-3eur": "npx hardhat run scripts/test/strategy/test3eur.ts --network hardhat",
+
     "test-busd3crv": "npx hardhat run scripts/test/strategy/testBusd3Crv.ts --network hardhat",
-    "test-dola3crv": "npx hardhat run scripts/test/strategy/testDola3Crv.ts --network hardhat",
-    "test-euroc3crv": "npx hardhat run scripts/test/strategy/testEuroc3Crv.ts --network hardhat",
-    "test-frax3crv": "npx hardhat run scripts/test/strategy/testFrax3Crv.ts --network hardhat",
-    "test-fraxusdc": "npx hardhat run scripts/test/strategy/testFraxUsdc.ts --network hardhat",
-    "test-ibEURsEUR": "npx hardhat run scripts/test/strategy/testibEURsEUR.ts --network hardhat",
-    "test-mim3crv": "npx hardhat run scripts/test/strategy/testMim3Crv.ts --network hardhat",
     "test-tusd3crv": "npx hardhat run scripts/test/strategy/testTusd3Crv.ts --network hardhat",
+    "test-mim3crv": "npx hardhat run scripts/test/strategy/testMim3Crv.ts --network hardhat",
+    "test-frax3crv": "npx hardhat run scripts/test/strategy/testFrax3Crv.ts --network hardhat",
+    "test-alUsd3crv": "npx hardhat run scripts/test/strategy/testAlUsd3Crv.ts --network hardhat",
+    "test-ousd3crv": "npx hardhat run scripts/test/strategy/testOusd3Crv.ts --network hardhat",
+
+    "test-3Pool": "npx hardhat run scripts/test/strategy/test3Pool.ts --network hardhat",
     "test-usdd3crv": "npx hardhat run scripts/test/strategy/testUsdd3Crv.ts --network hardhat",
+    "test-fraxusdc": "npx hardhat run scripts/test/strategy/testFraxUsdc.ts --network hardhat",
+    "test-gusd3crv": "npx hardhat run scripts/test/strategy/testGusd3Crv.ts --network hardhat",
+    "test-usdp3crv": "npx hardhat run scripts/test/strategy/testUsdp3Crv.ts --network hardhat",
+    "test-dolaFraxbp": "npx hardhat run scripts/test/strategy/testDolaFraxBp.ts --network hardhat",
+    "test-agEurEuroC": "npx hardhat run scripts/test/strategy/testAgEurEuroC.ts --network hardhat",
+    "test-agEurEurTEurS": "npx hardhat run scripts/test/strategy/testAgEurEurTEurS.ts --network hardhat",
+
+    "test-euroc3crv": "npx hardhat run scripts/test/strategy/testEuroc3Crv.ts --network hardhat",
+    "test-eurt3crv": "npx hardhat run scripts/test/strategy/testEurt3Crv.ts --network hardhat",
+    "test-usdceurs": "npx hardhat run scripts/test/strategy/testUsdcEurs.ts --network hardhat",
+    "test-ibEurUsdc": "npx hardhat run scripts/test/strategy/testIbEurUsdc.ts --network hardhat",
+
+    "test-3eur": "npx hardhat run scripts/test/strategy/test3eur.ts --network hardhat",
+    "test-dola3crv": "npx hardhat run scripts/test/strategy/testDola3Crv.ts --network hardhat",
+    "test-ibEURsEUR": "npx hardhat run scripts/test/strategy/testibEURsEUR.ts --network hardhat",
+
+    "setEvm-scalingNode": "npx hardhat run scripts/utils/setEVM.ts --network scaling_node",
 
     "test-veScomp": "npx hardhat run scripts/test/votingEscrow/testVeScomp.ts --network hardhat",
+
     "test-farming": "npx hardhat run scripts/test/farming/testFarming.ts --network hardhat",
+
+    "test-oneClick": "npx hardhat run scripts/test/oneClick/testOneClick.ts --network hardhat",
+
+    "getPoolsInfo": "npx hardhat run scripts/convex/booster/getPoolsInfo.ts --network eth_mainnet",
+
+    "getSingleQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/getSingleQuoteUniswap.ts --network eth_mainnet",
+    "updateAllQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/updateAllQuoteUniswap.ts --network eth_mainnet",
+    "updateSingleQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/updateSingleQuoteUniswap.ts --network eth_mainnet",
 
     "test": "npx hardhat test --network hardhat",
     "compile": "npx hardhat compile"
@@ -77,8 +103,10 @@
     "web3": "^1.7.3"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.4.2",
     "@uniswap/v3-periphery": "^1.4.3",
     "ethereum-input-data-decoder": "^0.4.2",
-    "@chainlink/contracts": "^0.4.2"
+    "simple-sushiswap-sdk-v2": "^1.0.0",
+    "solidity-bytes-utils": "^0.8.0"
   }
 }

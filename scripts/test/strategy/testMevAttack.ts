@@ -3,14 +3,14 @@ import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {utilsTask} from "../../01_task/standard/utilsTask";
 import {testStrategyTask} from "../01_task/testStrategyTask";
-import {deployScompTask, vaultTask} from "../../01_task/sCompTask";
+import {ConfigStrategy, deployScompTask, vaultTask} from "../../01_task/sCompTask";
 import {erc20Task} from "../../01_task/standard/erc20Task";
 import hre from "hardhat";
 
 const {run, ethers} = hardhat;
 
 let nameConfig = "mim3crv"
-let config: any;
+let config: ConfigStrategy;
 
 // account
 let deployer: SignerWithAddress;
@@ -56,9 +56,9 @@ main()
         let vault = await deployScompTask.deployVault(controller.address, testERC20Deployed.address, deployer.address, config.feeDeposit);
 
         let strategy = await deployScompTask.deployStrategy(
-            config.nameStrategy, deployer.address, surplusConverterV2.address, controller.address, oracleRouter.address,
-            testERC20Deployed.address, config.tokenCompoundAddress, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
-            config.curveSwapAddress, config.nElementPool, timelockController.address, config.versionStrategy
+            config.name, deployer.address, surplusConverterV2.address, controller.address, oracleRouter.address,
+            testERC20Deployed.address, config.tokenCompound, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
+            config.curveSwap, config.nElementPool, timelockController.address, config.versionStrategy
         );
 
         feeDistributionContract = feeDistribution;
@@ -81,7 +81,7 @@ main()
 
         console.log("--- TRANSFER ATTACKER: AMOUNT ", ethers.utils.formatEther(transferAttacker))
         await erc20Task.transfer(testERC20Deployed.address, attacker, vault.address, transferAttacker);
-        console.log("------ Attacker want balance: " + ethers.utils.formatEther(await utilsTask.getBalanceERC20(attacker.address, config.wantAddress)));
+        console.log("------ Attacker want balance: " + ethers.utils.formatEther(await utilsTask.getBalanceERC20(attacker.address, config.want)));
 
         console.log("--- DEPOSIT VICTIM: AMOUNT ", ethers.utils.formatEther(depositVictim))
         await erc20Task.approve(testERC20Deployed.address, victim, vault.address, depositVictim);

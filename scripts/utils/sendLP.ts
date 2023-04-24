@@ -1,7 +1,7 @@
 import hardhat from 'hardhat';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {utilsTask} from "../01_task/standard/utilsTask";
-import {deployScompTask} from "../01_task/sCompTask";
+import {ConfigStrategy, deployScompTask} from "../01_task/sCompTask";
 
 const { run, ethers } = hardhat;
 
@@ -61,16 +61,16 @@ main()
         accountWhaleUsdd3Crv = await utilsTask.impersonateAccountExternalNode(addressWhaleUsdd3Crv, "http://104.248.142.30:8545")
         //accountWhaleEuroC3Crv = await utilsTask.impersonateAccountExternalNode(addressWhaleEuroC3crv, "http://104.248.142.30:8545")
 
-        let config3crv = await deployScompTask.getConfig("3eur")
-        let configBusd3crv = await deployScompTask.getConfig("busd3crv")
-        let configDola3crv = await deployScompTask.getConfig("dola3crv")
-        let configFrax3Crv = await deployScompTask.getConfig("frax3crv")
-        let configIbEurSEur = await deployScompTask.getConfig("ibeurseur")
-        let configMim3Crv = await deployScompTask.getConfig("mim3crv")
-        let configTusd3Crv = await deployScompTask.getConfig("tusd3crv")
-        let configFraxUsdc = await deployScompTask.getConfig("fraxusdc")
-        let configUsdd3Crv = await deployScompTask.getConfig("usdd3crv")
-        let configEuroC3Crv = await deployScompTask.getConfig("euroc3crv")
+        let config3crv : ConfigStrategy = await deployScompTask.getConfig("3eur")
+        let configBusd3crv : ConfigStrategy = await deployScompTask.getConfig("busd3crv")
+        let configDola3crv : ConfigStrategy = await deployScompTask.getConfig("dola3crv")
+        let configFrax3Crv : ConfigStrategy = await deployScompTask.getConfig("frax3crv")
+        let configIbEurSEur : ConfigStrategy = await deployScompTask.getConfig("ibeurseur")
+        let configMim3Crv : ConfigStrategy = await deployScompTask.getConfig("mim3crv")
+        let configTusd3Crv : ConfigStrategy = await deployScompTask.getConfig("tusd3crv")
+        let configFraxUsdc : ConfigStrategy = await deployScompTask.getConfig("fraxusdc")
+        let configUsdd3Crv : ConfigStrategy = await deployScompTask.getConfig("usdd3crv")
+        let configEuroC3Crv : ConfigStrategy = await deployScompTask.getConfig("euroc3crv")
 
         /*for (let i = 0; i < accountsToFund.length; i++) {
             console.log(" --- Fund eth whale: ", accountsToFund[i], " --- ")
@@ -80,23 +80,23 @@ main()
         for (let i = 0; i < accountsToFund.length; i++) {
             console.log(" --- Fund account: ", accountsToFund[i], " --- ")
 
-            await utilsTask.fundAccountToken(config3crv.wantAddress, accountWhaleThreeEur, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(config3crv.want, accountWhaleThreeEur, accountsToFund[i], amountToFund)
             console.log("ThreeEur sent")
-            await utilsTask.fundAccountToken(configBusd3crv.wantAddress, accountWhaleBusd3Crv, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(configBusd3crv.want, accountWhaleBusd3Crv, accountsToFund[i], amountToFund)
             console.log("Busd3crv sent")
-            await utilsTask.fundAccountToken(configDola3crv.wantAddress, accountWhaleDola3Crv, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(configDola3crv.want, accountWhaleDola3Crv, accountsToFund[i], amountToFund)
             console.log("Dola3Crv sent")
-            await utilsTask.fundAccountToken(configFrax3Crv.wantAddress, accountWhaleFrax3Crv, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(configFrax3Crv.want, accountWhaleFrax3Crv, accountsToFund[i], amountToFund)
             console.log("Frax3Crv sent")
-            await utilsTask.fundAccountToken(configIbEurSEur.wantAddress, accountWhaleIbEurSEur, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(configIbEurSEur.want, accountWhaleIbEurSEur, accountsToFund[i], amountToFund)
             console.log("IbEurSEur sent")
-            await utilsTask.fundAccountToken(configMim3Crv.wantAddress, accountWhaleMim3Crv, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(configMim3Crv.want, accountWhaleMim3Crv, accountsToFund[i], amountToFund)
             console.log("Mim3Crv sent")
-            await utilsTask.fundAccountToken(configTusd3Crv.wantAddress, accountWhaleTusd3Crv, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(configTusd3Crv.want, accountWhaleTusd3Crv, accountsToFund[i], amountToFund)
             console.log("Tusd3Crv sent")
-            await utilsTask.fundAccountToken(configFraxUsdc.wantAddress, accountWhaleFraxUsdc, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(configFraxUsdc.want, accountWhaleFraxUsdc, accountsToFund[i], amountToFund)
             console.log("FraxUsdc sent")
-            await utilsTask.fundAccountToken(configUsdd3Crv.wantAddress, accountWhaleUsdd3Crv, accountsToFund[i], amountToFund)
+            await utilsTask.fundAccountToken(configUsdd3Crv.want, accountWhaleUsdd3Crv, accountsToFund[i], amountToFund)
             console.log("Usdd3Crv sent")
             //await utilsTask.fundAccountToken(configEuroC3Crv.wantAddress, accountWhaleEuroC3Crv, accountsToFund[i], amountToFund)
             //console.log("EuroC3Crv sent")

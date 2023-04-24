@@ -1,6 +1,6 @@
 import hardhat from 'hardhat';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {deployScompTask, strategyTask, vaultTask} from "../../01_task/sCompTask";
+import {ConfigStrategy, deployScompTask, strategyTask, vaultTask} from "../../01_task/sCompTask";
 import {utilsTask} from "../../01_task/standard/utilsTask";
 import {poolCurveTask} from "../../01_task/curve/curveTask";
 import {erc20Task} from "../../01_task/standard/erc20Task";
@@ -11,7 +11,7 @@ const tokenInfo = require('../../../info/address_mainnet/tokenInfo.json');
 const curveInfo = require('../../../info/address_mainnet/curveAddress.json');
 const oracleInfo = require('../../../info/address_mainnet/oracleAddress.json');
 
-async function setupContractBase(config: any): Promise<any> {
+async function setupContractBase(config: ConfigStrategy): Promise<any> {
 
     const [deployer] = await ethers.getSigners();
 
@@ -29,12 +29,12 @@ async function setupContractBase(config: any): Promise<any> {
 
     let oracleRouter = await deployScompTask.deployOracleRouter();
 
-    let vault = await deployScompTask.deployVault(controller.address, config.wantAddress, deployer.address, config.feeDeposit);
+    let vault = await deployScompTask.deployVault(controller.address, config.want, deployer.address, config.feeDeposit);
 
     let strategy = await deployScompTask.deployStrategy(
-        config.nameStrategy, deployer.address, surplusConverterV2.address, controller.address, oracleRouter.address,
-        config.wantAddress, config.tokenCompoundAddress, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
-        config.curveSwapAddress, config.nElementPool, timelockController.address, config.versionStrategy
+        config.name, deployer.address, surplusConverterV2.address, controller.address, oracleRouter.address,
+        config.want, config.tokenCompound, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
+        config.curveSwap, config.nElementPool, timelockController.address, config.versionStrategy
     );
 
 
@@ -76,7 +76,7 @@ async function setupVaultAndStrategy(config: any, controllerAddress: string, sur
     return {vault, strategy}
 }
 
-async function setTokenSwapPath(strategyAddress: string, config: any): Promise<any> {
+async function setTokenSwapPath(strategyAddress: string, config: ConfigStrategy): Promise<any> {
 
     // set token swap path for cvx and crv
     await strategyTask.setTokenSwapPathConfig(strategyAddress, config.crvSwapPath);
@@ -84,36 +84,40 @@ async function setTokenSwapPath(strategyAddress: string, config: any): Promise<a
 
 }
 
-async function addFeed(oracleRouterAddress: string, config: any): Promise<any> {
+async function addFeed(oracleRouterAddress: string, config: ConfigStrategy): Promise<any> {
     let timeUpdate = 100000000
     await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.crv.address, oracleInfo.crv_usd.address, 0, timeUpdate, false)
     await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.cvx.address, oracleInfo.cvx_usd.address, 0, timeUpdate,false)
-    await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompoundAddress, config.feedAddress, config.priceAdmin, timeUpdate, true)
+    await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompound, config.feed, config.priceAdmin, timeUpdate, true)
 }
 
-async function impersonateAccount(config: any): Promise<any> {
+async function impersonateAccount(config: ConfigStrategy): Promise<any> {
 
-    let acc1 = await utilsTask.impersonateAccountLocalNode(config.accountDepositAddress1);
-    let acc2 = await utilsTask.impersonateAccountLocalNode(config.accountDepositAddress2);
-    let acc3 = await utilsTask.impersonateAccountLocalNode(config.accountDepositAddress3);
+    let acc1 = await utilsTask.impersonateAccountLocalNode(config.account1);
+    let acc2 = await utilsTask.impersonateAccountLocalNode(config.account2);
+    let acc3 = await utilsTask.impersonateAccountLocalNode(config.account3);
 
     return {acc1, acc2, acc3}
 }
 
-async function addLiquidity(accounts: SignerWithAddress[], config: any): Promise<void> {
+async function addLiquidity(accounts: SignerWithAddress[], config: ConfigStrategy): Promise<void> {
 
     for (let i = 0; i < accounts.length; i++) {
+        console.log("accounts: ", accounts[i].address)
         await poolCurveTask.addLiquidity(accounts[i],
-            config.tokenDepositAddress, config.curveSwapAddress,
+            config.tokenDeposit, config.curveSwap,
             config.pathAddLiquidityCurve, 0,
             "");
     }
 }
 
-async function depositVault(accounts: SignerWithAddress[], vaultAddress: string, config: any): Promise<void> {
+async function depositVault(accounts: SignerWithAddress[], vaultAddress: string, config: ConfigStrategy): Promise<void> {
     for (let i = 0; i < accounts.length; i++) {
-        await erc20Task.approve(config.wantAddress, accounts[i], vaultAddress, ethers.constants.MaxUint256);
-        await vaultTask.deposit(vaultAddress, accounts[i], config.amountToDepositVault)
+        await erc20Task.approve(config.want, accounts[i], vaultAddress, ethers.constants.MaxUint256);
+
+        let balanceLp = await erc20Task.balanceOf(config.want, accounts[i].address);
+        let amountIn = balanceLp.gt(config.amountToDepositVault) ? config.amountToDepositVault : balanceLp;
+        await vaultTask.deposit(vaultAddress, accounts[i], amountIn)
     }
 }
 

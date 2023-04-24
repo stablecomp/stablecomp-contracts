@@ -5,6 +5,39 @@ pragma solidity ^0.8.13;
 interface ICurveFi_V1_0 {
     function get_virtual_price() external view returns (uint256 out);
 
+    function calc_token_amount(
+        uint256[2] calldata _amounts,
+        bool _isDeposit
+    ) external view returns (uint256);
+
+    function calc_token_amount(
+        uint256[2] calldata _amounts,
+        bool _isDeposit,
+        bool _previous
+    ) external view returns (uint256);
+
+    function calc_token_amount(
+        uint256[3] calldata _amounts,
+        bool _isDeposit
+    ) external view returns (uint256);
+
+    function calc_token_amount(
+        uint256[3] calldata _amounts,
+        bool _isDeposit,
+        bool _previous
+    ) external view returns (uint256);
+
+    function calc_token_amount(
+        uint256[4] calldata _amounts,
+        bool _isDeposit
+    ) external view returns (uint256);
+
+    function calc_token_amount(
+        uint256[4] calldata _amounts,
+        bool _isDeposit,
+        bool _previous
+    ) external view returns (uint256);
+
     function add_liquidity(
     // renbtc/tbtc pool
         uint256[2] calldata amounts,

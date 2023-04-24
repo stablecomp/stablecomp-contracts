@@ -45,7 +45,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     uint256 public performanceFeeStrategist;
     uint256 public withdrawalFee;
 
-    uint256 public constant MAX_FEE = 10000;
+    uint256 public constant PRECISION = 10000;
 
     address public controller;
 
@@ -116,7 +116,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
 
     function setWithdrawalFee(uint256 _withdrawalFee) external {
         _onlyTimeLockController();
-        require(_withdrawalFee <= MAX_FEE, "excessive-fee");
+        require(_withdrawalFee <= PRECISION, "excessive-fee");
         withdrawalFee = _withdrawalFee;
         emit SetWithdrawalFee(_withdrawalFee);
     }
@@ -125,7 +125,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     external
     {
         _onlyTimeLockController();
-        require(_performanceFeeStrategist <= MAX_FEE, "excessive-fee");
+        require(_performanceFeeStrategist <= PRECISION, "excessive-fee");
         performanceFeeStrategist = _performanceFeeStrategist;
         emit SetPerformanceFeeStrategist(_performanceFeeStrategist);
     }
@@ -134,7 +134,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
     external
     {
         _onlyTimeLockController();
-        require(_performanceFeeGovernance <= MAX_FEE, "excessive-fee");
+        require(_performanceFeeGovernance <= PRECISION, "excessive-fee");
         performanceFeeGovernance = _performanceFeeGovernance;
         emit SetPerformanceFeeGovernance(_performanceFeeGovernance);
     }
@@ -149,7 +149,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
 
     function setWithdrawalMaxDeviationThreshold(uint256 _threshold) external {
         _onlyGovernance();
-        require(_threshold <= MAX_FEE, "excessive-threshold");
+        require(_threshold <= PRECISION, "excessive-threshold");
         withdrawalMaxDeviationThreshold = _threshold;
     }
 
@@ -196,7 +196,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
             // Require that difference between expected and actual values is less than the deviation threshold percentage
             require(
                 diff <=
-                _amount.mul(withdrawalMaxDeviationThreshold).div(MAX_FEE),
+                _amount.mul(withdrawalMaxDeviationThreshold).div(PRECISION),
                 "withdraw-exceed-max-deviation-threshold"
             );
         }
@@ -247,7 +247,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
             return 0;
         }
 
-        uint256 fee = _amount.mul(withdrawalFee).div(MAX_FEE);
+        uint256 fee = _amount.mul(withdrawalFee).div(PRECISION);
         IERC20(want).safeTransfer(
             IController(controller).rewards(),
             fee
@@ -267,7 +267,7 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
         if (feeBps == 0) {
             return 0;
         }
-        uint256 fee = amount.mul(feeBps).div(MAX_FEE);
+        uint256 fee = amount.mul(feeBps).div(PRECISION);
         IERC20(token).safeTransfer(recipient, fee);
         return fee;
     }

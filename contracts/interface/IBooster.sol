@@ -13,6 +13,7 @@ interface IBooster {
     }
 
     function poolInfo(uint256 _pid) external view returns (PoolInfo memory);
+    function poolLength() external view returns (uint);
 
     function deposit(
         uint256 _pid,

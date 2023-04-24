@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 /*
 Version 1.0:
-    - Lp price calculated with virtual_price function in curve pool
+    - Amount out min calculate with previous balance check
 */
 contract SCompStrategyV1_0 is
 BaseStrategy,
@@ -29,21 +29,6 @@ CurveSwapper_V1_0,
 UniswapSwapper,
 TokenSwapPathRegistry
 {
-
-    /**
-    The default conditions for a rewards token are:
-    - Collect rewards token
-    - Distribute 100% via Tree to users
-
-    === Harvest Config ===
-    - autoCompoundingBps: Sell this % of rewards for underlying asset.
-    - autoCompoundingPerfFee: Of the auto compounded portion, take this % as a performance fee.
-    - treeDistributionPerfFee: Of the remaining portion (everything not distributed or converted via another mehcanic is distributed via the tree), take this % as a performance fee.
-
-    === Tend Config ===
-    - tendConvertTo: On tend, convert some of this token into another asset. By default with value as address(0), skip this step.
-    - tendConvertBps: Convert this portion of balance into another asset.
-     */
 
     using SafeERC20 for IERC20;
     using Address for address;
@@ -71,7 +56,11 @@ TokenSwapPathRegistry
     address public tokenCompoundAddress;
     IERC20 public tokenCompound;
 
-    uint256 public maxSlippage = 3e16; // 3%
+    uint256 public slippageSwapCrv = 100; // 5000 -> 50% ; 500 -> 5% ; 50 -> 0.5% ; 5 -> 0.05%
+    uint256 public slippageSwapCvx = 100; // 5000 -> 50% ; 500 -> 5% ; 50 -> 0.5% ; 5 -> 0.05%
+
+    uint256 public slippageLiquidity = 100; // 5000 -> 50% ; 500 -> 5% ; 50 -> 0.5% ; 5 -> 0.05%
+    uint256 public variantPrice = 300; // 5000 -> 50% ; 500 -> 5% ; 50 -> 0.5% ; 5 -> 0.05%
 
     struct CurvePoolConfig {
         address swap;
@@ -112,6 +101,16 @@ TokenSwapPathRegistry
 
     event TendState(uint crvTended, uint cvxTended);
 
+    /**
+     * @param _nameStrategy name string of strategy
+     * @param _governance is authorized actors, authorized pauser, can call earn, can set params strategy, receive fee harvest
+     * @param _strategist receive fee compound
+     * @param _want address lp to deposit
+     * @param _tokenCompound address token to compound
+     * @param _pid id of pool in convex booster
+     * @param _feeConfig performanceFee governance e strategist + fee withdraw
+     * @param _curvePool curve pool config
+     */
     constructor(
         string memory _nameStrategy,
         address _governance,
@@ -204,9 +203,24 @@ TokenSwapPathRegistry
         _setOracleRouter(_router);
     }
 
-    function setMaxSlippage(uint _maxSlippage) external {
+    function setSlippageSwapCrv(uint _slippage) external {
         _onlyGovernance();
-        maxSlippage = _maxSlippage;
+        slippageSwapCrv = _slippage;
+    }
+
+    function setSlippageSwapCvx(uint _slippage) external {
+        _onlyGovernance();
+        slippageSwapCvx = _slippage;
+    }
+
+    function setSlippageLiquidity(uint _slippage) external {
+        _onlyGovernance();
+        slippageLiquidity = _slippage;
+    }
+
+    function setVariancePrice(uint _variant) external {
+        _onlyGovernance();
+        variantPrice = _variant;
     }
 
     /// ===== View Functions =====
@@ -220,23 +234,6 @@ TokenSwapPathRegistry
 
     function balanceOfPool() public view override returns (uint256) {
         return baseRewardsPool.balanceOf(address(this));
-    }
-
-    function getProtectedTokens()
-    public
-    view
-    override
-    returns (address[] memory)
-    {
-        address[] memory protectedTokens = new address[](3);
-        protectedTokens[0] = want;
-        protectedTokens[1] = crv;
-        protectedTokens[2] = cvx;
-        return protectedTokens;
-    }
-
-    function isTendable() public pure override returns (bool) {
-        return true;
     }
 
     /// ===== Internal Core Implementations =====
@@ -295,7 +292,7 @@ TokenSwapPathRegistry
         if(performanceFeeGovernance > 0) {
             autoCompoundedPerformanceFeeGovernance =
             _amount.mul(performanceFeeGovernance).div(
-                MAX_FEE
+                PRECISION
             );
             IERC20(_tokenAddress).transfer(
                 governance,
@@ -313,7 +310,7 @@ TokenSwapPathRegistry
         if(performanceFeeStrategist > 0) {
             autoCompoundedPerformanceFeeStrategist =
             _amount.mul(performanceFeeStrategist).div(
-                MAX_FEE
+                PRECISION
             );
             IERC20(_tokenAddress).transfer(
                 strategist,
@@ -411,24 +408,8 @@ TokenSwapPathRegistry
         }
     }
 
-    function _getAmountOutMin(address _tokenIn, address _tokenOut, uint _amountIn) public view returns(uint){
-        uint tokenInPrice = OracleRouter(oracleRouter).price(_tokenIn);
-        uint tokenOutPrice = OracleRouter(oracleRouter).price(_tokenOut);
-
-        // sanitary check
-        if(tokenOutPrice == 0 ) {
-            return 0;
-        }
-
-        uint amountOutMin = _amountIn * uint(tokenInPrice) / uint(tokenOutPrice);
-        return amountOutMin.mulTruncate(uint(1e18) - maxSlippage);
-    }
-
     function _addLiquidityCurve(uint _amount) internal {
-        uint8 assetDecimals = IBasicToken(tokenCompoundAddress).decimals();
-        uint256 virtualPrice = ICurveFi_V1_0(curvePool.swap).get_virtual_price();
-        uint256 depositValue = _amount.scaleBy(18, assetDecimals).divPrecisely(virtualPrice);
-        uint256 minLPOutput = depositValue.mulTruncate(uint256(1e18) - maxSlippage);
+        uint minLpOutput = _getAmountOutMinAddLiquidity(_amount);
 
         _add_liquidity_single_coin(
             curvePool.swap,
@@ -436,17 +417,69 @@ TokenSwapPathRegistry
             _amount,
             curvePool.tokenCompoundPosition,
             curvePool.numElements,
-            minLPOutput
+            minLpOutput
         );
     }
 
+    function _getAmountOutMinAddLiquidity(uint _amount) public view returns(uint){
+        uint amountCurveOut;
+        if ( curvePool.numElements == 2 ) {
+            uint[2] memory amounts;
+            amounts[curvePool.tokenCompoundPosition] = _amount;
+            uint amountCurveOutPrevious = ICurveFi_V1_0(curvePool.swap).calc_token_amount(amounts, true, true);
+            amountCurveOut = ICurveFi_V1_0(curvePool.swap).calc_token_amount(amounts, true);
+            uint diff = amountCurveOutPrevious > amountCurveOut ?
+                            amountCurveOutPrevious - amountCurveOut :
+                            amountCurveOut - amountCurveOutPrevious;
+            require(amountCurveOutPrevious.mul(variantPrice).div(PRECISION) > diff, "diff min lp out");
+        } else if ( curvePool.numElements == 3 ) {
+            uint[3] memory amounts;
+            amounts[curvePool.tokenCompoundPosition] = _amount;
+            uint amountCurveOutPrevious = ICurveFi_V1_0(curvePool.swap).calc_token_amount(amounts, true, true);
+            amountCurveOut = ICurveFi_V1_0(curvePool.swap).calc_token_amount(amounts, true);
+            uint diff = amountCurveOutPrevious > amountCurveOut ?
+                            amountCurveOutPrevious - amountCurveOut :
+                            amountCurveOut - amountCurveOutPrevious;
+            require(amountCurveOutPrevious.mul(variantPrice).div(PRECISION) > diff, "diff min lp out");
+        } else {
+            uint[4] memory amounts;
+            amounts[curvePool.tokenCompoundPosition] = _amount;
+            uint amountCurveOutPrevious = ICurveFi_V1_0(curvePool.swap).calc_token_amount(amounts, true, true);
+            amountCurveOut = ICurveFi_V1_0(curvePool.swap).calc_token_amount(amounts, true);
+            uint diff = amountCurveOutPrevious > amountCurveOut ?
+                            amountCurveOutPrevious - amountCurveOut :
+                            amountCurveOut - amountCurveOutPrevious;
+            require(amountCurveOutPrevious.mul(variantPrice).div(PRECISION) > diff, "diff min lp out");
+        }
+        amountCurveOut -= amountCurveOut.mul(slippageLiquidity).div(PRECISION);
+        return amountCurveOut;
+    }
+
     function _makeSwap(address _tokenIn, address _tokenOut, uint _amountIn) internal {
-        uint amountOutMin = _getAmountOutMin(_tokenIn, _tokenOut, _amountIn);
+        uint amountOutMin = _getAmountOutMinSwap(_tokenIn, _tokenOut, _amountIn);
         address router = getRouterAddress(_tokenIn, _tokenOut);
         if(swapPaths[_tokenIn][_tokenOut].isSwapV2) {
-            _swapExactTokensForTokens(router, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathAddress);
+            _swapExactTokensForTokens(router, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathAddress, "");
         } else {
             _swapExactInputMultihop(router, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathData);
         }
     }
+
+    function _getAmountOutMinSwap(address _tokenIn, address _tokenOut, uint _amountIn) public view returns(uint){
+        uint slippageTokenOut = _tokenIn == crv ? slippageSwapCrv : slippageSwapCvx;
+        (uint tokenInPrice, ) = OracleRouter(oracleRouter).price(_tokenIn);
+        (uint tokenOutPrice, ) = OracleRouter(oracleRouter).price(_tokenOut);
+        // sanitary check
+        if(tokenOutPrice == 0 ) {
+            return 0;
+        }
+
+        uint amountOutMin = _amountIn * tokenInPrice / tokenOutPrice;
+        uint decimalsTokenIn = IBasicToken(_tokenIn).decimals();
+        uint decimalsTokenOut = IBasicToken(_tokenOut).decimals();
+        amountOutMin = amountOutMin.scaleBy(decimalsTokenOut, decimalsTokenIn);
+        amountOutMin -= amountOutMin.mul(slippageTokenOut).div(PRECISION);
+        return amountOutMin.mulTruncate(uint256(1e18));
+    }
+
 }

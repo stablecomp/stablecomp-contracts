@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
 /*
     Common base for permissioned roles throughout Sett ecosystem
 

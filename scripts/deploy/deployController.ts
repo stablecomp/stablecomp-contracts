@@ -13,7 +13,11 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-        await deployScompTask.deployController(deployer.address, deployer.address, deployer.address);
+        let governance = deployer.address;
+        let strategist = deployer.address;
+        let rewards = deployer.address;
+
+        await deployScompTask.deployController(governance, strategist, rewards);
         process.exit(0)
     })
     .catch((error: Error) => {
