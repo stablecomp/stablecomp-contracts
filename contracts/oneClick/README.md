@@ -20,5 +20,4 @@ const OneClick = await OneClickFactory.deploy(
   oneClickFeeAddress
 );
 await OneClick.deployed();
-console.log("Contract deployed to:", OneClick.address);
 ```

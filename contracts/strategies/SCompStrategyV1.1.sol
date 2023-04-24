@@ -435,8 +435,6 @@ TokenSwapPathRegistry
 
     function _makeSwap(address _tokenIn, address _tokenOut, uint _amountIn) internal {
         uint amountOutMin = _getAmountOutMinSwap(_tokenIn, _tokenOut, _amountIn);
-        console.log("amountOutMin mul truncate");
-        console.log(amountOutMin);
         address router = getRouterAddress(_tokenIn, _tokenOut);
         if(swapPaths[_tokenIn][_tokenOut].isSwapV2) {
             _swapExactTokensForTokens(router, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathAddress, "" );

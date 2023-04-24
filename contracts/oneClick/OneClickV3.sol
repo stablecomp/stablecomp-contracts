@@ -131,23 +131,8 @@ contract OneClickV3 is Ownable, UniswapSwapper {
 
         uint lpAmount = ISCompVault(_vault).withdraw(_amountIn);
 
-        console.log("lpAmount");
-        console.log(lpAmount);
-        console.log("lp balance before");
-        console.log(IERC20(_lpCurve).balanceOf(address(this)));
-
         uint[] memory amountsToSwap = _removeLiquidityCurve(_lpCurve, _curvePool, _removeLiquidityOneCoin, lpAmount, _amountsOutMinCurve);
 
-
-        console.log("lp balance after");
-        console.log(IERC20(_lpCurve).balanceOf(address(this)));
-
-
-        console.log("mim balance after");
-            console.log(IERC20(0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3).balanceOf(address(this)));
-
-        console.log("3crv balance after");
-        console.log(IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490).balanceOf(address(this)));
 
         uint amountsOut = _executeSwapOut(_curvePool, amountsToSwap, _listRouterAddress, _listAmountOutMin, _listPathData, _listTypeSwap);
 
@@ -226,12 +211,6 @@ contract OneClickV3 is Ownable, UniswapSwapper {
         address[] memory listCoin = _getCoinCurvePool(_curvePool, _listAmountToSwap.length);
         for(uint i = 0; i < _listAmountToSwap.length; i++) {
             if (_listAmountToSwap[i] != 0 ) {
-                console.log("Coin");
-                console.log(listCoin[i]);
-                console.log("_listAmountToSwap[i]");
-                console.log(_listAmountToSwap[i]);
-                console.log("_listAmountOutMin[i]");
-                console.log(_listAmountOutMin[i]);
                 if(_listTypeSwap[i] == 0) {
                     uint[] memory amountsOutV2 = _makeSwapV2(_listRouterAddress[i], listCoin[i], _listAmountToSwap[i], _listAmountOutMin[i], _listPathData[i]);
                     amountsOut += amountsOutV2[amountsOutV2.length -1];

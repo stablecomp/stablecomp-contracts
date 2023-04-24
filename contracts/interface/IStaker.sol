@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: ISC
+pragma solidity ^0.8.13;
+
 interface IStaker{
     function deposit(address, address) external;
     function withdraw(address) external;

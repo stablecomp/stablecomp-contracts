@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: ISC
+pragma solidity ^0.8.13;
 interface ICurveGauge {
     function deposit(uint256) external;
     function balanceOf(address) external view returns (uint256);
