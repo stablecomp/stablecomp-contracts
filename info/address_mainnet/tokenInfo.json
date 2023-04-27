@@ -110,5 +110,9 @@
   "eusd": {
     "address": "0xA0d69E286B938e21CBf7E51D71F6A4c8918f482F",
     "decimals": 18
+  },
+  "fraxBp": {
+    "address": "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC",
+    "decimals": 18
   }
 }

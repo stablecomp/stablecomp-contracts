@@ -5,11 +5,13 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 const { ethers } = hardhat;
 
 const curveInfo = require('../../../info/address_mainnet/curveAddress.json');
+const curveSwapRouterABI = require('../../../info/abi/curveSwapRouter.json')
+let tokenInfo = require("../../../info/address_mainnet/tokenInfo.json")
 
 async function addLiquidity(operator: SignerWithAddress,
                             tokenDepositAddress: string, curveSwapAddress: string,
                             amountsToAdd: any[], minMintAmount: any,
-                            urlProvider: string): Promise<any> {
+                            ): Promise<any> {
 
     // get token deposit contract
     let tokenDeposit = await ethers.getContractAt("ERC20", tokenDepositAddress, operator);
@@ -43,8 +45,7 @@ async function addLiquidity(operator: SignerWithAddress,
 
 async function removeLiquidity(operator: SignerWithAddress,
                             lpAddress: string, curveSwapAddress: string,
-                            amountsToAdd: any[], minAmountsOut: any[],
-                            urlProvider: string): Promise<any> {
+                            amountsToAdd: any[], minAmountsOut: any[]): Promise<any> {
 
     // get token deposit contract
     let lpCurve = await ethers.getContractAt("ERC20", lpAddress, operator);
@@ -125,14 +126,47 @@ async function getCurvePool(curvePoolAddress: string): Promise<Contract> {
     return await ethers.getContractAt("ICurvePool", curvePoolAddress, deployer);
 }
 
+// SWAP ROUTER
+/*
+
+     @notice Perform up to four swaps in a single transaction
+     @dev Routing and swap params must be determined off-chain. This
+     functionality is designed for gas efficiency over ease-of-use.
+     @param _route Array of [initial token, pool, token, pool, token, ...]
+     The array is iterated until a pool address of 0x00, then the last
+     given token is transferred to `_receiver`
+     @param _swap_params Multidimensional array of [i, j, swap type] where i and j are the correct
+     values for the n'th pool in `_route`. The swap type should be
+     1 for a stableswap `exchange`,
+     2 for stableswap `exchange_underlying`,
+     3 for a cryptoswap `exchange`,
+     4 for a cryptoswap `exchange_underlying`,
+     5 for factory metapools with lending base pool `exchange_underlying`,
+     6 for factory crypto-meta pools underlying exchange (`exchange` method in zap),
+     7-11 for wrapped coin (underlying for lending or fake pool) -> LP token "exchange" (actually `add_liquidity`),
+     12-14 for LP token -> wrapped coin (underlying for lending pool) "exchange" (actually `remove_liquidity_one_coin`)
+     15 for WETH -> ETH "exchange" (actually deposit/withdraw)
+ */
+async function exchangeMultiple(accountOperator: SignerWithAddress, tokenIn: string, tokenOut: string, amountIn: any, route: string[], swapParams: any[][]): Promise<Contract> {
+    let swapRouter: Contract = await getSwapRouter();
+
+    let tx = await swapRouter.connect(accountOperator).exchange_multiple(route, swapParams, amountIn, 0);
+    await tx.wait();
+}
+
+async function getSwapRouter(): Promise<Contract> {
+    const [deployer] = await ethers.getSigners();
+    return await ethers.getContractAt(curveSwapRouterABI, curveInfo.swapRouter, deployer);
+}
+
 export const poolCurveTask = {
     addLiquidity: async function (account: SignerWithAddress,
                                   tokenDepositAddress: string, curveSwapAddress: string,
-                                  amountsToAdd: any[], minMintAmount: any, urlProvider: string): Promise<any>{
+                                  amountsToAdd: any[], minMintAmount: any): Promise<any>{
         return await addLiquidity(
             account,
             tokenDepositAddress, curveSwapAddress,
-            amountsToAdd, minMintAmount, urlProvider);
+            amountsToAdd, minMintAmount);
     },
     removeLiquidityOneCoin: async function (operator: SignerWithAddress, curveSwapAddress: string,
                                   amountToRemove: any, indexCoin: number, minReceiver: any): Promise<any>{
@@ -146,5 +180,14 @@ export const poolCurveTask = {
     },
     getCoinsOfCurvePool: async function (curvePoolAddress: string): Promise<any>{
         return await getCoinsOfCurvePool(curvePoolAddress);
+    },
+};
+
+export const taskSwapRouterCurve = {
+    exchangeMultiple: async function (accountOperator: SignerWithAddress, tokenIn: string, tokenOut: string, amountIn: any,
+                                      route: string[], swapParams: any[][]): Promise<any>{
+        return await exchangeMultiple(
+            accountOperator, tokenIn, tokenOut, amountIn, route, swapParams
+        );
     },
 };

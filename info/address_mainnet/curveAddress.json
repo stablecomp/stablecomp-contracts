@@ -1,4 +1,6 @@
 {
+  "swapRouter": "0x99a58482BD75cbab83b27EC03CA68fF489b5788f",
+  "poolRegistry": "0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5",
   "boosterAddress": "0xF403C135812408BFbE8713b5A23a04b3D48AAE31",
   "pool": {
     "threeEur": "0xb9446c4Ef5EBE66268dA6700D26f96273DE3d571",
@@ -20,11 +22,13 @@
     "ousd3crv": "0x87650d7bbfc3a9f10587d7778206671719d9910d",
     "usdcEurs": "0x98a7f18d4e56cfe84e3d081b40001b3d5bd3eb8b",
     "usdp3crv": "0xc270b3b858c335b6ba5d5b10e2da8a09976005ad",
-    "eusdfraxbp": "0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F",
-    "dolafraxbp": "0xe57180685e3348589e9521aa53af0bcd497e884d",
+    "eusdFraxbp": "0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F",
+    "dolaFraxbp": "0xe57180685e3348589e9521aa53af0bcd497e884d",
     "agEurEuroC": "0xba3436fd341f2c8a928452db3c5a3670d1d5cc73",
     "ibEurUsdc": "0x1570af3df649fc74872c5b8f280a162a3bdd4eb6",
-    "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571"
+    "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571",
+    "wethCrv": "0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511",
+    "wethFrax": "0x1631d0e588d475cee4be0f51b7410daaaabd7034"
 
   },
   "lp": {
@@ -47,8 +51,8 @@
     "ousd3crv": "0x87650d7bbfc3a9f10587d7778206671719d9910d",
     "usdcEurs": "0x3d229e1b4faab62f621ef2f6a610961f7bd7b23b",
     "usdp3crv": "0xc270b3b858c335b6ba5d5b10e2da8a09976005ad",
-    "eusdfraxbp": "0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F",
-    "dolafraxbp": "0xe57180685e3348589e9521aa53af0bcd497e884d",
+    "eusdFraxbp": "0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F",
+    "dolaFraxbp": "0xe57180685e3348589e9521aa53af0bcd497e884d",
     "agEurEuroC": "0xba3436fd341f2c8a928452db3c5a3670d1d5cc73",
     "ibEurUsdc": "0x8682fbf0cbf312c891532ba9f1a91e44f81ad7df",
     "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571"
@@ -74,8 +78,8 @@
     "ousd3crv": "0x7D536a737C13561e0D2Decf1152a653B4e615158",
     "usdcEurs": "0xb0c1B7b83Baae51284B8BbBa02Ec37742440199d",
     "usdp3crv": "0x500E169c15961DE8798Edb52e0f88a8662d30EC5",
-    "eusdfraxbp": "0xB468dB2E478885B87D7ce0C8DA1D4373A756C138",
-    "dolafraxbp": "0x0404d05F3992347d2f0dC3a97bdd147D77C85c1c",
+    "eusdFraxbp": "0xB468dB2E478885B87D7ce0C8DA1D4373A756C138",
+    "dolaFraxbp": "0x0404d05F3992347d2f0dC3a97bdd147D77C85c1c",
     "agEurEuroC": "0xA91fccC1ec9d4A2271B7A86a7509Ca05057C1A98",
     "ibEurUsdc": "0xAab7202D93B5633eB7FB3b80873C817B240F6F44",
     "agEurEurtEurs": "0x4a9b7eDD67f58654a2c33B587f98c5709AC7d482"
@@ -101,8 +105,8 @@
     "ousd3crv": 56,
     "usdcEurs": 54,
     "usdp3crv": 57,
-    "eusdfraxbp": 156,
-    "dolafraxbp": 115,
+    "eusdFraxbp": 156,
+    "dolaFraxbp": 115,
     "agEurEuroC": 113,
     "ibEurUsdc": 86,
     "agEurEurtEurs": 60
@@ -126,9 +130,9 @@
     "gusd3crv": 2,
     "ousd3crv": 2,
     "usdcEurs": 2,
-    "usdp3crv": 4,
-    "eusdfraxbp": 2,
-    "dolafraxbp": 2,
+    "usdp3crv": 2,
+    "eusdFraxbp": 2,
+    "dolaFraxbp": 2,
     "agEurEuroC": 2,
     "ibEurUsdc": 2,
     "agEurEurtEurs": 3
