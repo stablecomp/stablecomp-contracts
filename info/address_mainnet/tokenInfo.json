@@ -114,5 +114,9 @@
   "fraxBp": {
     "address": "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC",
     "decimals": 18
+  },
+  "stEth": {
+    "address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+    "decimals": 18
   }
 }

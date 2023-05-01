@@ -25,15 +25,20 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-        sCompVault = await deployScompTask.deployVault(controllerJson.sCompController.address, config.want, deployer.address, config.feeDeposit);
-        sCompStrategy = await deployScompTask.deployStrategy(config.name, deployer.address,
-            surplusConverterJson.surplusConverterV2Contract.address, controllerJson.sCompController.address, oracleRouterJson.oracleRouter.address,
+        let controllerAddress = controllerJson.sCompController.address;
+        let timeLockControllerAddress = timeLockControllerJson.sCompTimelockController.address;
+        let oracleRouterAddress = oracleRouterJson.oracleRouter.address;
+        let governance = deployer.address;
+        let strategist = surplusConverterJson.surplusConverterV2Contract.address;
+
+        sCompVault = await deployScompTask.deployVault(controllerAddress, config.want, governance, config.feeDeposit);
+        sCompStrategy = await deployScompTask.deployStrategy(config.name, governance, strategist, controllerAddress,
             config.want, config.tokenCompound, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
-            config.curveSwap, config.nElementPool, timeLockControllerJson.sCompTimelockController.address, config.versionStrategy,
+            config.curveSwap, config.nElementPool, config.versionStrategy,
         );
 
-        await strategyTask.setTokenSwapPathConfig(sCompStrategy.address, "crv_busd")
-        await strategyTask.setTokenSwapPathConfig(sCompStrategy.address, "cvx_busd")
+        await strategyTask.setConfig(sCompStrategy.address, config,
+            controllerAddress, oracleRouterAddress, timeLockControllerAddress)
 
         process.exit(0)
     })

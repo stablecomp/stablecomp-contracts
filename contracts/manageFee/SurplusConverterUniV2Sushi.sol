@@ -3,7 +3,8 @@
 pragma solidity ^0.8.7;
 
 import "./BaseSurplusConverter.sol";
-import "../interface/IUniswapRouter.sol";
+import "../utility/uniswap/interface/IUniswapV3Router.sol";
+import "../utility/uniswap/interface/IUniswapRouterV2.sol";
 
 /// @title SurplusConverterUniV2Sushi
 /// @author Angle Core Team

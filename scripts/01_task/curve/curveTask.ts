@@ -1,6 +1,9 @@
 import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import curve from "@curvefi/api";
+import process from "process";
+import fs from "fs";
 
 const { ethers } = hardhat;
 
@@ -147,10 +150,13 @@ async function getCurvePool(curvePoolAddress: string): Promise<Contract> {
      12-14 for LP token -> wrapped coin (underlying for lending pool) "exchange" (actually `remove_liquidity_one_coin`)
      15 for WETH -> ETH "exchange" (actually deposit/withdraw)
  */
-async function exchangeMultiple(accountOperator: SignerWithAddress, tokenIn: string, tokenOut: string, amountIn: any, route: string[], swapParams: any[][]): Promise<Contract> {
+async function exchangeMultiple(accountOperator: SignerWithAddress,
+                                amountIn: any, route: string[],
+                                swapParams: any[][], poolAddress: string[],
+                                receiver: string): Promise<Contract> {
     let swapRouter: Contract = await getSwapRouter();
 
-    let tx = await swapRouter.connect(accountOperator).exchange_multiple(route, swapParams, amountIn, 0);
+    let tx = await swapRouter.connect(accountOperator).exchange_multiple(route, swapParams, amountIn, 0, poolAddress, receiver);
     await tx.wait();
 }
 
@@ -159,7 +165,20 @@ async function getSwapRouter(): Promise<Contract> {
     return await ethers.getContractAt(curveSwapRouterABI, curveInfo.swapRouter, deployer);
 }
 
-export const poolCurveTask = {
+// SDK
+
+async function getBestRateForMultiplePools(rpcUrl: any, inputToken: string, outputToken: string, amountIn: string | number) {
+    await curve.init(
+        'JsonRpc',
+        { url: rpcUrl, privateKey: process.env.PRIVATE_KEY },
+        { gasPrice: 0, maxFeePerGas: 0, maxPriorityFeePerGas: 0, chainId: 1 }
+    );
+    await curve.factory.fetchPools();
+    await curve.cryptoFactory.fetchPools();
+    return await curve.router.getBestRouteAndOutput(inputToken, outputToken, amountIn)
+}
+
+export const taskPoolCurve = {
     addLiquidity: async function (account: SignerWithAddress,
                                   tokenDepositAddress: string, curveSwapAddress: string,
                                   amountsToAdd: any[], minMintAmount: any): Promise<any>{
@@ -184,10 +203,84 @@ export const poolCurveTask = {
 };
 
 export const taskSwapRouterCurve = {
-    exchangeMultiple: async function (accountOperator: SignerWithAddress, tokenIn: string, tokenOut: string, amountIn: any,
-                                      route: string[], swapParams: any[][]): Promise<any>{
+    exchangeMultiple: async function (accountOperator: SignerWithAddress,
+                                      amountIn: any, route: string[],
+                                      swapParams: any[][], poolAddress: any[],
+                                      receiver: string): Promise<any>{
         return await exchangeMultiple(
-            accountOperator, tokenIn, tokenOut, amountIn, route, swapParams
+            accountOperator, amountIn, route, swapParams, poolAddress, receiver
         );
+    },
+};
+
+async function writeBestQuoteCurve(nameQuote: string, route: any[]): Promise<any> {
+    let infoPath = "./info"
+    if (!fs.existsSync(infoPath)) {
+        fs.mkdirSync(infoPath);
+    }
+    let quotePath = infoPath+"/bestQuote/"
+    if (!fs.existsSync(quotePath)) {
+        fs.mkdirSync(quotePath);
+    }
+
+    let path = quotePath + nameQuote+".json"
+
+    let routeList = [];
+    let swapParamList = [];
+    let poolAddressList = [];
+    for (let i = 0; i < route.length; i++) {
+
+        routeList.push(route[i].inputCoinAddress)
+        routeList.push(route[i].poolAddress);
+
+        let swapParam : any[] = []
+        swapParam[0] = route[i].i;
+        swapParam[1] = route[i].j;
+        swapParam[2] = route[i].swapType;
+        swapParamList.push(swapParam);
+
+        poolAddressList.push(route[i].swapAddress);
+    }
+    routeList.push(route[route.length -1].outputCoinAddress);
+
+    // format data
+    let initialLength = routeList.length;
+    if (routeList.length < 9) {
+        for (let i = 0; i < 9 - initialLength; i++) {
+            routeList.push(ethers.constants.AddressZero);
+        }
+    }
+    initialLength = swapParamList.length;
+    if (swapParamList.length < 4) {
+        for (let i = 0; i < 4 - initialLength; i++) {
+            swapParamList.push([0,0,0]);
+        }
+    }
+    initialLength = poolAddressList.length;
+    if (poolAddressList.length < 4) {
+        for (let i = 0; i < 4 - initialLength; i++) {
+            poolAddressList.push(ethers.constants.AddressZero);
+        }
+    }
+
+    let jsonData = {
+        coinPath: routeList,
+        feePath: [],
+        swapParams: swapParamList,
+        poolAddress: poolAddressList,
+        swapType: 3
+    }
+
+    let data = JSON.stringify(jsonData);
+    fs.writeFileSync(path, data);
+}
+
+
+export const taskSdkCurve = {
+    getBestRateForMultiplePools: async function (rpcUrl: any, inputToken: string, outputToken: string, amountIn: string | number): Promise<any>{
+        return await getBestRateForMultiplePools(rpcUrl, inputToken, outputToken, amountIn);
+    },
+    writeBestQuoteCurve: async function (nameQuote: string, route: any[]): Promise<any>{
+        return await writeBestQuoteCurve(nameQuote, route);
     },
 };

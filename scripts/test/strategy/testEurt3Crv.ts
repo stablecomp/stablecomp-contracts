@@ -131,19 +131,9 @@ main()
         const {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, oracleRouter, vault, strategy} : Contract =
             await testStrategyTask.setupContractBase(config);
 
-        await strategyTask.setSlippageSwapCrv(strategy.address, config.slippageSwapCrv);
-        await strategyTask.setSlippageSwapCvx(strategy.address, config.slippageSwapCvx);
-        await strategyTask.setSlippageLiquidity(strategy.address, config.slippageLiquidity);
-
         feeDistributionContract = feeDistribution;
         surplusConverterV2Contract = surplusConverterV2;
         strategyContract = strategy;
-
-        console.log(" ----- SET TOKEN SWAP PATH")
-        await testStrategyTask.setTokenSwapPath(strategy.address, config);
-
-        console.log(" ----- SET FEED ORACLE")
-        await testStrategyTask.addFeed(oracleRouter.address, config)
 
         console.log(" ----- SETUP ACCOUNT")
         const {acc1, acc2, acc3} = await testStrategyTask.impersonateAccount(config);

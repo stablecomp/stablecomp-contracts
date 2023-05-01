@@ -14,39 +14,38 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-
-        console.log("SWAP CRV EUSD")
+        let tokenInAddress = tokenInfo.crv.address
+        let tokenInDecimals = tokenInfo.crv.decimals
+        let tokenOutAddress = tokenInfo.ibEur.address
+        let tokenOutDecimals = tokenInfo.ibEur.decimals
+        let addressWhaleTokenIn = "0x7a16fF8270133F063aAb6C9977183D9e72835428"
 
         // FUND ACCOUNT
-        let whaleCrv : SignerWithAddress = await utilsTask.impersonateAccountLocalNode("0x68BEDE1d0bc6BE6d215f8f8Ee4ee8F9faB97fE7a");
-        await utilsTask.fundAccountToken(tokenInfo.crv.address, whaleCrv, deployer.address, ethers.utils.parseEther("100"));
 
-        let balanceCRV = await erc20Task.balanceOf(tokenInfo.crv.address, deployer.address);
+        let whaleTokenIn : SignerWithAddress = await utilsTask.impersonateAccountLocalNode(addressWhaleTokenIn);
+        await utilsTask.fundAccountETH(whaleTokenIn.address,
+            ethers.utils.parseEther("10"));
+        await utilsTask.fundAccountToken(tokenInAddress, whaleTokenIn,
+            deployer.address, ethers.utils.parseUnits("10", tokenInDecimals));
+        let bestQuote = require("../../info/bestQuote/crv_ibEUR.json");
 
-        let route = [
-            tokenInfo.crv.address,
-            curveInfo.pool.wethCrv,
-            tokenInfo.weth.address,
-            curveInfo.pool.wethFrax,
-            tokenInfo.frax.address,
-            curveInfo.pool.fraxUsdc,
-            curveInfo.lp.fraxUsdc,
-            curveInfo.pool.eusdFraxbp,
-            tokenInfo.eusd.address,
-        ];
-        let swapParams = [[1, 0, 3], [0, 1, 3], [0, 0, 7], [1, 0, 1]];
 
-        let amountIn = ethers.utils.parseEther("1")
-        console.log("Amount in crv: "+ ethers.utils.formatEther(amountIn));
-        let balanceEusdBefore = await erc20Task.balanceOf(tokenInfo.eusd.address, deployer.address);
+        let amountIn = ethers.utils.parseUnits("10", tokenInDecimals)
+        console.log("Amount in tokenIn: "+ amountIn);
+        let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOutAddress, deployer.address);
 
-        await erc20Task.approve(tokenInfo.crv.address, deployer, curveInfo.swapRouter, ethers.constants.MaxUint256);
+        await erc20Task.approve(tokenInAddress, deployer, curveInfo.swapRouter, ethers.constants.MaxUint256);
 
-        await taskSwapRouterCurve.exchangeMultiple(deployer, tokenInfo.crv.address, tokenInfo.weth.address, amountIn, route, swapParams)
-        let balanceEusdAfter = await erc20Task.balanceOf(tokenInfo.eusd.address, deployer.address);
+        await taskSwapRouterCurve.exchangeMultiple(
+            deployer,
+            amountIn, bestQuote.coinPath,
+            bestQuote.swapParams, bestQuote.poolAddress,
+            deployer.address
+        )
+        let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOutAddress, deployer.address);
 
-        console.log("Balance eusd before swap: "+ balanceEusdBefore)
-        console.log("Balance eusd after swap: "+ balanceEusdAfter)
+        console.log("Balance tokenOut before swap: "+ balanceTokenOutBefore)
+        console.log("Balance tokenOut after swap: "+ balanceTokenOutAfter)
 
     })
     .catch((error: Error) => {

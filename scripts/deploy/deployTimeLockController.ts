@@ -17,7 +17,17 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
+
+        let balanceBeforeDeploy = await deployer.getBalance();
+
         await deployScompTask.deployTimeLockController([deployer.address], [deployer.address]);
+
+        let balanceAfterDeploy = await deployer.getBalance();
+        let diffDeploy = balanceBeforeDeploy.sub(balanceAfterDeploy);
+
+        console.log("Cost deploy timelock controller: " + diffDeploy)
+
+
         process.exit(0)
     })
     .catch((error: Error) => {

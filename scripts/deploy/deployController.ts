@@ -17,7 +17,13 @@ main()
         let strategist = deployer.address;
         let rewards = deployer.address;
 
+        let balanceBeforeController = await deployer.getBalance();
         await deployScompTask.deployController(governance, strategist, rewards);
+        let balanceAfterController = await deployer.getBalance();
+        let diff = balanceBeforeController.sub(balanceAfterController);
+
+        console.log("Cost deploy: " + diff)
+
         process.exit(0)
     })
     .catch((error: Error) => {

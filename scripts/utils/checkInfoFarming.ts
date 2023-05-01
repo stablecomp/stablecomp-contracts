@@ -1,8 +1,8 @@
-import hardhat, {network} from 'hardhat';
+import hardhat from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
-const { run, ethers, upgrades } = hardhat;
+const { run, ethers} = hardhat;
 
 const controllerInfo = require('../../info/deploy_address/scaling_node/controller/sCompControllerContract.json');
 const masterchefInfo = require('../../info/deploy_address/scaling_node/farming/masterchefScompContract.json');
@@ -11,9 +11,7 @@ const tokenInfo = require('../../info/deploy_address/scaling_node/token/sCompTok
 let deployer : SignerWithAddress;
 
 // contract deploy
-let sCompVault : Contract;
 let sCompController : Contract;
-let sCompStrategy : Contract;
 let sCompFarm : Contract;
 let sCompToken : Contract;
 
@@ -21,14 +19,13 @@ async function main(): Promise<void> {
   await run('compile');
   [deployer] = await ethers.getSigners();
 
-  const balance = await deployer.getBalance();
   let sCompControllerFactory = await ethers.getContractFactory("SCompController");
   sCompController = sCompControllerFactory.attach(controllerInfo.sCompController.address)
 
   let sCompFarmFactory = await ethers.getContractFactory("MasterChefScomp");
   sCompFarm = sCompFarmFactory.attach(masterchefInfo.masterchefScomp.address);
 
-  let sCompTokenFactory = await ethers.getContractFactory("GenericERC20");
+  let sCompTokenFactory = await ethers.getContractFactory("TestErc20");
   sCompToken = sCompTokenFactory.attach(tokenInfo.sCompTokenContract.address);
 
   console.log("Get contract ok...")

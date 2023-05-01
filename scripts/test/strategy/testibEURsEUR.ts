@@ -7,7 +7,7 @@ import {feeDistributionTask, surplusConverterTask} from "../../01_task/feeTask";
 import {testStrategyTask} from "../01_task/testStrategyTask";
 import {boosterTask} from "../../01_task/convex/convexTask";
 
-const { run, ethers } = hardhat;
+const { ethers } = hardhat;
 
 let nameConfig = "ibeurseur"
 let config: ConfigStrategy;
@@ -35,7 +35,6 @@ let lastBalanceWantOfStrategy : any = 0;
 let storelLpAccount: any = [];
 
 async function main(): Promise<void> {
-    await run('compile');
     [deployer] = await ethers.getSigners();
     config = await deployScompTask.getConfig(nameConfig)
 }
@@ -134,12 +133,6 @@ main()
         feeDistributionContract = feeDistribution;
         surplusConverterV2Contract = surplusConverterV2;
         strategyContract = strategy;
-
-        console.log(" ----- SET TOKEN SWAP PATH")
-        await testStrategyTask.setTokenSwapPath(strategy.address, config);
-
-        console.log(" ----- SET FEED ORACLE")
-        await testStrategyTask.addFeed(oracleRouter.address, config)
 
         console.log(" ----- SETUP ACCOUNT")
         const {acc1, acc2, acc3} = await testStrategyTask.impersonateAccount(config);

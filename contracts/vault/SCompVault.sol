@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../interface/IController.sol";
+import "../controller/interface/IController.sol";
 import "./ERC20SCompVault.sol";
 
 contract SCompVault is ERC20SCompVault {

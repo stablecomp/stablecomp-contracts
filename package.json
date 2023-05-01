@@ -20,6 +20,7 @@
     "test-dolaFraxbp": "npx hardhat run scripts/test/strategy/testDolaFraxBp.ts --network hardhat",
     "test-agEurEuroC": "npx hardhat run scripts/test/strategy/testAgEurEuroC.ts --network hardhat",
     "test-agEurEurTEurS": "npx hardhat run scripts/test/strategy/testAgEurEurTEurS.ts --network hardhat",
+    "test-eusdFraxbp": "npx hardhat run scripts/test/strategy/testEusdFraxBp.ts --network hardhat",
 
     "test-euroc3crv": "npx hardhat run scripts/test/strategy/testEuroc3Crv.ts --network hardhat",
     "test-eurt3crv": "npx hardhat run scripts/test/strategy/testEurt3Crv.ts --network hardhat",
@@ -41,9 +42,11 @@
     "getPoolsInfo": "npx hardhat run scripts/convex/booster/getPoolsInfo.ts --network eth_mainnet",
 
     "swapCurve": "npx hardhat run scripts/curve/swap.ts --network hardhat",
+    "getSingleQuoteCurve": "npx hardhat run scripts/curve/sdk/getSingleQuote.ts --network eth_mainnet",
+    "updateSingleQuoteCurve": "npx hardhat run scripts/curve/sdk/updateSingleQuote.ts --network eth_mainnet",
 
     "getSingleQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/getSingleQuoteUniswap.ts --network eth_mainnet",
-    "updateAllQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/updateAllQuoteUniswap.ts --network eth_mainnet",
+    "updateAllQuote": "npx hardhat run scripts/strategy/updateAllQuote.ts --network eth_mainnet",
     "updateSingleQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/updateSingleQuoteUniswap.ts --network eth_mainnet",
     "test": "npx hardhat test --network hardhat",
     "compile": "npx hardhat compile"
@@ -57,9 +60,12 @@
   "bugs": {
     "url": "https://github.com/scalingparrots/contracts-stablecompV1/issues"
   },
+  "engines": {
+    "node": "^16.14.0"
+  },
   "homepage": "https://github.com/scalingparrots/contracts-stablecompV1#readme",
   "devDependencies": {
-    "@curvefi/api": "^2.31.1",
+    "@curvefi/api": "^2.31.0",
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-vyper": "^3.0.1",
@@ -89,7 +95,7 @@
     "prettier-plugin-solidity": "^1.0.0-beta.13",
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.7.21",
-    "ts-node": "^10.8.0",
+    "ts-node": "^10.9.1",
     "typechain": "^5.2.0",
     "typescript": "^5.0.4",
     "web3": "^1.7.3"

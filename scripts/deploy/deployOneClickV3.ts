@@ -17,6 +17,8 @@ async function main() {
 
   /* --------------------------- Deploy the contract -------------------------- */
 
+  let balanceBefore = await account.getBalance();
+
   const OneClickV3Factory = await ethers.getContractFactory("OneClickV3");
   const OneClickV3 = await OneClickV3Factory.deploy(
     UniswapV2Router,
@@ -27,6 +29,12 @@ async function main() {
   );
   await OneClickV3.deployed();
   console.log("ONECLICKV3 Contract deployed to:", OneClickV3.address);
+
+  let balanceAfter = await account.getBalance();
+  let diff = balanceBefore.sub(balanceAfter);
+
+  console.log("Cost deploy vault/strategy: " + diff)
+
 }
 
 main().catch((error) => {

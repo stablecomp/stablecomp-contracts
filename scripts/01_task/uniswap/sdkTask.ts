@@ -109,13 +109,14 @@ async function writeBestQuoteUniswap(nameQuote: string, coinPath: string[], feeP
 
     let path = quotePath + nameQuote+".json"
 
-    let routerIndex = versionProtocol === "V2" ? 0 : versionProtocol === "V3" ? 2 : 1
+    let swapType = versionProtocol === "V2" ? 0 : versionProtocol === "V3" ? 2 : 1
 
     let jsonData = {
         coinPath: coinPath,
         feePath: feePath,
-        versionProtocol: versionProtocol,
-        routerIndex: routerIndex
+        swapParams: [[]],
+        poolAddress: [],
+        swapType: swapType
     }
     let data = JSON.stringify(jsonData);
     fs.writeFileSync(path, data);
@@ -241,8 +242,6 @@ async function getBestPathUniswap(tokenIn: Token, tokenOut: Token, amountIn: any
             }
 
         }
-    } else {
-        console.log("No pool founded for route: ", await erc20Task.getSymbol(tokenIn.address), " -> ", await erc20Task.getSymbol(tokenOut.address))
     }
 
     return {coinPath, feePath, versionProtocol, rawQuote}
@@ -292,7 +291,7 @@ async function getBestPathUniswapOneClick(tokenIn: Token, tokenOut: Token, amoun
                         coinPath.push(token0)
                     }
                 }
-                feePath.push(fee.toString(16).padStart(6, "0"));
+                feePath.push(fee.toString().padStart(6, "0"));
             } else {
                 // get correct pool contract
                 let poolContract = new ethers.Contract(

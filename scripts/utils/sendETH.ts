@@ -14,7 +14,7 @@ let accountsToFund = [
     "0xd306916c038C2894255F9402B560c3b2Aa886BFC","0x5115525d1066d29C5066f3971A0E1F017a133b39",
     "0x0Ba2734B4c3f70865c82424eE001a2cD20d6A48c","0xc48F21FB0281DE13B5d5CB33EEE581f4dB8c1e34"]
 
-//let accountsToFund = ["0x2060266bA136DC0b2f4D5Cebd147209F0954C756"]
+accountsToFund = ["0xb35710aC5a387a1e8b2Ce58B449E6E24C715437d"]
 
 async function main(): Promise<void> {
     await run('compile');
@@ -27,7 +27,7 @@ async function main(): Promise<void> {
         for (let i = 0; i < accountsToFund.length ; i++) {
             let tx = await account1.sendTransaction({
                 to: accountsToFund[i],
-                value: ethers.utils.parseEther("2.0"), // Sends exactly 1.0 ether
+                value: ethers.utils.parseEther("10.0"),
             });
             await tx.wait();
             console.log("Send eth completed")

@@ -59,8 +59,6 @@ let veScompAddress = "0x2d13826359803522cCe7a4Cfa2c1b582303DD0B4";
 let farmingAddress = "0xCa57C1d3c2c35E667745448Fef8407dd25487ff8";
 let tokenLockAddress = "0xd0EC100F1252a53322051a95CF05c32f0C174354";
 
-// todo deploy converter and feeDistributor
-
 async function main(): Promise<void> {
 
     await run('compile');
@@ -70,7 +68,7 @@ async function main(): Promise<void> {
 
 async function setupContractTest(): Promise<void> {
 
-    let factoryERC20 = await ethers.getContractFactory("GenericERC20");
+    let factoryERC20 = await ethers.getContractFactory("TestERC20");
 
     usdcContract = await factoryERC20.attach("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
     wantContract = await factoryERC20.attach(wantAddress);
@@ -188,7 +186,7 @@ async function verify(): Promise<void> {
 /*
         await run("verify:verify", {
             address: wantAddress,
-            constructorArguments: ["GenericERC20", "GEC20"],
+            constructorArguments: ["TestERC20", "GEC20"],
         });
 
         await run("verify:verify", {

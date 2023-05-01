@@ -50,7 +50,7 @@ async function main(): Promise<void> {
   let sCompFarmFactory = await ethers.getContractFactory("MasterChefScomp");
   sCompFarm = sCompFarmFactory.attach("0xc3023a2c9f7B92d1dd19F488AF6Ee107a78Df9DB");
 
-  let sCompTokenFactory = await ethers.getContractFactory("GenericERC20");
+  let sCompTokenFactory = await ethers.getContractFactory("TestERC20");
   sCompToken = sCompTokenFactory.attach("0x2d13826359803522cCe7a4Cfa2c1b582303DD0B4");
 
   console.log("Get contract ok...")
@@ -60,11 +60,8 @@ async function main(): Promise<void> {
 async function depositFarming(accounts: SignerWithAddress[], pid: any, amountToDeposit: any): Promise<void> {
   if (amountToDeposit > 0 ) {
     for (let i = 0; i < accounts.length; i++) {
-      //let balance = await sCompToken.balanceOf(accounts[i].address);
-      //console.log("Balance: ", ethers.utils.formatEther(balance))
       let txApprove = await sCompVault.connect(accounts[i]).approve(sCompFarm.address, amountToDeposit);
       await txApprove.wait();
-      console.log("Approve ok")
     }
 
 

@@ -11,8 +11,8 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-import "../interface/ICurvePool.sol";
-import "../interface/ISCompVault.sol";
+import "../utility/curve/interface/ICurvePool.sol";
+import "../vault/interface/ISCompVault.sol";
 
 contract OneClickV3_OLD is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;

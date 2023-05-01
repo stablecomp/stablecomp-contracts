@@ -135,19 +135,6 @@ main()
         surplusConverterV2Contract = surplusConverterV2;
         strategyContract = strategy;
 
-        console.log(" ----- SET SLIPPAGE CVX")
-        await strategyTask.setSlippageSwapCvx(strategy.address, config.slippageSwapCvx);
-        console.log(" ----- SET SLIPPAGE CRV")
-        await strategyTask.setSlippageSwapCrv(strategy.address, config.slippageSwapCrv);
-        console.log(" ----- SET SLIPPAGE LIQUIDITY")
-        await strategyTask.setSlippageLiquidity(strategy.address, config.slippageLiquidity);
-
-        console.log(" ----- SET TOKEN SWAP PATH")
-        await testStrategyTask.setTokenSwapPath(strategy.address, config);
-
-        console.log(" ----- SET FEED ORACLE")
-        await testStrategyTask.addFeed(oracleRouter.address, config)
-
         console.log(" ----- SETUP ACCOUNT")
         const {acc1, acc2, acc3} = await testStrategyTask.impersonateAccount(config);
         account1 = acc1;

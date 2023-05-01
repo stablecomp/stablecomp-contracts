@@ -120,7 +120,7 @@ const config: HardhatUserConfig = {
                     "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e",
                 ] : [],
         },
-        local_node: {
+        localhost: {
             url: "http://127.0.0.1:8545/",
             accounts:
                 process.env.PRIVATE_KEY !== undefined ? [
@@ -149,7 +149,7 @@ const config: HardhatUserConfig = {
         hardhat: {
             forking: {
                 url: process.env.ETH_MAINNET_URL !== undefined ? process.env.ETH_MAINNET_URL : "",
-            }
+            },
         },
     },
     gasReporter: {

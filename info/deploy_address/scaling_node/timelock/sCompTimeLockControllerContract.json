@@ -1,1 +1,1 @@
-{"sCompTimelockController":{"address":"0x4CD5ecD5E0Dabb0b933657F4162dE4376326A536","args":{"minDelay":86400,"proposer":["0x2b276218D962dEEbF96C749ffB228601b2C7a587"],"executors":["0x2b276218D962dEEbF96C749ffB228601b2C7a587"]}}}
+{"sCompTimelockController":{"address":"0xBC7f9B374f5651e07ED03aCDF313dE07770f566c","args":{"minDelay":86400,"proposer":["0x2b276218D962dEEbF96C749ffB228601b2C7a587"],"executors":["0x2b276218D962dEEbF96C749ffB228601b2C7a587"]}}}

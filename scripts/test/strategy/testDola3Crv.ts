@@ -135,12 +135,6 @@ main()
         surplusConverterV2Contract = surplusConverterV2;
         strategyContract = strategy;
 
-        console.log(" ----- SET TOKEN SWAP PATH")
-        await testStrategyTask.setTokenSwapPath(strategy.address, config);
-
-        console.log(" ----- SET FEED ORACLE")
-        await testStrategyTask.addFeed(oracleRouter.address, config)
-
         console.log(" ----- SETUP ACCOUNT")
         const {acc1, acc2, acc3} = await testStrategyTask.impersonateAccount(config);
         account1 = acc1;
@@ -151,7 +145,7 @@ main()
         await utilsTask.fundAccountETH(account1.address, ethers.utils.parseEther("0.1"))
         await utilsTask.fundAccountETH(account2.address, ethers.utils.parseEther("0.1"))
         await utilsTask.fundAccountETH(account3.address, ethers.utils.parseEther("0.1"))
-        await testStrategyTask.addLiquidity([account1, account2, account3], config);
+        //await testStrategyTask.addLiquidity([account1, account2, account3], config);
 
         console.log(" ----- STORE BALANCE LP")
         await checkLP();

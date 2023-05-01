@@ -258,6 +258,14 @@
       {
         "name": "_expected",
         "type": "uint256"
+      },
+      {
+        "name": "_pools",
+        "type": "address[4]"
+      },
+      {
+        "name": "_receiver",
+        "type": "address"
       }
     ],
     "outputs": [

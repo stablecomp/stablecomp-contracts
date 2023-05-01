@@ -9,7 +9,7 @@ import {erc20Task} from "../scripts/01_task/standard/erc20Task";
 import {ConfigStrategy, deployScompTask, oneClickTask} from "../scripts/01_task/sCompTask";
 import {utilsTask} from "../scripts/01_task/standard/utilsTask";
 import {uniswapSdkTask} from "../scripts/01_task/uniswap/sdkTask";
-import {poolCurveTask} from "../scripts/01_task/curve/curveTask";
+import {taskPoolCurve} from "../scripts/01_task/curve/curveTask";
 
 const curveInfo = require('../info/address_mainnet/curveAddress.json');
 const tokenInfo = require('../info/address_mainnet/tokenInfo.json');
@@ -61,7 +61,7 @@ async function getBestQuoteOneClickIn(_tokenIn: any, curvePool: any, listAverage
         listAmountSwap.push(amountToSwap);
     }
 
-    let listCoin = await poolCurveTask.getCoinsOfCurvePool(curvePool);
+    let listCoin = await taskPoolCurve.getCoinsOfCurvePool(curvePool);
 
     let listPathData = [];
     let listAddress = [];
@@ -110,8 +110,8 @@ async function getBestQuoteOneClickIn(_tokenIn: any, curvePool: any, listAverage
 }
 
 async function getBestQuoteOneClickOut(_tokenOut: any, curvePoolAddress: string, amountLp: any): Promise<any> {
-    let listCoin = await poolCurveTask.getCoinsOfCurvePool(curvePoolAddress);
-    let amountsOutMin = await poolCurveTask.calcAmountsOutMin(curvePoolAddress, amountLp, listCoin.length);
+    let listCoin = await taskPoolCurve.getCoinsOfCurvePool(curvePoolAddress);
+    let amountsOutMin = await taskPoolCurve.calcAmountsOutMin(curvePoolAddress, amountLp, listCoin.length);
 
     let listPathData = [];
     let listAddress = [];
@@ -162,7 +162,7 @@ async function getBestQuoteOneClickOutOneCoin(tokenOut: any, curvePoolAddress: s
     let amountsOutMin: any[] = [];
     for (let i = 0; i < nCoins; i++) {
         if (i == indexCoin) {
-            let amountOut = poolCurveTask.calcAmountsOutMinOneCoin(curvePoolAddress, amountIn, indexCoin);
+            let amountOut = taskPoolCurve.calcAmountsOutMinOneCoin(curvePoolAddress, amountIn, indexCoin);
             amountsOutMin.push(amountOut);
         } else {
             amountsOutMin.push(0);
@@ -170,7 +170,7 @@ async function getBestQuoteOneClickOutOneCoin(tokenOut: any, curvePoolAddress: s
     }
     console.log(amountsOutMin);
 
-    let listCoin = await poolCurveTask.getCoinsOfCurvePool(curvePoolAddress);
+    let listCoin = await taskPoolCurve.getCoinsOfCurvePool(curvePoolAddress);
 
 }
 
@@ -217,36 +217,36 @@ describe("Testing one click", async function () {
             let configTusd3Crv: ConfigStrategy = await deployScompTask.getConfig("tusd3crv")
             let configUsdd3Crv: ConfigStrategy = await deployScompTask.getConfig("usdd3crv")
 
-            strategy3Eur = await deployScompTask.deployStrategy(config3eur.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+            strategy3Eur = await deployScompTask.deployStrategy(config3eur.name, deployer.address, surplusConvert.address, controller.address,
                 config3eur.want, config3eur.tokenCompound, config3eur.tokenCompoundPosition, config3eur.pidPool, config3eur.feeGovernance, config3eur.feeStrategist, config3eur.feeWithdraw,
-                config3eur.curveSwap, config3eur.nElementPool, timeLockController.address, config3eur.versionStrategy)
-            strategyBusd3Crv = await deployScompTask.deployStrategy(configBusd3crv.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                config3eur.curveSwap, config3eur.nElementPool,  config3eur.versionStrategy)
+            strategyBusd3Crv = await deployScompTask.deployStrategy(configBusd3crv.name, deployer.address, surplusConvert.address, controller.address,
                 configBusd3crv.want, configBusd3crv.tokenCompound, configBusd3crv.tokenCompoundPosition, configBusd3crv.pidPool, configBusd3crv.feeGovernance, configBusd3crv.feeStrategist, configBusd3crv.feeWithdraw,
-                configBusd3crv.curveSwap, configBusd3crv.nElementPool, timeLockController.address, configBusd3crv.versionStrategy)
-            strategyDola3Crv = await deployScompTask.deployStrategy(configDola3crv.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                configBusd3crv.curveSwap, configBusd3crv.nElementPool,  configBusd3crv.versionStrategy)
+            strategyDola3Crv = await deployScompTask.deployStrategy(configDola3crv.name, deployer.address, surplusConvert.address, controller.address,
                 configDola3crv.want, configDola3crv.tokenCompound, configDola3crv.tokenCompoundPosition, configDola3crv.pidPool, configDola3crv.feeGovernance, configDola3crv.feeStrategist, configDola3crv.feeWithdraw,
-                configDola3crv.curveSwap, configDola3crv.nElementPool, timeLockController.address, configDola3crv.versionStrategy)
-            strategyEuroC3Crv = await deployScompTask.deployStrategy(configEuroC3crv.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                configDola3crv.curveSwap, configDola3crv.nElementPool,  configDola3crv.versionStrategy)
+            strategyEuroC3Crv = await deployScompTask.deployStrategy(configEuroC3crv.name, deployer.address, surplusConvert.address, controller.address,
                 configEuroC3crv.want, configEuroC3crv.tokenCompound, configEuroC3crv.tokenCompoundPosition, configEuroC3crv.pidPool, configEuroC3crv.feeGovernance, configEuroC3crv.feeStrategist, configEuroC3crv.feeWithdraw,
-                configEuroC3crv.curveSwap, configEuroC3crv.nElementPool, timeLockController.address, configEuroC3crv.versionStrategy)
-            strategyFrax3Crv = await deployScompTask.deployStrategy(configFrax3crv.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                configEuroC3crv.curveSwap, configEuroC3crv.nElementPool,  configEuroC3crv.versionStrategy)
+            strategyFrax3Crv = await deployScompTask.deployStrategy(configFrax3crv.name, deployer.address, surplusConvert.address, controller.address,
                 configFrax3crv.want, configFrax3crv.tokenCompound, configFrax3crv.tokenCompoundPosition, configFrax3crv.pidPool, configFrax3crv.feeGovernance, configFrax3crv.feeStrategist, configFrax3crv.feeWithdraw,
-                configFrax3crv.curveSwap, configFrax3crv.nElementPool, timeLockController.address, configFrax3crv.versionStrategy)
-            strategyFraxUsdc = await deployScompTask.deployStrategy(configFraxUsdc.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                configFrax3crv.curveSwap, configFrax3crv.nElementPool,  configFrax3crv.versionStrategy)
+            strategyFraxUsdc = await deployScompTask.deployStrategy(configFraxUsdc.name, deployer.address, surplusConvert.address, controller.address,
                 configFraxUsdc.want, configFraxUsdc.tokenCompound, configFraxUsdc.tokenCompoundPosition, configFraxUsdc.pidPool, configFraxUsdc.feeGovernance, configFraxUsdc.feeStrategist, configFraxUsdc.feeWithdraw,
-                configFraxUsdc.curveSwap, configFraxUsdc.nElementPool, timeLockController.address, configFraxUsdc.versionStrategy)
-            strategyIbEurSEur = await deployScompTask.deployStrategy(configIbEurSEur.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                configFraxUsdc.curveSwap, configFraxUsdc.nElementPool,  configFraxUsdc.versionStrategy)
+            strategyIbEurSEur = await deployScompTask.deployStrategy(configIbEurSEur.name, deployer.address, surplusConvert.address, controller.address,
                 configIbEurSEur.want, configIbEurSEur.tokenCompound, configIbEurSEur.tokenCompoundPosition, configIbEurSEur.pidPool, configIbEurSEur.feeGovernance, configIbEurSEur.feeStrategist, configIbEurSEur.feeWithdraw,
-                configIbEurSEur.curveSwap, configIbEurSEur.nElementPool, timeLockController.address, configIbEurSEur.versionStrategy)
-            strategyMim3Crv = await deployScompTask.deployStrategy(configMim3crv.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                configIbEurSEur.curveSwap, configIbEurSEur.nElementPool,  configIbEurSEur.versionStrategy)
+            strategyMim3Crv = await deployScompTask.deployStrategy(configMim3crv.name, deployer.address, surplusConvert.address, controller.address,
                 configMim3crv.want, configMim3crv.tokenCompound, configMim3crv.tokenCompoundPosition, configMim3crv.pidPool, configMim3crv.feeGovernance, configMim3crv.feeStrategist, configMim3crv.feeWithdraw,
-                configMim3crv.curveSwap, configMim3crv.nElementPool, timeLockController.address, configMim3crv.versionStrategy)
-            strategyTusd3Crv = await deployScompTask.deployStrategy(configTusd3Crv.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                configMim3crv.curveSwap, configMim3crv.nElementPool,  configMim3crv.versionStrategy)
+            strategyTusd3Crv = await deployScompTask.deployStrategy(configTusd3Crv.name, deployer.address, surplusConvert.address, controller.address,
                 configTusd3Crv.want, configTusd3Crv.tokenCompound, configTusd3Crv.tokenCompoundPosition, configTusd3Crv.pidPool, configTusd3Crv.feeGovernance, configTusd3Crv.feeStrategist, configTusd3Crv.feeWithdraw,
-                configTusd3Crv.curveSwap, configTusd3Crv.nElementPool, timeLockController.address, configTusd3Crv.versionStrategy)
-            strategyUsdd3Crv = await deployScompTask.deployStrategy(configUsdd3Crv.name, deployer.address, surplusConvert.address, controller.address, oracleRouter.address,
+                configTusd3Crv.curveSwap, configTusd3Crv.nElementPool,  configTusd3Crv.versionStrategy)
+            strategyUsdd3Crv = await deployScompTask.deployStrategy(configUsdd3Crv.name, deployer.address, surplusConvert.address, controller.address,
                 configUsdd3Crv.want, configUsdd3Crv.tokenCompound, configUsdd3Crv.tokenCompoundPosition, configUsdd3Crv.pidPool, configUsdd3Crv.feeGovernance, configUsdd3Crv.feeStrategist, configUsdd3Crv.feeWithdraw,
-                configUsdd3Crv.curveSwap, configUsdd3Crv.nElementPool, timeLockController.address, configUsdd3Crv.versionStrategy)
+                configUsdd3Crv.curveSwap, configUsdd3Crv.nElementPool,  configUsdd3Crv.versionStrategy)
         });
 
 

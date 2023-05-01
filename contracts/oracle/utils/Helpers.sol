@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.13;
 
-import { IBasicToken } from "../../interface/IBasicToken.sol";
+import "../../utility/interface/IBasicToken.sol";
 
 library Helpers {
     /**

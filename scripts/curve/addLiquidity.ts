@@ -3,7 +3,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 const { ethers } = hardhat;
 let deployer : SignerWithAddress;
 
-import {poolCurveTask} from "../01_task/curve/curveTask";
+import {taskPoolCurve} from "../01_task/curve/curveTask";
 import {utilsTask} from "../01_task/standard/utilsTask";
 import {ConfigStrategy, deployScompTask} from "../01_task/sCompTask";
 
@@ -22,7 +22,7 @@ main()
         console.log("ETH balance: ", ethers.utils.formatEther(await ethers.provider.getBalance(whaleAccountAddress)))
 
         let whaleAccount: SignerWithAddress = await utilsTask.impersonateAccountLocalNode(whaleAccountAddress);
-        let lpMinted = await poolCurveTask.addLiquidity(
+        let lpMinted = await taskPoolCurve.addLiquidity(
             whaleAccount,
             info.tokenDeposit, info.curveSwap,
             info.pathAddLiquidityCurve, 0);

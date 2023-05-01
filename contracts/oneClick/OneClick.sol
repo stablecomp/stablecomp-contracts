@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.13;
 
-import "hardhat/console.sol";
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -13,8 +11,8 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 
-import "../interface/ICurvePool.sol";
-import "../interface/ISCompVault.sol";
+import "../utility/curve/interface/ICurvePool.sol";
+import "../vault/interface/ISCompVault.sol";
 
 contract OneClick is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;

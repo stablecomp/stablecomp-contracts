@@ -12,9 +12,9 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-import "../interface/ICurvePool.sol";
-import "../interface/ISCompVault.sol";
-import "../utility/UniswapSwapper.sol";
+import "../utility/curve/interface/ICurvePool.sol";
+import "../vault/interface/ISCompVault.sol";
+import "../utility/uniswap/UniswapSwapper.sol";
 
 contract OneClickV3 is Ownable, UniswapSwapper {
     using SafeERC20 for IERC20;
@@ -225,7 +225,7 @@ contract OneClickV3 is Ownable, UniswapSwapper {
     function _makeSwapV2(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint[] memory){
         address[] memory listAddrEmpty;
         if ( _tokenIn != address(0) ) {
-            return _swapExactTokensForTokens(_router, _tokenIn, _amountIn, _amountOutMin, listAddrEmpty, _pathData);
+            return _swapExactTokensForTokens(_router, _tokenIn, _amountIn, _amountOutMin, _pathData);
         } else {
             // todo swap exact eth
         }

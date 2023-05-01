@@ -7,8 +7,8 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-        await strategyTask.setTokenSwapPathConfig(usdd3Crv.sCompStrategy.address, "crv_usdd")
-        await strategyTask.setTokenSwapPathConfig(usdd3Crv.sCompStrategy.address, "cvx_usdd")
+        await strategyTask.setTokenSwapPath(usdd3Crv.sCompStrategy.address, "crv_usdd")
+        await strategyTask.setTokenSwapPath(usdd3Crv.sCompStrategy.address, "cvx_usdd")
         process.exit(0)
     })
     .catch((error: Error) => {
