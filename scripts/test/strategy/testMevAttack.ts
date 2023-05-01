@@ -56,9 +56,9 @@ main()
         let vault = await deployScompTask.deployVault(controller.address, testERC20Deployed.address, deployer.address, config.feeDeposit);
 
         let strategy = await deployScompTask.deployStrategy(
-            config.name, deployer.address, surplusConverterV2.address, controller.address, oracleRouter.address,
+            config.name, deployer.address, surplusConverterV2.address, controller.address,
             testERC20Deployed.address, config.tokenCompound, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
-            config.curveSwap, config.nElementPool, timelockController.address, config.versionStrategy
+            config.curveSwap, config.nElementPool, config.versionStrategy
         );
 
         feeDistributionContract = feeDistribution;
