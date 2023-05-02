@@ -46,7 +46,7 @@ before(async function () {
 
 });
 
-describe.only("Testing deploy", async function () {
+describe("Testing deploy", async function () {
 
     describe('Setup', async () => {
 

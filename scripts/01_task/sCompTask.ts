@@ -5,6 +5,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {erc20Task} from "./standard/erc20Task";
 import {BigNumber} from "ethers";
 import {oracleRouterTask} from "./oracle/oracleRouterTask";
+import {min} from "hardhat/internal/util/bigint";
 const { run, ethers } = hardhat;
 
 const tokenInfo = require('../../info/address_mainnet/tokenInfo.json');
@@ -686,11 +687,15 @@ async function setConfig(strategyAddress: string, config: ConfigStrategy, contro
     await strategyTask.setTokenSwapPath(strategy.address, config.cvxSwapPath);
 
     let timeUpdate = 100000000
-    await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.crv.address, oracleInfo.crv_usd.address, 0, timeUpdate, false)
-    await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.cvx.address, oracleInfo.cvx_usd.address, 0, timeUpdate,false)
-    await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompound, config.feed, config.priceAdmin, timeUpdate, true)
-
-
+    let crvFeed = await oracleRouterTask.getFeed(oracleRouterAddress, tokenInfo.crv.address);
+    if (crvFeed[0].toString().toUpperCase() == ethers.constants.AddressZero.toString().toUpperCase()) {
+        await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.crv.address, oracleInfo.crv_usd.address, 0, 86424, false)
+    }
+    let cvxFeed = await oracleRouterTask.getFeed(oracleRouterAddress, tokenInfo.cvx.address);
+    if (cvxFeed[0].toString().toUpperCase() == ethers.constants.AddressZero.toString().toUpperCase()) {
+        await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.cvx.address, oracleInfo.cvx_usd.address, 0, 86424,false)
+    }
+    await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompound, config.feed, config.priceAdmin, config.timeUpdate, true)
 
 }
 async function setSlippageSwapCrv(strategyAddress: string, newSlippage: string): Promise<void> {
@@ -827,15 +832,24 @@ async function getVault(vaultAddress: string): Promise<Contract> {
 }
 
 // ONE CLICK FUNCTION
-async function oneClickIn(oneClickV3Address: string, poolAddress: string, lpCurve: string, minMintAmount: any,
+async function oneClickIn(oneClickV3Address: string, minMintAmount: any,
                           tokenIn: string, amountIn: any,
                           listAverageSwap: any, listPathData: string[],
                           listTypeSwap: any[], listAmountOutMin: any[], listRouterAddress: any[],
                           vault: string): Promise<void> {
     let oneClick = await getOneClickV3(oneClickV3Address)
+    let oneClickParams : any = {
+        listAverageSwap : listAverageSwap,
+        listPathData : listPathData,
+        listTypeSwap : listTypeSwap,
+        listAmountOutMin : listAmountOutMin,
+        listRouterAddress : listRouterAddress,
+        minMintAmount : minMintAmount
+    }
     await oneClick.OneClickIn(
-        poolAddress, lpCurve, minMintAmount, tokenIn, amountIn, listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
+        tokenIn, amountIn, vault, oneClickParams);
 }
+
 async function oneClickOut(oneClickV3Address: string, poolAddress: string, lpCurve: string,
                            tokenOut: string, amountIn: any, amountsOutMinCurve: any, removeLiquidityOneCoin: boolean,
                            listPathData: string[], listTypeSwap: any[], listAmountOutMin: any[], listRouterAddress: any[],
@@ -907,7 +921,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             slippageSwapCvx: 100,
             slippageLiquidity: 100,
             amountToDepositVault: ethers.utils.parseEther("500"),
-            feed: oracleInfo.tetherEur_usd,
+            feed: oracleInfo.tetherEur_usd.address,
             timeUpdate: oracleInfo.tetherEur_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
             versionStrategy: "1.0"
@@ -1002,7 +1016,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             amountToDepositVault: ethers.utils.parseEther("250"),
             feed: oracleInfo.euroC_usd.address,
             timeUpdate: oracleInfo.euroC_usd.timeUpdate,
-            priceAdmin: ethers.utils.parseUnits("0", 8),
+            priceAdmin: ethers.utils.parseUnits("0.95", 8),
             versionStrategy: "1.2"
         }
     }
@@ -1643,13 +1657,13 @@ export const deployScompTask = {
 };
 
 export const oneClickTask = {
-    oneClickIn: async function (oneClickV3Address: string, poolAddress: string, lpCurve: string, minMintAmount: any,
+    oneClickIn: async function (oneClickV3Address: string, minMintAmount: any,
                                 tokenIn: string, amountIn: any,
                                 listAverageSwap: any, listPathData: string[],
                                 listTypeSwap: any[],
                                 listAmountOutMin: any[], listRouterAddress: any[], vault: string
     ): Promise<void>{
-        return await oneClickIn(oneClickV3Address, poolAddress, lpCurve, minMintAmount,
+        return await oneClickIn(oneClickV3Address, minMintAmount,
             tokenIn, amountIn,
             listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
     },

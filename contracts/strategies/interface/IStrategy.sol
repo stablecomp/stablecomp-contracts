@@ -3,6 +3,14 @@
 pragma solidity ^0.8.13;
 
 interface IStrategy {
+    struct CurvePoolConfig {
+        address swap;
+        uint256 tokenCompoundPosition;
+        uint256 numElements;
+    }
+
+    function curvePool() external view returns (CurvePoolConfig memory);
+
     function want() external view returns (address);
 
     function deposit() external;

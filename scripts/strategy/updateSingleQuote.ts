@@ -24,7 +24,6 @@ async function saveBestQuote(nameQuote: string, tokenIn: any, tokenOut: any, amo
         await uniswapSdkTask.writeBestQuoteUniswap(nameQuote, coinPath, feePath, versionProtocol)
     } else {
         const { route, output }  = await taskSdkCurve.getBestRateForMultiplePools(
-            process.env.ETH_MAINNET_URL,
             tokenIn, tokenOut,
             amountIn
         );

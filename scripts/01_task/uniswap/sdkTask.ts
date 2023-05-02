@@ -9,6 +9,7 @@ const {  ethers } = hardhat;
 
 import {erc20Task} from "../standard/erc20Task";
 import {Contract} from "@ethersproject/contracts";
+import * as path from "path";
 
 const poolUniswapV3Abi = require('../../../info/abi/poolUniswapV3.json');
 const poolUniswapV2Abi = require('../../../info/abi/poolUniswapV2.json');
@@ -66,7 +67,9 @@ async function getBestQuoteSwapEncoded(tokenInAddress: any, tokenOutAddress: any
     return {coinPath, feePath, versionProtocol, rawQuote, pathEncoded}
 }
 
-async function getBestQuoteSwapOneClick(tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<any> {
+async function getBestQuoteSwapOneClick(tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<BestQuoteStruct> {
+    let bestQuote : BestQuoteStruct = <BestQuoteStruct>{};
+
     let erc20In = await getErc20(tokenInAddress);
     const tokenIn = new Token(
         SupportedChainId.MAINNET,
@@ -86,6 +89,10 @@ async function getBestQuoteSwapOneClick(tokenInAddress: any, tokenOutAddress: an
     )
 
     let {coinPath, feePath, versionProtocol, rawQuote} = await getBestPathUniswapOneClick(tokenIn, tokenOut, amountIn);
+    bestQuote.coinPath = coinPath;
+    bestQuote.feePath = feePath;
+    bestQuote.versionProtocol = versionProtocol;
+    bestQuote.output = rawQuote;
 
     let pathEncoded = "";
     if (versionProtocol == "V3"){
@@ -94,7 +101,9 @@ async function getBestQuoteSwapOneClick(tokenInAddress: any, tokenOutAddress: an
         pathEncoded = encodePathV2(coinPath);
     }
 
-    return {coinPath, feePath, versionProtocol, rawQuote, pathEncoded}
+    bestQuote.pathEncoded = pathEncoded;
+
+    return bestQuote;
 }
 
 async function writeBestQuoteUniswap(nameQuote: string, coinPath: string[], feePath: string[], versionProtocol: string): Promise<any> {
@@ -291,7 +300,7 @@ async function getBestPathUniswapOneClick(tokenIn: Token, tokenOut: Token, amoun
                         coinPath.push(token0)
                     }
                 }
-                feePath.push(fee.toString().padStart(6, "0"));
+                feePath.push(fee.toString(16).padStart(6, "0"));
             } else {
                 // get correct pool contract
                 let poolContract = new ethers.Contract(
@@ -332,7 +341,7 @@ async function getBestPathUniswapOneClick(tokenIn: Token, tokenOut: Token, amoun
 
         }
     } else {
-        console.log("No pool founded for route: ", await erc20Task.getSymbol(tokenIn.address), " -> ", await erc20Task.getSymbol(tokenOut.address))
+        //console.log("No pool founded for route: ", await erc20Task.getSymbol(tokenIn.address), " -> ", await erc20Task.getSymbol(tokenOut.address))
     }
 
     return {coinPath, feePath, versionProtocol, rawQuote}
@@ -385,11 +394,19 @@ function countDecimals(x: number) {
     return x.toString().split('.')[1].length || 0
 }
 
+
+export interface BestQuoteStruct {
+    coinPath: string[],
+    feePath: any[],
+    pathEncoded: string,
+    versionProtocol: string,
+    output: any
+}
 export const uniswapSdkTask = {
     getBestQuoteSwap: async function (tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<any>{
         return await getBestQuoteSwap(tokenInAddress, tokenOutAddress, amountIn);
     },
-    getBestQuoteSwapOneClick: async function (tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<any>{
+    getBestQuoteSwapOneClick: async function (tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<BestQuoteStruct>{
         return await getBestQuoteSwapOneClick(tokenInAddress, tokenOutAddress, amountIn);
     },
     writeBestQuoteUniswap: async function (nameQuote: string, coinPath: string[], feePath: string[], versionProtocol: string): Promise<any>{

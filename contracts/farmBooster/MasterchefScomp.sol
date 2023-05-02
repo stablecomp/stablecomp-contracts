@@ -139,7 +139,7 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
     ) external onlyOwner {
         // stake TOKEN token will cause staked token and reward token mixed up,
         // may cause staked tokens withdraw as reward token,never do it.
-        require(_lpToken != TOKEN, "TOKEN token can't be added to farm pools");
+        require(_lpToken != TOKEN, "token can't be added to farm pools");
 
         if (_withUpdate) {
             massUpdatePools();
@@ -375,7 +375,7 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
     }
 
     function _updateBoostMultiplier(address _user, uint _pid) internal {
-        require(_user != address(0), "MasterChefV2: The user address must be valid");
+        require(_user != address(0), "user address must be valid");
 
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][_user];

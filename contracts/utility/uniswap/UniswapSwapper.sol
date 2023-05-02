@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 
 import "./interface/IUniswapRouterV2.sol";
 import "./interface/IUniswapV2Factory.sol";
@@ -82,8 +81,7 @@ contract UniswapSwapper is BaseSwapper {
     ) internal returns(uint){
         ISwapRouter swapRouter = ISwapRouter(_router);
 
-        TransferHelper.safeApprove(_startToken, address(swapRouter), 0);
-        TransferHelper.safeApprove(_startToken, address(swapRouter), _amountIn);
+        _safeApproveHelper(_startToken, _router, _amountIn);
 
         ISwapRouter.ExactInputParams memory params =
         ISwapRouter.ExactInputParams({

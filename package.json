@@ -48,7 +48,7 @@
     "getSingleQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/getSingleQuoteUniswap.ts --network eth_mainnet",
     "updateAllQuote": "npx hardhat run scripts/strategy/updateAllQuote.ts --network eth_mainnet",
     "updateSingleQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/updateSingleQuoteUniswap.ts --network eth_mainnet",
-    "test": "npx hardhat test --network hardhat",
+    "test": "hh test --network hardhat",
     "compile": "npx hardhat compile"
   },
   "repository": {
@@ -59,9 +59,6 @@
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/scalingparrots/contracts-stablecompV1/issues"
-  },
-  "engines": {
-    "node": "^16.14.0"
   },
   "homepage": "https://github.com/scalingparrots/contracts-stablecompV1#readme",
   "devDependencies": {

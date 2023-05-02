@@ -2,6 +2,10 @@
 pragma solidity ^0.8.13;
 
 interface ISCompVault {
+    function token() external view returns (address);
+
+    function controller() external view returns (address);
+
     function balance() external view returns (uint256);
 
     function setMin(uint256 _min) external;
@@ -40,7 +44,7 @@ interface ISCompVault {
         uint256 _shares,
         address _receiver
     ) external returns (uint);
- 
+
     function harvest(address reserve, uint256 amount) external;
 
     function getPricePerFullShare() external view returns (uint256);

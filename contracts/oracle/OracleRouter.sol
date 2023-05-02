@@ -55,8 +55,8 @@ contract OracleRouter is Ownable {
         require(verifyTimestampRound(startedAt, heartbeat), "feed price is not updated");
         uint256 priceRoundData = uint256(iPrice);
         if (isStablecoin) {
-            require(priceRoundData <= MAX_DRIFT, "Oracle: Price exceeds max");
-            require(priceRoundData >= MIN_DRIFT, "Oracle: Price under min");
+            require(priceRoundData <= MAX_DRIFT, "price exceeds max");
+            require(priceRoundData >= MIN_DRIFT, "price under min");
         }
         return (priceRoundData, uint(decimals));
     }

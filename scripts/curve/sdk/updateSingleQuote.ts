@@ -13,7 +13,7 @@ main()
         const tokenIn = tokenInfo.crv.address;
         const tokenOut = tokenInfo.eusd.address;
         const amountIn = 100;
-        const { route, output }  = await taskSdkCurve.getBestRateForMultiplePools(process.env.ETH_MAINNET_URL, tokenIn, tokenOut, amountIn);
+        const { route, output }  = await taskSdkCurve.getBestRateForMultiplePools(tokenIn, tokenOut, amountIn);
 
         if (route.length > 0 ) {
             console.log(`Best rate for ${amountIn} ${await erc20Task.getSymbol(tokenIn)} to ${await erc20Task.getSymbol(tokenOut)}: ${output}`);

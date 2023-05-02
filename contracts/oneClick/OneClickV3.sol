@@ -13,10 +13,13 @@ import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import "../utility/curve/interface/ICurvePool.sol";
-import "../vault/interface/ISCompVault.sol";
+import "../utility/curve/CurveSwapper.sol";
 import "../utility/uniswap/UniswapSwapper.sol";
+import "../vault/interface/ISCompVault.sol";
+import "../controller/interface/IController.sol";
+import "../strategies/interface/IStrategy.sol";
 
-contract OneClickV3 is Ownable, UniswapSwapper {
+contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
     using SafeERC20 for IERC20;
 
     IWETH public immutable wEth;
@@ -29,6 +32,15 @@ contract OneClickV3 is Ownable, UniswapSwapper {
     address public oneClickFeeAddress;
     address public timeLockController;
 
+    struct OneClickParamsSwap {
+        uint[] listAverageSwap;
+        bytes[] listPathData;
+        uint[] listTypeSwap;
+        uint[] listAmountOutMin;
+        address[] listRouterAddress;
+        uint minMintAmount;
+    }
+
     /**
      * @notice Fallback for wToken
      * @dev when user send ETH with payable function,
@@ -39,6 +51,7 @@ contract OneClickV3 is Ownable, UniswapSwapper {
     }
 
     // Owner recovers token
+    event NewOneClickIn(address indexed sender, address indexed vault, address tokenIn, uint amountIn, uint amountOut, uint share);
     event TokenRecovery(address indexed token, uint256 amount);
 
     /**
@@ -62,44 +75,55 @@ contract OneClickV3 is Ownable, UniswapSwapper {
      * @notice OneClick a token in (e.g. token/other token)
      */
     function OneClickIn(
-        address _curvePool,
-        address _lpCurve,
-        uint _minMintAmount,
         address _tokenIn,
         uint _amountIn,
-        uint[] memory _listAverageSwap,
-        bytes[] memory _listPathData,
-        uint[] memory _listTypeSwap,
-        uint[] memory _listAmountOutMin,
-        address[] memory _listRouterAddress,
-        address _vault
+        address _vault,
+        OneClickParamsSwap memory paramsSwap
     ) external payable {
-        require(_curvePool != address(0), "curve pool cannot be 0");
-        require(_tokenIn != address(0) || msg.value == _amountIn, "token in cannot be 0 or msg value must be same of amountIn");
-        require(_amountIn > 0, "amount in must be > 0");
-        require(_listAmountOutMin.length == _listTypeSwap.length, "average, type and amountMin must be same length");
-        require(_listPathData.length == _listTypeSwap.length, "list length invalid");
-        require(_listTypeSwap.length == _listAmountOutMin.length, "list length invalid");
-        require(_listAmountOutMin.length == _listAverageSwap.length, "list length invalid");
-        require(_listAverageSwap.length == _listRouterAddress.length, "list length invalid");
 
-        // get tokenIn from msgSender
+        _checkOneClickIn(_vault, _tokenIn, _amountIn, paramsSwap);
+
+        (address lpCurve, address curvePool) = _getCurveAddress(_vault);
+
         _amountIn = transferTokenIn(_tokenIn, _amountIn);
 
-        uint[] memory amountsToSwap = getListAmountByAverage(_amountIn, _listAverageSwap);
+        uint[] memory amountsInCurve = _executeSwapIn(_amountIn, _tokenIn, paramsSwap);
 
-        uint[] memory amountsInCurve = _executeSwapIn(amountsToSwap, _listRouterAddress, _tokenIn, _listAmountOutMin, _listPathData, _listTypeSwap);
+        uint amountLpMinted = _addLiquidityCurve(curvePool, lpCurve, amountsInCurve, paramsSwap.minMintAmount);
 
-        // add liquidity curve
-        uint balanceLPBefore = IERC20(_lpCurve).balanceOf(address(this));
-        _addLiquidityCurve(_curvePool, amountsInCurve, _minMintAmount);
-        uint balanceLPAfter = IERC20(_lpCurve).balanceOf(address(this));
-        uint amountLpMinted = balanceLPAfter - balanceLPBefore;
+        _approveVault(lpCurve, _vault, amountLpMinted);
+        uint share = ISCompVault(_vault).depositFor(amountLpMinted, _msgSender());
 
-        _approveVault(_lpCurve, _vault, amountLpMinted);
-        ISCompVault(_vault).depositFor(amountLpMinted, _msgSender());
+        emit NewOneClickIn(msg.sender, _vault, _tokenIn, _amountIn, amountLpMinted, share);
+    }
 
-        //emit NewOneClickIn(_tokenIn, _poolAddress, _amountIn, lpAmount, msg.sender);
+    function _checkOneClickIn(
+        address _vault,
+        address _tokenIn,
+        uint _amountIn,
+        OneClickParamsSwap memory paramsSwap
+    ) internal {
+        require(_vault != address(0), "vault cannot be 0");
+        require(_tokenIn != address(0) || msg.value == _amountIn, "token in cannot be 0 or msg value must be same of amountIn");
+        require(_amountIn > 0, "amount in must be > 0");
+        require(paramsSwap.listAverageSwap.length == paramsSwap.listPathData.length, "list length invalid");
+        require(paramsSwap.listPathData.length == paramsSwap.listTypeSwap.length, "list length invalid");
+        require(paramsSwap.listTypeSwap.length == paramsSwap.listAmountOutMin.length, "list length invalid");
+        require(paramsSwap.listAmountOutMin.length == paramsSwap.listAverageSwap.length, "list length invalid");
+        require(paramsSwap.listAverageSwap.length == paramsSwap.listRouterAddress.length, "list length invalid");
+    }
+
+    function _getCurveAddress(
+        address _vault
+    ) internal view returns(address, address){
+
+        address lpCurve = ISCompVault(_vault).token();
+        address controller = ISCompVault(_vault).controller();
+        address strategy = IController(controller).strategies(lpCurve);
+        IStrategy.CurvePoolConfig memory curvePoolConfig = IStrategy(strategy).curvePool();
+        address curvePool = curvePoolConfig.swap;
+
+        return (lpCurve, curvePool);
     }
 
     /**
@@ -176,22 +200,25 @@ contract OneClickV3 is Ownable, UniswapSwapper {
     }
 
     function _executeSwapIn(
-        uint[] memory _amountToSwap,
-        address[]memory _listRouterAddress,
+        uint _amountIn,
         address _tokenIn,
-        uint[] memory _listAmountOutMin,
-        bytes[] memory _listPathData,
-        uint[] memory _listTypeSwap
+        OneClickParamsSwap memory paramsSwap
     ) internal returns(uint[] memory amountsOut) {
-        amountsOut = new uint[](_amountToSwap.length);
-        for(uint i = 0; i < _amountToSwap.length; i++) {
-            if (_amountToSwap[i] != 0 ) {
-                if(_listTypeSwap[i] == 0) {
-                    uint[] memory amountsOut = _makeSwapV2(_listRouterAddress[i], _tokenIn, _amountToSwap[i], _listAmountOutMin[i], _listPathData[i]);
-                    amountsOut[i] = amountsOut[amountsOut.length -1];
+        uint[] memory amountsToSwap = getListAmountByAverage(_amountIn, paramsSwap.listAverageSwap);
+        amountsOut = new uint[](amountsToSwap.length);
+        for(uint i = 0; i < amountsToSwap.length; i++) {
+            if (amountsToSwap[i] != 0 ) {
+                if(paramsSwap.listTypeSwap[i] == 0) {
+                    uint[] memory amountsOutV2 = _makeSwapV2(paramsSwap.listRouterAddress[i], _tokenIn, amountsToSwap[i], paramsSwap.listAmountOutMin[i], paramsSwap.listPathData[i]);
+                    amountsOut[i] = amountsOutV2[amountsOutV2.length -1];
+                } else if(paramsSwap.listTypeSwap[i] == 1) {
+                    uint amountOutV3 = _makeSwapV3(paramsSwap.listRouterAddress[i], _tokenIn, amountsToSwap[i], paramsSwap.listAmountOutMin[i], paramsSwap.listPathData[i]);
+                    amountsOut[i] = amountOutV3;
+                } else if(paramsSwap.listTypeSwap[i] == 2) {
+                    uint amountOutCurve = _makeSwapCurve(paramsSwap.listRouterAddress[i], _tokenIn, amountsToSwap[i], paramsSwap.listAmountOutMin[i], paramsSwap.listPathData[i]);
+                    amountsOut[i] = amountOutCurve;
                 } else {
-                    uint amountOut = _makeSwapV3(_listRouterAddress[i], _tokenIn, _amountToSwap[i], _listAmountOutMin[i], _listPathData[i]);
-                    amountsOut[i] = amountOut;
+                    amountsOut[i] = 0;
                 }
             } else {
                 amountsOut[i] = 0;
@@ -215,7 +242,8 @@ contract OneClickV3 is Ownable, UniswapSwapper {
                     uint[] memory amountsOutV2 = _makeSwapV2(_listRouterAddress[i], listCoin[i], _listAmountToSwap[i], _listAmountOutMin[i], _listPathData[i]);
                     amountsOut += amountsOutV2[amountsOutV2.length -1];
                 } else {
-                    amountsOut += _makeSwapV3(_listRouterAddress[i], listCoin[i], _listAmountToSwap[i], _listAmountOutMin[i], _listPathData[i]);
+                    _makeSwapV3(_listRouterAddress[i], listCoin[i], _listAmountToSwap[i], _listAmountOutMin[i], _listPathData[i]);
+                    //amountsOut
                 }
             }
         }
@@ -223,7 +251,6 @@ contract OneClickV3 is Ownable, UniswapSwapper {
     }
 
     function _makeSwapV2(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint[] memory){
-        address[] memory listAddrEmpty;
         if ( _tokenIn != address(0) ) {
             return _swapExactTokensForTokens(_router, _tokenIn, _amountIn, _amountOutMin, _pathData);
         } else {
@@ -235,8 +262,13 @@ contract OneClickV3 is Ownable, UniswapSwapper {
         return _swapExactInputMultihop(_router, _tokenIn, _amountIn, _amountOutMin, _pathData);
     }
 
+    function _makeSwapCurve(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint) {
+        return _exchange_multiple(_router, _tokenIn, _amountIn, _amountOutMin, _pathData);
+    }
+
     // CURVE
-    function _addLiquidityCurve(address _pool, uint[] memory _amountsIn, uint _minMintAmount) internal {
+    function _addLiquidityCurve(address _pool, address _lpCurve, uint[] memory _amountsIn, uint _minMintAmount) internal returns(uint){
+        uint balanceLPBefore = IERC20(_lpCurve).balanceOf(address(this));
         _approvePoolCoin(_pool, _pool, _amountsIn);
         if ( _amountsIn.length == 2) {
             uint[2] memory amountsIn;
@@ -257,6 +289,9 @@ contract OneClickV3 is Ownable, UniswapSwapper {
             }
             ICurvePool(_pool).add_liquidity(amountsIn, _minMintAmount);
         }
+        uint balanceLPAfter = IERC20(_lpCurve).balanceOf(address(this));
+        return balanceLPAfter - balanceLPBefore;
+
     }
 
     function _removeLiquidityCurve(address _token, address _pool, bool _oneCoin, uint _amountIn, uint[] memory _minAmountsOut) internal returns(uint[] memory amounts){
@@ -318,7 +353,7 @@ contract OneClickV3 is Ownable, UniswapSwapper {
         return 0;
     }
 
-    function _getBalanceCoinPool(address _pool, uint _poolLength) internal returns(uint[] memory){
+    function _getBalanceCoinPool(address _pool, uint _poolLength) internal view returns(uint[] memory){
         uint[] memory amounts = new uint[](_poolLength);
 
         address[] memory coins = _getCoinCurvePool(_pool, _poolLength);
