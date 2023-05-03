@@ -5,13 +5,16 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {erc20Task} from "./standard/erc20Task";
 import {BigNumber} from "ethers";
 import {oracleRouterTask} from "./oracle/oracleRouterTask";
-import {min} from "hardhat/internal/util/bigint";
+import {BestQuoteStruct, uniswapSdkTask} from "./uniswap/sdkTask";
+import {taskSdkCurve} from "./curve/curveTask";
 const { run, ethers } = hardhat;
 
 const tokenInfo = require('../../info/address_mainnet/tokenInfo.json');
 const routerInfo = require('../../info/address_mainnet/routerAddress.json');
 const curveInfo = require('../../info/address_mainnet/curveAddress.json');
 const oracleInfo = require('../../info/address_mainnet/oracleAddress.json');
+
+const baseRewardsABI = require('../../info/abi/baseRewardPoolAbi.json')
 
 // DEPLOY FUNCTION
 async function deploySCompToken(): Promise<Contract> {
@@ -683,19 +686,17 @@ async function setConfig(strategyAddress: string, config: ConfigStrategy, contro
     await strategyTask.setSlippageSwapCvx(strategy.address, config.slippageSwapCvx);
     await strategyTask.setSlippageLiquidity(strategy.address, config.slippageLiquidity);
 
-    await strategyTask.setTokenSwapPath(strategy.address, config.crvSwapPath);
-    await strategyTask.setTokenSwapPath(strategy.address, config.cvxSwapPath);
 
-    let timeUpdate = 100000000
+    let timeUpdateMock = 100000000
     let crvFeed = await oracleRouterTask.getFeed(oracleRouterAddress, tokenInfo.crv.address);
     if (crvFeed[0].toString().toUpperCase() == ethers.constants.AddressZero.toString().toUpperCase()) {
-        await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.crv.address, oracleInfo.crv_usd.address, 0, 86424, false)
+        await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.crv.address, oracleInfo.crv_usd.address, 0, timeUpdateMock, false)
     }
     let cvxFeed = await oracleRouterTask.getFeed(oracleRouterAddress, tokenInfo.cvx.address);
     if (cvxFeed[0].toString().toUpperCase() == ethers.constants.AddressZero.toString().toUpperCase()) {
-        await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.cvx.address, oracleInfo.cvx_usd.address, 0, 86424,false)
+        await oracleRouterTask.addFeed(oracleRouterAddress, tokenInfo.cvx.address, oracleInfo.cvx_usd.address, 0, timeUpdateMock,false)
     }
-    await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompound, config.feed, config.priceAdmin, config.timeUpdate, true)
+    await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompound, config.feed, config.priceAdmin, timeUpdateMock, true)
 
 }
 async function setSlippageSwapCrv(strategyAddress: string, newSlippage: string): Promise<void> {
@@ -751,10 +752,73 @@ async function getTokenSwapPath(strategyAddress: string, tokenIn: string, tokenO
     return await strategy.swapPaths(tokenIn, tokenOut);
 }
 
-async function harvest(strategyAddress: string): Promise<void> {
+async function getTokenCompound(strategyAddress: string): Promise<any> {
+    let strategy: Contract = await getStrategy(strategyAddress)
+    return await strategy.tokenCompoundAddress();
+}
+async function getRewardsExpected(strategyAddress: string): Promise<any> {
+    let strategy: Contract = await getStrategy(strategyAddress)
+    let baseRewardsPoolAddress = await strategy.baseRewardsPool();
+    let baseRewards: Contract = await getBaseRewardsPool(baseRewardsPoolAddress);
+    let earned = await baseRewards.earned(strategyAddress);
+    return await baseRewards.rewards(strategyAddress);
+}
+
+async function getSwapHarvest(strategyAddress: string): Promise<any> {
+    let tokenCompound = await getTokenCompound(strategyAddress);
+
+    // todo rewards expected
+    let rewardsExpected = await getRewardsExpected(strategyAddress);
+
+    let paramsSwapHarvest : any = {
+        listPathData : [],
+        listTypeSwap: [],
+        listRouterAddress: []
+    }
+
+    let bestQuoteUniswap : BestQuoteStruct = await uniswapSdkTask.getBestQuoteSwapOneClick(tokenInfo.crv.address, tokenCompound, 10);
+    let bestQuoteCurve : BestQuoteStruct = await taskSdkCurve.getBestQuoteSwapOneClick(tokenInfo.crv.address, tokenCompound, 10);
+    bestQuoteCurve.output = ethers.utils.parseUnits(bestQuoteCurve.output, await erc20Task.getDecimals(tokenCompound))
+    if (bestQuoteUniswap.output >= bestQuoteCurve.output) {
+        let routerAddress = bestQuoteUniswap.versionProtocol == "V2" ? routerInfo.uniswapV2 : bestQuoteUniswap.versionProtocol == "V3" ? routerInfo.uniswapV3 : "";
+        let typeSwap = bestQuoteUniswap.versionProtocol == "V2" ? 0 : 1
+        paramsSwapHarvest.listPathData.push(bestQuoteUniswap.pathEncoded);
+        paramsSwapHarvest.listTypeSwap.push(typeSwap);
+        paramsSwapHarvest.listRouterAddress.push(routerAddress);
+
+    } else {
+        let routerAddress = routerInfo.curve;
+        let typeSwap = 2
+        paramsSwapHarvest.listPathData.push(bestQuoteCurve.pathEncoded);
+        paramsSwapHarvest.listTypeSwap.push(typeSwap);
+        paramsSwapHarvest.listRouterAddress.push(routerAddress);
+    }
+
+    bestQuoteUniswap = await uniswapSdkTask.getBestQuoteSwapOneClick(tokenInfo.cvx.address, tokenCompound, 10);
+    bestQuoteCurve = await taskSdkCurve.getBestQuoteSwapOneClick(tokenInfo.cvx.address, tokenCompound, 10);
+    bestQuoteCurve.output = ethers.utils.parseUnits(bestQuoteCurve.output, await erc20Task.getDecimals(tokenCompound))
+    if (bestQuoteUniswap.output >= bestQuoteCurve.output) {
+        let routerAddress = bestQuoteUniswap.versionProtocol == "V2" ? routerInfo.uniswapV2 : bestQuoteUniswap.versionProtocol == "V3" ? routerInfo.uniswapV3 : "";
+        let typeSwap = bestQuoteUniswap.versionProtocol == "V2" ? 0 : 1
+        paramsSwapHarvest.listPathData.push(bestQuoteUniswap.pathEncoded);
+        paramsSwapHarvest.listTypeSwap.push(typeSwap);
+        paramsSwapHarvest.listRouterAddress.push(routerAddress);
+
+    } else {
+        let routerAddress = routerInfo.curve;
+        let typeSwap = 2
+        paramsSwapHarvest.listPathData.push(bestQuoteCurve.pathEncoded);
+        paramsSwapHarvest.listTypeSwap.push(typeSwap);
+        paramsSwapHarvest.listRouterAddress.push(routerAddress);
+    }
+
+    return paramsSwapHarvest;
+}
+
+async function harvest(strategyAddress: string, swapHarvest: any): Promise<void> {
     let strategy: Contract = await getStrategy(strategyAddress)
     const [deployer] = await ethers.getSigners();
-    let tx = await strategy.connect(deployer).harvest();
+    let tx = await strategy.connect(deployer).harvest(swapHarvest);
     await tx.wait();
 }
 
@@ -792,6 +856,10 @@ async function executeChangeFeeStrategy(timeLockController: Contract, strategyAd
 async function getStrategy(strategyAddress: string): Promise<Contract> {
     let factory = await ethers.getContractFactory("SCompStrategyV1_0");
     return factory.attach(strategyAddress);
+}
+async function getBaseRewardsPool(baseRewardsPoolAddress: string): Promise<Contract> {
+    const [deployer] = await ethers.getSigners();
+    return await ethers.getContractAt(baseRewardsABI, baseRewardsPoolAddress, deployer);
 }
 
 // VAULT FUNCTION
@@ -896,7 +964,7 @@ export interface ConfigStrategy {
 
 async function getConfig(name: string): Promise<ConfigStrategy> {
     let config: ConfigStrategy;
-    if (name == "3eur" ) { // no used to test before deploy
+    if (name == "3eur" ) {
         config = {
             name: "3Eur",
             want: curveInfo.lp.threeEur,
@@ -904,9 +972,9 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             tokenCompoundPosition: 1,
             curveSwap: curveInfo.pool.threeEur,
             tokenDeposit: tokenInfo.tetherEur.address,
-            account1: "0x8ff006ECdD4867F9670e8d724243f7E0619ABb66",
-            account2: "0xc6fBD88378cF798f90B66084350fA38eed6a8645",
-            account3: "0x103090A6141ae2F3cB1734F2D0D2D8f8924b3A5d",
+            account1: "0x98DebD798afbC0641B3AA0AdE7443BC8B619261E",
+            account2: "0x0dE5199779b43E13B3Bec21e91117E18736BC1A8",
+            account3: "0xA2dEe32662F6243dA539bf6A8613F9A9e39843D3",
             pathAddLiquidityCurve: [ethers.utils.parseUnits("0", 18), ethers.utils.parseUnits("1000", tokenInfo.tetherEur.decimals), ethers.utils.parseUnits("0", 18)],
             baseRewardPool: curveInfo.baseRewardPool.threeEur,
             pidPool: curveInfo.pid.threeEur,
@@ -917,14 +985,14 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             feeDeposit: 0,
             crvSwapPath: "crv_EURT",
             cvxSwapPath: "cvx_EURT",
-            slippageSwapCrv: 100,
-            slippageSwapCvx: 100,
-            slippageLiquidity: 100,
+            slippageSwapCrv: 300,
+            slippageSwapCvx: 300,
+            slippageLiquidity: 300,
             amountToDepositVault: ethers.utils.parseEther("500"),
             feed: oracleInfo.tetherEur_usd.address,
             timeUpdate: oracleInfo.tetherEur_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
-            versionStrategy: "1.0"
+            versionStrategy: "1.1"
         }
     }
     else if (name == "busd3crv" ) {
@@ -935,9 +1003,9 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             tokenCompoundPosition: 0,
             curveSwap: curveInfo.pool.busd3crv,
             tokenDeposit: tokenInfo.bUsd.address,
-            account1: "0xf6deeb3fd7f9ab00b8ba2b0428611bebb4740aab",
-            account2: "0xf9211FfBD6f741771393205c1c3F6D7d28B90F03",
-            account3: "0x0c01e95c161c3025d1874b5734c250449036b32a",
+            account1: "0x8c3e24477C309DeAe96e533a2dc191d728ACED9c",
+            account2: "0x409C7001A93269eB3418991e9adEb6b5F1c2F481",
+            account3: "0x634905a44940130053d4C042dCfa7Cf314B6F9dC",
             pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.bUsd.decimals), ethers.utils.parseUnits("0", 18)],
             baseRewardPool: curveInfo.baseRewardPool.busd3crv,
             pidPool: curveInfo.pid.busd3crv,
@@ -951,7 +1019,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             slippageSwapCrv: 100,
             slippageSwapCvx: 100,
             slippageLiquidity: 100,
-            amountToDepositVault: ethers.utils.parseEther("500"),
+            amountToDepositVault: ethers.utils.parseEther("10000"),
             feed: oracleInfo.busd_usd.address,
             timeUpdate: oracleInfo.busd_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
@@ -1010,13 +1078,13 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             feeDeposit: 0,
             crvSwapPath: "crv_EUROC",
             cvxSwapPath: "cvx_EUROC",
-            slippageSwapCrv: 100,
-            slippageSwapCvx: 300,
-            slippageLiquidity: 100,
-            amountToDepositVault: ethers.utils.parseEther("250"),
+            slippageSwapCrv: 500,
+            slippageSwapCvx: 500,
+            slippageLiquidity: 300,
+            amountToDepositVault: ethers.utils.parseEther("1000"),
             feed: oracleInfo.euroC_usd.address,
             timeUpdate: oracleInfo.euroC_usd.timeUpdate,
-            priceAdmin: ethers.utils.parseUnits("0.95", 8),
+            priceAdmin: ethers.utils.parseUnits("1.10", 8),
             versionStrategy: "1.2"
         }
     }
@@ -1075,8 +1143,8 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             feeStrategist: 500,
             feeWithdraw: 20,
             feeDeposit: 0,
-            slippageSwapCrv: 300,
-            slippageSwapCvx: 300,
+            slippageSwapCrv: 400,
+            slippageSwapCvx: 400,
             slippageLiquidity: 100,
             amountToDepositVault: ethers.utils.parseEther("10000"),
             versionStrategy: "1.1"
@@ -1120,9 +1188,9 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             tokenCompound: tokenInfo.mim.address,
             curveSwap: curveInfo.pool.mim3crv,
             tokenDeposit: tokenInfo.mim.address,
-            account1: "0xd7efcbb86efdd9e8de014dafa5944aae36e817e4",
-            account2: "0x2bbdca89491e6f0c0f49412d38d893aea394fd02",
-            account3: "0x25431341A5800759268a6aC1d3CD91C029D7d9CA",
+            account1: "0xe896e539e557BC751860a7763C8dD589aF1698Ce",
+            account2: "0xDf6Db53933ebca389eC348fF1959C01364071144",
+            account3: "0x11B49699aa0462a0488d93aEFdE435D4D6608469",
             pathAddLiquidityCurve: [ethers.utils.parseUnits("1000", tokenInfo.mim.decimals), ethers.utils.parseUnits("0", 18)],
             baseRewardPool: curveInfo.baseRewardPool.mim3crv,
             pidPool: curveInfo.pid.mim3crv,
@@ -1137,7 +1205,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             slippageSwapCrv: 200,
             slippageSwapCvx: 200,
             slippageLiquidity: 100,
-            amountToDepositVault: ethers.utils.parseEther("500"),
+            amountToDepositVault: ethers.utils.parseEther("1000"),
             feed: oracleInfo.mim_usd.address,
             timeUpdate: oracleInfo.mim_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
@@ -1196,8 +1264,8 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             feeDeposit: 0,
             crvSwapPath: "crv_USDD",
             cvxSwapPath: "cvx_USDD",
-            slippageSwapCrv: 100,
-            slippageSwapCvx: 200,
+            slippageSwapCrv: 300,
+            slippageSwapCvx: 300,
             slippageLiquidity: 200,
             amountToDepositVault: ethers.utils.parseEther("500"),
             feed: oracleInfo.usdd_usd.address,
@@ -1213,7 +1281,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             tokenCompound: tokenInfo.tetherEur.address,
             curveSwap: curveInfo.pool.eurt3crv,
             tokenDeposit: tokenInfo.tetherEur.address,
-            account1: "0x331174A9067e864A61B2F87861CCf006eD3bC95D",
+            account1: "0xA3ae519321A48D5D62F05bd45A88f71d412009D1",
             account2: "0xc065653dD4fd6fD97E7134b7B6daAb6fC221FD23",
             account3: "0xdf7a990073845DA3567AA70B6db1Bf4bbB07B718",
             pathAddLiquidityCurve: [ethers.utils.parseUnits("600", tokenInfo.tetherEur.decimals), ethers.utils.parseUnits("0", tokenInfo.tetherEur.decimals)],
@@ -1540,8 +1608,8 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             feeStrategist: 500,
             feeWithdraw: 20,
             feeDeposit: 0,
-            slippageSwapCrv: 200,
-            slippageSwapCvx: 200,
+            slippageSwapCrv: 500,
+            slippageSwapCvx: 500,
             slippageLiquidity: 100,
             amountToDepositVault: ethers.utils.parseEther("5000"),
             versionStrategy: "1.2"
@@ -1696,8 +1764,14 @@ export const strategyTask = {
     getTokenSwapPath: async function (strategyAddress: string, tokenIn: string, tokenOut: string): Promise<void>{
         return await getTokenSwapPath(strategyAddress, tokenIn, tokenOut);
     },
-    harvest: async function (strategyAddress: string): Promise<void>{
-        return await harvest(strategyAddress);
+    getTokenCompound: async function (strategyAddress: string): Promise<void>{
+        return await getTokenCompound(strategyAddress);
+    },
+    getSwapHarvest: async function (strategyAddress: string): Promise<any> {
+        return await getSwapHarvest(strategyAddress);
+    },
+    harvest: async function (strategyAddress: string, swapHarvest: any): Promise<void>{
+        return await harvest(strategyAddress, swapHarvest);
     },
     proposeChangeFeeStrategy: async function (timeLockController: Contract, strategyAddress: string, newFeeGovernance:any, minDelay: number): Promise<void>{
         return await proposeChangeFeeGovernance(timeLockController, strategyAddress, newFeeGovernance, minDelay);

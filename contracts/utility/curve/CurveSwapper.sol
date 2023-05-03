@@ -145,7 +145,7 @@ contract CurveSwapper is BaseSwapper {
     }
 
     function sliceUint8(bytes memory bs, uint start)
-    internal
+    internal pure
     returns (uint8)
     {
         require(bs.length >= start + 1, "slicing out of range");

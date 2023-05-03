@@ -25,8 +25,7 @@ Version 1.0:
 abstract contract SCompStrategyBase is
 BaseStrategy,
 CurveSwapper,
-UniswapSwapper,
-TokenSwapPathRegistry
+UniswapSwapper
 {
 
     using SafeERC20 for IERC20;
@@ -64,6 +63,12 @@ TokenSwapPathRegistry
         address swap;
         uint256 tokenCompoundPosition;
         uint256 numElements;
+    }
+
+    struct ParamsSwapHarvest {
+        bytes[] listPathData;
+        uint[] listTypeSwap;
+        address[] listRouterAddress;
     }
 
     CurvePoolConfig public curvePool;
@@ -183,17 +188,6 @@ TokenSwapPathRegistry
 
     }
 
-    function setTokenSwapPath(
-        address _tokenIn, address _tokenOut,
-        address[] memory _pathAddress,
-        uint24[] memory _pathFee,
-        uint[][] memory _swapParams, address[] memory _poolAddress,
-        uint _swapType
-    ) external {
-        _onlyGovernance();
-        _addToken(_tokenIn, _tokenOut, _pathAddress, _pathFee, _swapParams, _poolAddress, _swapType);
-    }
-
     function setUniswapV3Router(address _router) external {
         _onlyGovernance();
         _setUniswapV3Router(_router);
@@ -240,9 +234,9 @@ TokenSwapPathRegistry
 
     /// ===== Internal Core Implementations =====
     function _onlyNotProtectedTokens(address _asset) internal view override {
-        require(address(want) != _asset, "SCompStrategy: want");
-        require(address(crv) != _asset, "SCompStrategy: crv");
-        require(address(cvx) != _asset, "SCompStrategy: cvx");
+        require(address(want) != _asset, "want");
+        require(address(crv) != _asset, "crv");
+        require(address(cvx) != _asset, "cvx");
     }
 
     /// @dev Deposit Badger into the staking contract
@@ -350,7 +344,7 @@ TokenSwapPathRegistry
         return tendData;
     }
 
-    function harvest() external whenNotPaused returns (uint256) {
+    function harvest(ParamsSwapHarvest memory paramsSwap) external whenNotPaused returns (uint256) {
         uint256 idleWant = IERC20(want).balanceOf(address(this));
         uint256 totalWantBefore = balanceOf();
 
@@ -363,7 +357,8 @@ TokenSwapPathRegistry
             uint fee = _takeFeeAutoCompounded(crv, crvToSell);
             crvToSell = crvToSell.sub(fee);
 
-            _makeSwap(crv, tokenCompoundAddress, crvToSell);
+            _makeSwap(crv, tokenCompoundAddress, crvToSell,
+                paramsSwap.listTypeSwap[0], paramsSwap.listRouterAddress[0], paramsSwap.listPathData[0]);
         }
 
         uint cvxToSell = cvxToken.balanceOf(address(this));
@@ -371,7 +366,8 @@ TokenSwapPathRegistry
             uint fee = _takeFeeAutoCompounded(cvx, cvxToSell);
             cvxToSell = cvxToSell.sub(fee);
 
-            _makeSwap(cvx, tokenCompoundAddress, cvxToSell);
+            _makeSwap(cvx, tokenCompoundAddress, cvxToSell,
+                paramsSwap.listTypeSwap[1], paramsSwap.listRouterAddress[1], paramsSwap.listPathData[1]);
         }
 
         // 4. Roll Want gained into want position
@@ -393,7 +389,7 @@ TokenSwapPathRegistry
         }
 
         uint256 totalWantAfter = balanceOf();
-        require(totalWantAfter >= totalWantBefore, "SCompStrategy: want-decreased");
+        require(totalWantAfter >= totalWantBefore, "want-decreased");
 
         emit Harvest(wantGained, block.number);
         return wantGained;
@@ -412,17 +408,14 @@ TokenSwapPathRegistry
         );
     }
 
-    function _makeSwap(address _tokenIn, address _tokenOut, uint _amountIn) internal {
+    function _makeSwap(address _tokenIn, address _tokenOut, uint _amountIn, uint swapType, address router, bytes memory pathData) internal {
         uint amountOutMin = _getAmountOutMinSwap(_tokenIn, _tokenOut, _amountIn);
-        uint swapType = swapPaths[_tokenIn][_tokenOut].swapType;
         if(swapType == 0) {
-            _swapExactTokensForTokens(uniswapV2, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathData);
+            _swapExactTokensForTokens(router, _tokenIn, _amountIn, amountOutMin, pathData);
         } else if(swapType == 1) {
-            _swapExactTokensForTokens(sushiswap, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathData);
-        } else if(swapType == 2) {
-            _swapExactInputMultihop(uniswapV3, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathData);
+            _swapExactInputMultihop(router, _tokenIn, _amountIn, amountOutMin, pathData);
         } else {
-            _exchange_multiple(curveRouter, _tokenIn, _amountIn, amountOutMin, swapPaths[_tokenIn][_tokenOut].pathData);
+            _exchange_multiple(router, _tokenIn, _amountIn, amountOutMin, pathData);
         }
     }
 

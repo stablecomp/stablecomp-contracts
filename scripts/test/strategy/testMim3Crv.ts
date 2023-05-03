@@ -104,8 +104,11 @@ async function executeActionOneWeek(): Promise<void> {
     console.log(" -------- EARNMARK REWARD")
     await boosterTask.earnmarkReward(config.pidPool);
 
+    console.log(" -------- GET SWAP HARVEST")
+    let swapHarvest = await strategyTask.getSwapHarvest(strategyContract.address);
+
     console.log(" -------- HARVEST")
-    await strategyTask.harvest(strategyContract.address);
+    await strategyTask.harvest(strategyContract.address, swapHarvest);
 
     console.log(" -------- BUYBACK CONVERTER")
     await buyBackConverter();
@@ -142,7 +145,7 @@ main()
         await utilsTask.fundAccountETH(account1.address, ethers.utils.parseEther("0.1"))
         await utilsTask.fundAccountETH(account2.address, ethers.utils.parseEther("0.1"))
         await utilsTask.fundAccountETH(account3.address, ethers.utils.parseEther("0.1"))
-        await testStrategyTask.addLiquidity([account1, account2, account3], config);
+        //await testStrategyTask.addLiquidity([account1, account2, account3], config);
 
         console.log(" ----- STORE BALANCE LP")
         await checkLP();

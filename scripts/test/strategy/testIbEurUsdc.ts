@@ -106,8 +106,11 @@ async function executeActionOneWeek(index: any): Promise<void> {
 
     if (index > 2 ) {
 
+        console.log(" -------- GET SWAP HARVEST")
+        let swapHarvest = await strategyTask.getSwapHarvest(strategyContract.address);
+
         console.log(" -------- HARVEST")
-        await strategyTask.harvest(strategyContract.address);
+        await strategyTask.harvest(strategyContract.address, swapHarvest);
 
         console.log(" -------- BUYBACK CONVERTER")
         await buyBackConverter();
