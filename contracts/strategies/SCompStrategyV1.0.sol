@@ -49,35 +49,32 @@ SCompStrategyBase
     }
 
     function _getAmountOutMinAddLiquidity(uint _amount) virtual override public view returns(uint){
+        // check diff amount out and previous amounts out
         uint amountCurveOut;
+        uint amountCurveOutPrevious;
         if ( curvePool.numElements == 2 ) {
             uint[2] memory amounts;
             amounts[curvePool.tokenCompoundPosition] = _amount;
-            uint amountCurveOutPrevious = ICurveFi(curvePool.swap).calc_token_amount(amounts, true, true);
+            amountCurveOutPrevious = ICurveFi(curvePool.swap).calc_token_amount(amounts, true, true);
             amountCurveOut = ICurveFi(curvePool.swap).calc_token_amount(amounts, true);
-            uint diff = amountCurveOutPrevious > amountCurveOut ?
-                            amountCurveOutPrevious - amountCurveOut :
-                            amountCurveOut - amountCurveOutPrevious;
-            require(amountCurveOutPrevious.mul(variantPrice).div(PRECISION) > diff, "diff min lp out");
         } else if ( curvePool.numElements == 3 ) {
             uint[3] memory amounts;
             amounts[curvePool.tokenCompoundPosition] = _amount;
-            uint amountCurveOutPrevious = ICurveFi(curvePool.swap).calc_token_amount(amounts, true, true);
+            amountCurveOutPrevious = ICurveFi(curvePool.swap).calc_token_amount(amounts, true, true);
             amountCurveOut = ICurveFi(curvePool.swap).calc_token_amount(amounts, true);
-            uint diff = amountCurveOutPrevious > amountCurveOut ?
-                            amountCurveOutPrevious - amountCurveOut :
-                            amountCurveOut - amountCurveOutPrevious;
-            require(amountCurveOutPrevious.mul(variantPrice).div(PRECISION) > diff, "diff min lp out");
         } else {
             uint[4] memory amounts;
             amounts[curvePool.tokenCompoundPosition] = _amount;
-            uint amountCurveOutPrevious = ICurveFi(curvePool.swap).calc_token_amount(amounts, true, true);
+            amountCurveOutPrevious = ICurveFi(curvePool.swap).calc_token_amount(amounts, true, true);
             amountCurveOut = ICurveFi(curvePool.swap).calc_token_amount(amounts, true);
-            uint diff = amountCurveOutPrevious > amountCurveOut ?
-                            amountCurveOutPrevious - amountCurveOut :
-                            amountCurveOut - amountCurveOutPrevious;
-            require(amountCurveOutPrevious.mul(variantPrice).div(PRECISION) > diff, "diff min lp out");
         }
+
+        uint diff = amountCurveOutPrevious > amountCurveOut ?
+        amountCurveOutPrevious - amountCurveOut :
+        amountCurveOut - amountCurveOutPrevious;
+        require(amountCurveOutPrevious.mul(variantPrice).div(PRECISION) > diff, "diff min lp out");
+
+        // slippage
         amountCurveOut -= amountCurveOut.mul(slippageLiquidity).div(PRECISION);
         return amountCurveOut;
     }

@@ -724,33 +724,6 @@ async function setSlippageLiquidity(strategyAddress: string, newSlippage: string
     await tx.wait();
 
 }
-async function setTokenSwapPath(strategyAddress: string, namePath: string): Promise<void> {
-    let strategy: Contract = await getStrategy(strategyAddress)
-
-    const [deployer] = await ethers.getSigners();
-
-    let infoSwap = require("../../info/bestQuote/"+namePath+".json");
-
-    let indexTokenOut =
-        infoSwap.swapType == 3 ?
-        infoSwap.coinPath.indexOf(ethers.constants.AddressZero) > 0 ?
-            infoSwap.coinPath.indexOf(ethers.constants.AddressZero) -1 :
-            infoSwap.coinPath.length -1 : infoSwap.coinPath.length - 1;
-    let tokenIn = infoSwap.coinPath[0];
-    let tokenOut = infoSwap.coinPath[indexTokenOut];
-
-    let tx = await strategy.connect(deployer).setTokenSwapPath(
-        tokenIn, tokenOut,
-        infoSwap.coinPath, infoSwap.feePath, infoSwap.swapParams, infoSwap.poolAddress, infoSwap.swapType);
-    await tx.wait();
-
-}
-
-async function getTokenSwapPath(strategyAddress: string, tokenIn: string, tokenOut: string): Promise<any> {
-    let strategy: Contract = await getStrategy(strategyAddress)
-
-    return await strategy.swapPaths(tokenIn, tokenOut);
-}
 
 async function getTokenCompound(strategyAddress: string): Promise<any> {
     let strategy: Contract = await getStrategy(strategyAddress)
@@ -894,6 +867,31 @@ async function earn(vaultAddress: string, accountOperator: SignerWithAddress): P
     await tx.wait();
 }
 
+async function getPricePerFullShare(vaultAddress: string): Promise<any> {
+    let vault = await getVault(vaultAddress);
+    return await vault.getPricePerFullShare();
+}
+
+async function getCurvePoolInfoFromVault(vaultAddress: string): Promise<any> {
+    let vault = await getVault(vaultAddress);
+    let controllerAddress = await vault.controller();
+    let token = await vault.token();
+    let strategyAddress = await getStrategyFromController(controllerAddress, token);
+    let strategy: Contract = await getStrategy(strategyAddress)
+    return await strategy.curvePool();
+}
+
+async function getCurvePoolFromStrategy(strategyAddress: string): Promise<void> {
+    let strategy: Contract = await getStrategy(strategyAddress)
+    return await strategy.curvePool();
+
+}
+
+async function getStrategyFromController(controllerAddress: string, token: string): Promise<any> {
+    let controllerContract = await getController(controllerAddress);
+    return await controllerContract.strategies(token);
+}
+
 async function getVault(vaultAddress: string): Promise<Contract> {
     let factory = await ethers.getContractFactory("SCompVault");
     return factory.attach(vaultAddress);
@@ -914,22 +912,34 @@ async function oneClickIn(oneClickV3Address: string, minMintAmount: any,
         listRouterAddress : listRouterAddress,
         minMintAmount : minMintAmount
     }
-    await oneClick.OneClickIn(
-        tokenIn, amountIn, vault, oneClickParams);
+    await oneClick.OneClickIn(tokenIn, amountIn, vault, oneClickParams);
 }
 
-async function oneClickOut(oneClickV3Address: string, poolAddress: string, lpCurve: string,
+async function oneClickOut(oneClickV3Address: string,
                            tokenOut: string, amountIn: any, amountsOutMinCurve: any, removeLiquidityOneCoin: boolean,
                            listPathData: string[], listTypeSwap: any[], listAmountOutMin: any[], listRouterAddress: any[],
                            vault: string): Promise<void> {
     let oneClick = await getOneClickV3(oneClickV3Address)
-    await oneClick.OneClickOut(
-        poolAddress, lpCurve, tokenOut, amountIn, amountsOutMinCurve, removeLiquidityOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
+    let oneClickParams : any = {
+        amountsOutMinCurve : amountsOutMinCurve,
+        removeLiquidityOneCoin : removeLiquidityOneCoin,
+        listPathData : listPathData,
+        listTypeSwap : listTypeSwap,
+        listAmountOutMin : listAmountOutMin,
+        listRouterAddress : listRouterAddress
+    }
+
+    await oneClick.OneClickOut(tokenOut, amountIn, vault, oneClickParams);
 }
 
 async function getOneClickV3(oneClickV3Address: string): Promise<Contract> {
     let factory = await ethers.getContractFactory("OneClickV3");
     return factory.attach(oneClickV3Address);
+}
+
+async function getController(controllerAddress: string): Promise<Contract> {
+    let factory = await ethers.getContractFactory("SCompController");
+    return factory.attach(controllerAddress);
 }
 
 export interface ConfigStrategy {
@@ -992,7 +1002,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             feed: oracleInfo.tetherEur_usd.address,
             timeUpdate: oracleInfo.tetherEur_usd.timeUpdate,
             priceAdmin: ethers.utils.parseUnits("0", 8),
-            versionStrategy: "1.1"
+            versionStrategy: "1.1",
         }
     }
     else if (name == "busd3crv" ) {
@@ -1725,6 +1735,7 @@ export const deployScompTask = {
 };
 
 export const oneClickTask = {
+    // todo order params
     oneClickIn: async function (oneClickV3Address: string, minMintAmount: any,
                                 tokenIn: string, amountIn: any,
                                 listAverageSwap: any, listPathData: string[],
@@ -1735,12 +1746,12 @@ export const oneClickTask = {
             tokenIn, amountIn,
             listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
     },
-    oneClickOut: async function (oneClickV3Address: string, poolAddress: string, lpCurve: string,
+    oneClickOut: async function (oneClickV3Address: string,
                                  tokenOut: string, amountIn: any, amountsOutMinCurve: any, removeLiquidityOneCoin: boolean,
                                  listPathData: string[], listTypeSwap: any[], listAmountOutMin: any[], listRouterAddress: any[],
                                  vault: string
     ): Promise<void>{
-        return await oneClickOut(oneClickV3Address, poolAddress, lpCurve, tokenOut, amountIn,
+        return await oneClickOut(oneClickV3Address, tokenOut, amountIn,
             amountsOutMinCurve, removeLiquidityOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
     },
 };
@@ -1758,11 +1769,8 @@ export const strategyTask = {
     setSlippageLiquidity: async function (strategyAddress: string, newSlippage: string): Promise<void>{
         return await setSlippageLiquidity(strategyAddress, newSlippage);
     },
-    setTokenSwapPath: async function (strategyAddress: string, namePath: string): Promise<void>{
-        return await setTokenSwapPath(strategyAddress, namePath);
-    },
-    getTokenSwapPath: async function (strategyAddress: string, tokenIn: string, tokenOut: string): Promise<void>{
-        return await getTokenSwapPath(strategyAddress, tokenIn, tokenOut);
+    getCurvePoolFromStrategy: async function (strategyAddress: string): Promise<any>{
+        return await getCurvePoolFromStrategy(strategyAddress);
     },
     getTokenCompound: async function (strategyAddress: string): Promise<void>{
         return await getTokenCompound(strategyAddress);
@@ -1796,6 +1804,12 @@ export const vaultTask = {
     },
     earn: async function (vaultAddress: string, accountOperator: SignerWithAddress): Promise<void> {
         return await earn(vaultAddress, accountOperator);
+    },
+    getCurvePoolInfoFromVault: async function (vaultAddress: string): Promise<void> {
+        return await getCurvePoolInfoFromVault(vaultAddress);
+    },
+    getPricePerFullShare: async function (vaultAddress: string): Promise<void> {
+        return await getPricePerFullShare(vaultAddress);
     },
 };
 

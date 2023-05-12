@@ -5,6 +5,10 @@ pragma solidity ^0.8.13;
 interface ICurveFi {
     function get_virtual_price() external view returns (uint256 out);
 
+    function coins(
+        uint256 _index
+    ) external view returns (address);
+
     function calc_token_amount(
         uint256[2] calldata _amounts
     ) external view returns (uint256);
@@ -160,8 +164,6 @@ interface ICurveFi {
     function revert_transfer_ownership() external;
 
     function withdraw_admin_fees() external;
-
-    function coins(int128 arg0) external returns (address out);
 
     function underlying_coins(int128 arg0) external returns (address out);
 

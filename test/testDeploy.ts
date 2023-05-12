@@ -119,7 +119,6 @@ describe("Testing deploy", async function () {
                 configUsdd3Crv.curveSwap, configUsdd3Crv.nElementPool, configUsdd3Crv.versionStrategy)
         });
 
-
     });
 
 });

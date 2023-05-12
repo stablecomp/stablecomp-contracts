@@ -32,13 +32,22 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
     address public oneClickFeeAddress;
     address public timeLockController;
 
-    struct OneClickParamsSwap {
+    struct OneClickInParamsSwap {
         uint[] listAverageSwap;
         bytes[] listPathData;
         uint[] listTypeSwap;
         uint[] listAmountOutMin;
         address[] listRouterAddress;
         uint minMintAmount;
+    }
+
+    struct OneClickOutParamsSwap {
+        uint[] amountsOutMinCurve;
+        bool removeLiquidityOneCoin;
+        bytes[] listPathData;
+        uint[] listTypeSwap;
+        uint[] listAmountOutMin;
+        address[] listRouterAddress;
     }
 
     /**
@@ -52,6 +61,8 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
 
     // Owner recovers token
     event NewOneClickIn(address indexed sender, address indexed vault, address tokenIn, uint amountIn, uint amountOut, uint share);
+    event NewOneClickOut(address indexed sender, address indexed vault, address tokenOut, uint amountIn, uint amountOut);
+
     event TokenRecovery(address indexed token, uint256 amount);
 
     /**
@@ -78,18 +89,18 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         address _tokenIn,
         uint _amountIn,
         address _vault,
-        OneClickParamsSwap memory paramsSwap
+        OneClickInParamsSwap memory _paramsSwap
     ) external payable {
 
-        _checkOneClickIn(_vault, _tokenIn, _amountIn, paramsSwap);
+        _checkOneClickIn(_vault, _tokenIn, _amountIn, _paramsSwap);
 
         (address lpCurve, address curvePool) = _getCurveAddress(_vault);
 
         _amountIn = transferTokenIn(_tokenIn, _amountIn);
 
-        uint[] memory amountsInCurve = _executeSwapIn(_amountIn, _tokenIn, paramsSwap);
+        uint[] memory amountsInCurve = _executeSwapIn(_amountIn, _tokenIn, _paramsSwap);
 
-        uint amountLpMinted = _addLiquidityCurve(curvePool, lpCurve, amountsInCurve, paramsSwap.minMintAmount);
+        uint amountLpMinted = _addLiquidityCurve(curvePool, lpCurve, amountsInCurve, _paramsSwap.minMintAmount);
 
         _approveVault(lpCurve, _vault, amountLpMinted);
         uint share = ISCompVault(_vault).depositFor(amountLpMinted, _msgSender());
@@ -97,25 +108,69 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         emit NewOneClickIn(msg.sender, _vault, _tokenIn, _amountIn, amountLpMinted, share);
     }
 
+    /**
+     * @notice OneClick a token out
+     */
+    function OneClickOut(
+        address _tokenOut,
+        uint _amountIn,
+        address _vault,
+        OneClickOutParamsSwap memory _paramsSwap
+    ) external {
+
+        _checkOneClickOut(_vault, _tokenOut, _amountIn, _paramsSwap);
+
+        (address lpCurve, address curvePool) = _getCurveAddress(_vault);
+
+        _amountIn = transferTokenIn(_vault, _amountIn);
+
+        uint lpAmount = ISCompVault(_vault).withdraw(_amountIn);
+
+        uint[] memory amountsToSwap = _removeLiquidityCurve(lpCurve, curvePool, _paramsSwap.removeLiquidityOneCoin, lpAmount, _paramsSwap.amountsOutMinCurve);
+
+        uint amountsOut = _executeSwapOut(curvePool, amountsToSwap, _paramsSwap);
+
+        if (amountsOut > 0 ) {
+            IERC20(_tokenOut).transfer(_msgSender(), amountsOut);
+        }
+
+        emit NewOneClickOut(msg.sender, _vault, _tokenOut, _amountIn, amountsOut);
+    }
+
+    // INTERNAL FUNCTION
     function _checkOneClickIn(
         address _vault,
         address _tokenIn,
         uint _amountIn,
-        OneClickParamsSwap memory paramsSwap
+        OneClickInParamsSwap memory _paramsSwap
     ) internal {
         require(_vault != address(0), "vault cannot be 0");
         require(_tokenIn != address(0) || msg.value == _amountIn, "token in cannot be 0 or msg value must be same of amountIn");
         require(_amountIn > 0, "amount in must be > 0");
-        require(paramsSwap.listAverageSwap.length == paramsSwap.listPathData.length, "list length invalid");
-        require(paramsSwap.listPathData.length == paramsSwap.listTypeSwap.length, "list length invalid");
-        require(paramsSwap.listTypeSwap.length == paramsSwap.listAmountOutMin.length, "list length invalid");
-        require(paramsSwap.listAmountOutMin.length == paramsSwap.listAverageSwap.length, "list length invalid");
-        require(paramsSwap.listAverageSwap.length == paramsSwap.listRouterAddress.length, "list length invalid");
+        require(_paramsSwap.listAverageSwap.length == _paramsSwap.listPathData.length, "list length invalid");
+        require(_paramsSwap.listPathData.length == _paramsSwap.listTypeSwap.length, "list length invalid");
+        require(_paramsSwap.listTypeSwap.length == _paramsSwap.listAmountOutMin.length, "list length invalid");
+        require(_paramsSwap.listAmountOutMin.length == _paramsSwap.listAverageSwap.length, "list length invalid");
+        require(_paramsSwap.listAverageSwap.length == _paramsSwap.listRouterAddress.length, "list length invalid");
     }
 
-    function _getCurveAddress(
-        address _vault
-    ) internal view returns(address, address){
+    function _checkOneClickOut(
+        address _vault,
+        address _tokenOut,
+        uint _amountIn,
+        OneClickOutParamsSwap memory _paramsSwap
+    ) internal pure{
+        require(_vault != address(0), "vault cannot be 0");
+        require(_tokenOut != address(0), "token out cannot be 0");
+        require(_amountIn > 0, "amount in must be > 0");
+
+        require(_paramsSwap.listPathData.length == _paramsSwap.listTypeSwap.length, "list length invalid");
+        require(_paramsSwap.listTypeSwap.length == _paramsSwap.listAmountOutMin.length, "list length invalid");
+        require(_paramsSwap.listAmountOutMin.length == _paramsSwap.amountsOutMinCurve.length, "list length invalid");
+        require(_paramsSwap.amountsOutMinCurve.length == _paramsSwap.listRouterAddress.length, "list length invalid");
+    }
+
+    function _getCurveAddress(address _vault) internal view returns(address, address){
 
         address lpCurve = ISCompVault(_vault).token();
         address controller = ISCompVault(_vault).controller();
@@ -126,48 +181,6 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         return (lpCurve, curvePool);
     }
 
-    /**
-     * @notice OneClick a token out
-     */
-    function OneClickOut(
-        address _curvePool,
-        address _lpCurve,
-        address _tokenOut,
-        uint _amountIn,
-        uint[] memory _amountsOutMinCurve,
-        bool _removeLiquidityOneCoin,
-        bytes[] memory _listPathData,
-        uint[] memory _listTypeSwap,
-        uint[] memory _listAmountOutMin,
-        address[] memory _listRouterAddress,
-        address _vault
-    ) external payable {
-        require(_curvePool != address(0), "curve pool cannot be 0");
-        require(_tokenOut != address(0), "token out cannot be 0");
-        require(_amountIn > 0, "amount in must be > 0");
-
-        require(_listPathData.length == _listTypeSwap.length, "list length invalid");
-        require(_listTypeSwap.length == _listAmountOutMin.length, "list length invalid");
-        require(_listAmountOutMin.length == _amountsOutMinCurve.length, "list length invalid");
-        require(_amountsOutMinCurve.length == _listRouterAddress.length, "list length invalid");
-
-        _amountIn = transferTokenIn(_vault, _amountIn);
-
-        uint lpAmount = ISCompVault(_vault).withdraw(_amountIn);
-
-        uint[] memory amountsToSwap = _removeLiquidityCurve(_lpCurve, _curvePool, _removeLiquidityOneCoin, lpAmount, _amountsOutMinCurve);
-
-
-        uint amountsOut = _executeSwapOut(_curvePool, amountsToSwap, _listRouterAddress, _listAmountOutMin, _listPathData, _listTypeSwap);
-
-        if (amountsOut > 0 ) {
-            IERC20(_tokenOut).transfer(_msgSender(), amountsOut);
-        }
-
-        //emit NewOneClickOut(_tokenIn, _poolAddress, _amountIn, lpAmount, msg.sender);
-    }
-
-    // INTERNAL FUNCTION
     function transferTokenIn(address _tokenIn, uint _amountIn) internal returns(uint){
         uint balanceBefore = IERC20(_tokenIn).balanceOf(address(this));
         IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _amountIn);
@@ -202,20 +215,23 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
     function _executeSwapIn(
         uint _amountIn,
         address _tokenIn,
-        OneClickParamsSwap memory paramsSwap
+        OneClickInParamsSwap memory _paramsSwap
     ) internal returns(uint[] memory amountsOut) {
-        uint[] memory amountsToSwap = getListAmountByAverage(_amountIn, paramsSwap.listAverageSwap);
+        uint[] memory amountsToSwap = getListAmountByAverage(_amountIn, _paramsSwap.listAverageSwap);
         amountsOut = new uint[](amountsToSwap.length);
         for(uint i = 0; i < amountsToSwap.length; i++) {
             if (amountsToSwap[i] != 0 ) {
-                if(paramsSwap.listTypeSwap[i] == 0) {
-                    uint[] memory amountsOutV2 = _makeSwapV2(paramsSwap.listRouterAddress[i], _tokenIn, amountsToSwap[i], paramsSwap.listAmountOutMin[i], paramsSwap.listPathData[i]);
+                if(_paramsSwap.listTypeSwap[i] == 0) {
+                    uint[] memory amountsOutV2 = _makeSwapV2(_paramsSwap.listRouterAddress[i], _tokenIn,
+                        amountsToSwap[i], _paramsSwap.listAmountOutMin[i], _paramsSwap.listPathData[i]);
                     amountsOut[i] = amountsOutV2[amountsOutV2.length -1];
-                } else if(paramsSwap.listTypeSwap[i] == 1) {
-                    uint amountOutV3 = _makeSwapV3(paramsSwap.listRouterAddress[i], _tokenIn, amountsToSwap[i], paramsSwap.listAmountOutMin[i], paramsSwap.listPathData[i]);
+                } else if(_paramsSwap.listTypeSwap[i] == 1) {
+                    uint amountOutV3 = _makeSwapV3(_paramsSwap.listRouterAddress[i], _tokenIn,
+                        amountsToSwap[i], _paramsSwap.listAmountOutMin[i], _paramsSwap.listPathData[i]);
                     amountsOut[i] = amountOutV3;
-                } else if(paramsSwap.listTypeSwap[i] == 2) {
-                    uint amountOutCurve = _makeSwapCurve(paramsSwap.listRouterAddress[i], _tokenIn, amountsToSwap[i], paramsSwap.listAmountOutMin[i], paramsSwap.listPathData[i]);
+                } else if(_paramsSwap.listTypeSwap[i] == 2) {
+                    uint amountOutCurve = _makeSwapCurve(_paramsSwap.listRouterAddress[i], _tokenIn,
+                        amountsToSwap[i], _paramsSwap.listAmountOutMin[i], _paramsSwap.listPathData[i]);
                     amountsOut[i] = amountOutCurve;
                 } else {
                     amountsOut[i] = 0;
@@ -230,24 +246,29 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
     function _executeSwapOut(
         address _curvePool,
         uint[] memory _listAmountToSwap,
-        address[]memory _listRouterAddress,
-        uint[] memory _listAmountOutMin,
-        bytes[] memory _listPathData,
-        uint[] memory _listTypeSwap
+        OneClickOutParamsSwap memory _paramsSwap
     ) internal returns(uint amountsOut) {
         address[] memory listCoin = _getCoinCurvePool(_curvePool, _listAmountToSwap.length);
         for(uint i = 0; i < _listAmountToSwap.length; i++) {
             if (_listAmountToSwap[i] != 0 ) {
-                if(_listTypeSwap[i] == 0) {
-                    uint[] memory amountsOutV2 = _makeSwapV2(_listRouterAddress[i], listCoin[i], _listAmountToSwap[i], _listAmountOutMin[i], _listPathData[i]);
+                console.log("_listAmountToSwap[i]");
+                console.log(_listAmountToSwap[i]);
+                if(_paramsSwap.listTypeSwap[i] == 0) {
+                    uint[] memory amountsOutV2 = _makeSwapV2(_paramsSwap.listRouterAddress[i], listCoin[i],
+                        _listAmountToSwap[i], _paramsSwap.listAmountOutMin[i], _paramsSwap.listPathData[i]);
                     amountsOut += amountsOutV2[amountsOutV2.length -1];
-                } else {
-                    _makeSwapV3(_listRouterAddress[i], listCoin[i], _listAmountToSwap[i], _listAmountOutMin[i], _listPathData[i]);
-                    //amountsOut
+                } else if(_paramsSwap.listTypeSwap[i] == 1) {
+                    uint amountOutV3 = _makeSwapV3(_paramsSwap.listRouterAddress[i], listCoin[i],
+                        _listAmountToSwap[i], _paramsSwap.listAmountOutMin[i], _paramsSwap.listPathData[i]);
+                    amountsOut += amountOutV3;
+                } else if (_paramsSwap.listTypeSwap[i] == 2 ) {
+                    uint amountOutCurve = _makeSwapCurve(_paramsSwap.listRouterAddress[i], listCoin[i],
+                        _listAmountToSwap[i], _paramsSwap.listAmountOutMin[i], _paramsSwap.listPathData[i]);
+                    amountsOut += amountOutCurve;
                 }
             }
         }
-        return 0;
+        return amountsOut;
     }
 
     function _makeSwapV2(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint[] memory){
@@ -294,23 +315,35 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
 
     }
 
-    function _removeLiquidityCurve(address _token, address _pool, bool _oneCoin, uint _amountIn, uint[] memory _minAmountsOut) internal returns(uint[] memory amounts){
+    function _removeLiquidityCurve(address _lp, address _pool, bool _oneCoin, uint _amountIn, uint[] memory _minAmountsOut) internal returns(uint[] memory amounts){
         require(_minAmountsOut.length >= 2 && _minAmountsOut.length <= 4, "min amounts out length not valid");
 
-        if(_token != _pool) {
-            IERC20(_token).safeApprove(_pool, 0);
-            IERC20(_token).safeApprove(_pool, _amountIn);
+        if(_lp != _pool) {
+            _safeApproveHelper(_lp, _pool, _amountIn);
         }
 
         if( _oneCoin ) {
             uint index = _checkIndexPool(_minAmountsOut);
-            ICurvePool(_pool).remove_liquidity_one_coin(_amountIn, int128(uint128(index)), _minAmountsOut[index]);
+            try ICurvePool(_pool).remove_liquidity_one_coin(_amountIn, int128(uint128(index)), _minAmountsOut[index]) {
+                console.log("Remove liquidity ok first case");
+            } catch {
+                try ICurvePool(_pool).remove_liquidity_one_coin(_amountIn, index, _minAmountsOut[index]) {
+                    console.log("Remove liquidity ok second case");
+
+                } catch {
+                    revert("remove liquidity not handle");
+                }
+
+            }
+
         } else if ( _minAmountsOut.length == 2) {
             uint[2] memory minAmountsOut;
             for ( uint i = 0; i < 2; i++ ) {
+                console.log("_minAmountsOut[i]");
+                console.log(_minAmountsOut[i]);
                 minAmountsOut[i] = _minAmountsOut[i];
             }
-            ICurvePool(_pool).remove_liquidity(_amountIn, minAmountsOut);
+            ICurvePool(_pool).remove_liquidity_imbalance(minAmountsOut, _amountIn);
         } else if ( _minAmountsOut.length == 3) {
             uint[3] memory minAmountsOut;
             for ( uint i = 0; i < 3; i++ ) {
@@ -344,7 +377,7 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         }
     }
 
-    function _checkIndexPool(uint[] memory _minAmountsOut) internal returns(uint){
+    function _checkIndexPool(uint[] memory _minAmountsOut) internal pure returns(uint){
         for(uint i = 0; i < _minAmountsOut.length; i++) {
             if(_minAmountsOut[i] > 0) {
                 return i;

@@ -4,8 +4,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import curve from "@curvefi/api";
 import process from "process";
 import fs from "fs";
-import {swap} from "@curvefi/api/lib/router";
-import * as path from "path";
 
 const { ethers } = hardhat;
 
@@ -97,17 +95,96 @@ async function calcAmountsOutMinOneCoin(curvePoolAddress: string, amountIn: any,
     return await curvePool.calc_withdraw_one_coin(amountIn, indexCoin);
 }
 
-async function calcAmountsOutMin(curvePoolAddress: string, amountIn: any, nCoins: any): Promise<any> {
+async function calcAmountOutMinAdd(curvePoolAddress: string, versionStrategy: string, listAmount: any[], slippage: any): Promise<any> {
+    const [deployer] = await ethers.getSigners();
+
+    let amountOutCurve : any;
+    if (versionStrategy == "1.0" || versionStrategy == "1.1") {
+        let poolCurveABI: any;
+        if (listAmount.length == 2) {
+            poolCurveABI = [
+                {"name":"calc_token_amount","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"uint256[2]","name":"_amounts"},{"type":"bool","name":"_is_deposit"}],"stateMutability":"view","type":"function"}
+            ];
+        } else if (listAmount.length == 3 ) {
+            poolCurveABI = [
+                {"name":"calc_token_amount","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"uint256[3]","name":"_amounts"},{"type":"bool","name":"_is_deposit"}],"stateMutability":"view","type":"function"}
+            ];
+        } else if (listAmount.length == 4 ) {
+            poolCurveABI = [
+                {"name":"calc_token_amount","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"uint256[2]","name":"_amounts"},{"type":"bool","name":"_is_deposit"}],"stateMutability":"view","type":"function"}
+            ];
+        } else {
+            throw new Error("List amount length invalid")
+        }
+        let curvePool = await ethers.getContractAt(poolCurveABI, curvePoolAddress, deployer);
+        amountOutCurve = await curvePool.calc_token_amount(listAmount, true);
+    } else if (versionStrategy == "1.2") {
+        let poolCurveABI: any;
+        if (listAmount.length == 2) {
+            poolCurveABI = [
+                {"stateMutability":"view","type":"function","name":"calc_token_amount","inputs":[{"name":"amounts","type":"uint256[2]"}],"outputs":[{"name":"","type":"uint256"}]}
+            ];
+        } else if (listAmount.length == 3 ) {
+            poolCurveABI = [
+                {"stateMutability":"view","type":"function","name":"calc_token_amount","inputs":[{"name":"amounts","type":"uint256[3]"}],"outputs":[{"name":"","type":"uint256"}]}
+            ];
+        } else if (listAmount.length == 4 ) {
+            poolCurveABI = [
+                {"stateMutability":"view","type":"function","name":"calc_token_amount","inputs":[{"name":"amounts","type":"uint256[4]"}],"outputs":[{"name":"","type":"uint256"}]}
+            ];
+        } else {
+            throw new Error("List amount length invalid")
+        }
+        let curvePool = await ethers.getContractAt(poolCurveABI, curvePoolAddress, deployer);
+        amountOutCurve = await curvePool.calc_token_amount(listAmount);
+    } else {
+        throw new Error("Version strategy invalid")
+    }
+
+    return amountOutCurve;
+}
+
+async function calcAmountsOutMinRemove(curvePoolAddress: string, listAmount: any[], listSlippage: any, oneCoin: boolean): Promise<any> {
+    const [deployer] = await ethers.getSigners();
     let curvePool = await getCurvePool(curvePoolAddress);
-    let slippage = 100 - 10
 
     let amountsOutMin: any[] = [];
-    for (let i = 0; i < nCoins; i++) {
-        let amountInTemp = amountIn.div(nCoins);
-        console.log("Amount in temp: " + amountInTemp)
-        let amountsOut = await curvePool.calc_withdraw_one_coin(amountInTemp, i);
-        console.log("Amounts out index ", i, " is: " + amountsOut)
-        amountsOutMin.push(amountsOut.div(100).mul(slippage))
+    for (let i = 0; i < listAmount.length; i++) {
+        console.log("Amount in temp: " + listAmount[i])
+        if (listAmount[i] > 0 ) {
+            if (oneCoin) {
+                let poolCurveABI;
+                try {
+                    poolCurveABI = [
+                        {"name":"calc_withdraw_one_coin","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"uint256","name":"_burn_amount"},{"type":"int128","name":"i"}],"stateMutability":"view","type":"function"}
+                    ];
+                    let curvePool = await ethers.getContractAt(poolCurveABI, curvePoolAddress, deployer);
+
+                    let amountsOut = await curvePool.calc_withdraw_one_coin(listAmount[i], i);
+                    amountsOutMin.push(amountsOut.div(100).mul(listSlippage[i]))
+
+                } catch (error: any) {
+                    try {
+                        poolCurveABI = [
+                            {"stateMutability": "view", "type": "function", "name": "calc_withdraw_one_coin", "inputs": [{"name": "token_amount", "type": "uint256"}, {"name": "i", "type": "uint256"}], "outputs": [{"name": "", "type": "uint256"}]}
+                        ];
+                        let curvePool = await ethers.getContractAt(poolCurveABI, curvePoolAddress, deployer);
+
+                        let amountsOut = await curvePool.calc_withdraw_one_coin(listAmount[i], i);
+                        amountsOutMin.push(amountsOut.div(100).mul(listSlippage[i]))
+                    } catch (error: any) {
+                        console.log("error")
+                        console.log(error)
+                        throw new Error("Unhandled version of calc withdraw one coin.")
+                    }
+                }
+            } else {
+                // todo calc amount out balanced
+            }
+        } else {
+            amountsOutMin.push(0)
+        }
+        console.log("Amounts out index ", i, " is: " + amountsOutMin[i])
     }
     return amountsOutMin;
 }
@@ -269,6 +346,9 @@ export const taskPoolCurve = {
             tokenDepositAddress, curveSwapAddress,
             amountsToAdd, minMintAmount);
     },
+    calcAmountOutMinAdd: async function (curvePoolAddress: string, versionStrategy: string, listAmountRemoveLiquidity: any[], slippage: any): Promise<any>{
+        return await calcAmountOutMinAdd(curvePoolAddress, versionStrategy, listAmountRemoveLiquidity, slippage);
+    },
     removeLiquidityOneCoin: async function (operator: SignerWithAddress, curveSwapAddress: string,
                                   amountToRemove: any, indexCoin: number, minReceiver: any): Promise<any>{
         return await removeLiquidityOneCoin(operator, curveSwapAddress, amountToRemove, indexCoin, minReceiver);
@@ -276,8 +356,8 @@ export const taskPoolCurve = {
     calcAmountsOutMinOneCoin: async function (curvePoolAddress: string, amountIn: any, indexCoin: any): Promise<any>{
         return await calcAmountsOutMinOneCoin(curvePoolAddress, amountIn, indexCoin);
     },
-    calcAmountsOutMin: async function (curvePoolAddress: string, amountIn: any, nCoins: any): Promise<any>{
-        return await calcAmountsOutMin(curvePoolAddress, amountIn, nCoins);
+    calcAmountsOutMinRemove: async function (curvePoolAddress: string, listAmountRemoveLiquidity: any[], listSlippage: any[], versionStrategy: any): Promise<any>{
+        return await calcAmountsOutMinRemove(curvePoolAddress, listAmountRemoveLiquidity, listSlippage, versionStrategy);
     },
     getCoinsOfCurvePool: async function (curvePoolAddress: string): Promise<any>{
         return await getCoinsOfCurvePool(curvePoolAddress);

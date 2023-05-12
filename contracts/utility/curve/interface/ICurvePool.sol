@@ -49,6 +49,12 @@ interface ICurvePool {
         uint256 _min_amount
     ) external returns(uint);
 
+    function remove_liquidity_one_coin(
+        uint256 _token_amount,
+        uint256 i,
+        uint256 _min_amount
+    ) external returns(uint);
+
     function remove_liquidity(
         uint256 _amount,
         uint256[2] calldata min_amounts
@@ -60,6 +66,21 @@ interface ICurvePool {
     ) external returns(uint[] memory);
 
     function remove_liquidity(
+        uint256 _amount,
+        uint256[4] calldata min_amounts
+    ) external returns(uint[] memory);
+
+    function remove_liquidity_imbalance(
+        uint256[2] calldata min_amounts,
+        uint256 _amount
+    ) external;
+
+    function remove_liquidity_imbalance(
+        uint256 _amount,
+        uint256[3] calldata min_amounts
+    ) external returns(uint[] memory);
+
+    function remove_liquidity_imbalance(
         uint256 _amount,
         uint256[4] calldata min_amounts
     ) external returns(uint[] memory);
