@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.13;
 
-import "hardhat/console.sol";
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -43,7 +41,7 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
 
     struct OneClickOutParamsSwap {
         uint[] amountsOutMinCurve;
-        bool removeLiquidityOneCoin;
+        uint typeRemoveLiquidity;
         bytes[] listPathData;
         uint[] listTypeSwap;
         uint[] listAmountOutMin;
@@ -126,7 +124,7 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
 
         uint lpAmount = ISCompVault(_vault).withdraw(_amountIn);
 
-        uint[] memory amountsToSwap = _removeLiquidityCurve(lpCurve, curvePool, _paramsSwap.removeLiquidityOneCoin, lpAmount, _paramsSwap.amountsOutMinCurve);
+        uint[] memory amountsToSwap = _removeLiquidityCurve(lpCurve, curvePool, _paramsSwap.typeRemoveLiquidity, lpAmount, _paramsSwap.amountsOutMinCurve);
 
         uint amountsOut = _executeSwapOut(curvePool, amountsToSwap, _paramsSwap);
 
@@ -164,6 +162,7 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         require(_tokenOut != address(0), "token out cannot be 0");
         require(_amountIn > 0, "amount in must be > 0");
 
+        require(_paramsSwap.typeRemoveLiquidity >= 0 && _paramsSwap.typeRemoveLiquidity <= 2, "type remove liquidity invalid");
         require(_paramsSwap.listPathData.length == _paramsSwap.listTypeSwap.length, "list length invalid");
         require(_paramsSwap.listTypeSwap.length == _paramsSwap.listAmountOutMin.length, "list length invalid");
         require(_paramsSwap.listAmountOutMin.length == _paramsSwap.amountsOutMinCurve.length, "list length invalid");
@@ -251,8 +250,6 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         address[] memory listCoin = _getCoinCurvePool(_curvePool, _listAmountToSwap.length);
         for(uint i = 0; i < _listAmountToSwap.length; i++) {
             if (_listAmountToSwap[i] != 0 ) {
-                console.log("_listAmountToSwap[i]");
-                console.log(_listAmountToSwap[i]);
                 if(_paramsSwap.listTypeSwap[i] == 0) {
                     uint[] memory amountsOutV2 = _makeSwapV2(_paramsSwap.listRouterAddress[i], listCoin[i],
                         _listAmountToSwap[i], _paramsSwap.listAmountOutMin[i], _paramsSwap.listPathData[i]);
@@ -315,47 +312,67 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
 
     }
 
-    function _removeLiquidityCurve(address _lp, address _pool, bool _oneCoin, uint _amountIn, uint[] memory _minAmountsOut) internal returns(uint[] memory amounts){
+    /**
+     * _typeRemove = 0 -> oneCoin / 1 -> balanced / 2 -> imbalanced
+     */
+    function _removeLiquidityCurve(address _lp, address _pool, uint _typeRemove, uint _amountIn, uint[] memory _minAmountsOut) internal returns(uint[] memory amounts){
         require(_minAmountsOut.length >= 2 && _minAmountsOut.length <= 4, "min amounts out length not valid");
 
         if(_lp != _pool) {
             _safeApproveHelper(_lp, _pool, _amountIn);
         }
 
-        if( _oneCoin ) {
+        if(_typeRemove == 0) {
             uint index = _checkIndexPool(_minAmountsOut);
             try ICurvePool(_pool).remove_liquidity_one_coin(_amountIn, int128(uint128(index)), _minAmountsOut[index]) {
-                console.log("Remove liquidity ok first case");
             } catch {
                 try ICurvePool(_pool).remove_liquidity_one_coin(_amountIn, index, _minAmountsOut[index]) {
-                    console.log("Remove liquidity ok second case");
-
                 } catch {
                     revert("remove liquidity not handle");
                 }
 
             }
 
-        } else if ( _minAmountsOut.length == 2) {
-            uint[2] memory minAmountsOut;
-            for ( uint i = 0; i < 2; i++ ) {
-                console.log("_minAmountsOut[i]");
-                console.log(_minAmountsOut[i]);
-                minAmountsOut[i] = _minAmountsOut[i];
+        } else if (_typeRemove == 1) {
+            if ( _minAmountsOut.length == 2) {
+                uint[2] memory minAmountsOut;
+                for ( uint i = 0; i < 2; i++ ) {
+                    minAmountsOut[i] = _minAmountsOut[i];
+                }
+                ICurvePool(_pool).remove_liquidity(_amountIn, minAmountsOut);
+            } else if ( _minAmountsOut.length == 3) {
+                uint[3] memory minAmountsOut;
+                for ( uint i = 0; i < 3; i++ ) {
+                    minAmountsOut[i] = _minAmountsOut[i];
+                }
+                ICurvePool(_pool).remove_liquidity(_amountIn, minAmountsOut);
+            } else {
+                uint[4] memory minAmountsOut;
+                for ( uint i = 0; i < 4; i++ ) {
+                    minAmountsOut[i] = _minAmountsOut[i];
+                }
+                ICurvePool(_pool).remove_liquidity(_amountIn, minAmountsOut);
             }
-            ICurvePool(_pool).remove_liquidity_imbalance(minAmountsOut, _amountIn);
-        } else if ( _minAmountsOut.length == 3) {
-            uint[3] memory minAmountsOut;
-            for ( uint i = 0; i < 3; i++ ) {
-                minAmountsOut[i] = _minAmountsOut[i];
-            }
-            ICurvePool(_pool).remove_liquidity(_amountIn, minAmountsOut);
         } else {
-            uint[4] memory minAmountsOut;
-            for ( uint i = 0; i < 4; i++ ) {
-                minAmountsOut[i] = _minAmountsOut[i];
+            if ( _minAmountsOut.length == 2) {
+                uint[2] memory minAmountsOut;
+                for ( uint i = 0; i < 2; i++ ) {
+                    minAmountsOut[i] = _minAmountsOut[i];
+                }
+                ICurvePool(_pool).remove_liquidity_imbalance(minAmountsOut, _amountIn);
+            } else if ( _minAmountsOut.length == 3) {
+                uint[3] memory minAmountsOut;
+                for ( uint i = 0; i < 3; i++ ) {
+                    minAmountsOut[i] = _minAmountsOut[i];
+                }
+                ICurvePool(_pool).remove_liquidity_imbalance(minAmountsOut, _amountIn);
+            } else {
+                uint[4] memory minAmountsOut;
+                for ( uint i = 0; i < 4; i++ ) {
+                    minAmountsOut[i] = _minAmountsOut[i];
+                }
+                ICurvePool(_pool).remove_liquidity_imbalance(minAmountsOut, _amountIn);
             }
-            ICurvePool(_pool).remove_liquidity(_amountIn, minAmountsOut);
         }
 
         amounts = _getBalanceCoinPool(_pool, _minAmountsOut.length);

@@ -111,7 +111,7 @@ async function calcAmountOutMinAdd(curvePoolAddress: string, versionStrategy: st
             ];
         } else if (listAmount.length == 4 ) {
             poolCurveABI = [
-                {"name":"calc_token_amount","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"uint256[2]","name":"_amounts"},{"type":"bool","name":"_is_deposit"}],"stateMutability":"view","type":"function"}
+                {"name":"calc_token_amount","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"uint256[4]","name":"_amounts"},{"type":"bool","name":"_is_deposit"}],"stateMutability":"view","type":"function"}
             ];
         } else {
             throw new Error("List amount length invalid")

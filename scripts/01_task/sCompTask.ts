@@ -916,13 +916,13 @@ async function oneClickIn(oneClickV3Address: string, minMintAmount: any,
 }
 
 async function oneClickOut(oneClickV3Address: string,
-                           tokenOut: string, amountIn: any, amountsOutMinCurve: any, removeLiquidityOneCoin: boolean,
+                           tokenOut: string, amountIn: any, amountsOutMinCurve: any, typeRemoveLiquidity: number,
                            listPathData: string[], listTypeSwap: any[], listAmountOutMin: any[], listRouterAddress: any[],
                            vault: string): Promise<void> {
     let oneClick = await getOneClickV3(oneClickV3Address)
     let oneClickParams : any = {
         amountsOutMinCurve : amountsOutMinCurve,
-        removeLiquidityOneCoin : removeLiquidityOneCoin,
+        typeRemoveLiquidity : typeRemoveLiquidity,
         listPathData : listPathData,
         listTypeSwap : listTypeSwap,
         listAmountOutMin : listAmountOutMin,
@@ -1747,12 +1747,12 @@ export const oneClickTask = {
             listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
     },
     oneClickOut: async function (oneClickV3Address: string,
-                                 tokenOut: string, amountIn: any, amountsOutMinCurve: any, removeLiquidityOneCoin: boolean,
+                                 tokenOut: string, amountIn: any, amountsOutMinCurve: any, typeRemoveLiquidity: number,
                                  listPathData: string[], listTypeSwap: any[], listAmountOutMin: any[], listRouterAddress: any[],
                                  vault: string
     ): Promise<void>{
         return await oneClickOut(oneClickV3Address, tokenOut, amountIn,
-            amountsOutMinCurve, removeLiquidityOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
+            amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
     },
 };
 

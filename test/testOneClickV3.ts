@@ -158,7 +158,8 @@ async function getBestQuoteOneClickIn(_tokenIn: any, vaultAddress: any, versionS
  * @param listSlippage
  * @param listTypeGetQuote
  */
-async function getBestQuoteOneClickOut(_tokenOut: any, vaultAddress: string, versionStrategy: any, amountShare: any, listAverageRemoveLiquidity: any[], listSlippage: any[], listTypeGetQuote: any[] = []): Promise<any> {
+async function getBestQuoteOneClickOut(_tokenOut: any, vaultAddress: string, versionStrategy: any, amountShare: any,
+                                       listAverageRemoveLiquidity: any[], listSlippage: any[], listTypeGetQuote: any[] = []): Promise<any> {
 
     let pricePerFullShare = await vaultTask.getPricePerFullShare(vaultAddress);
     let amountLp = amountShare.mul(pricePerFullShare).div(ethers.utils.parseEther("1"));
@@ -635,7 +636,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [100,0,0];
             let listSlippageRemoveLiquidity = [80,0,0];
-            let isOneCoin = true;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare, listAverageRemoveLiquidity, listSlippageRemoveLiquidity);
@@ -644,7 +645,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -662,7 +663,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [0,100];
             let listSlippageRemoveLiquidity = [0,90];
-            let isOneCoin = true;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare, listAverageRemoveLiquidity, listSlippageRemoveLiquidity);
@@ -671,7 +672,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -689,7 +690,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [100,0];
             let listSlippageRemoveLiquidity = [80,0];
-            let isOneCoin = true;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare,
@@ -699,7 +700,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -717,7 +718,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [50,50];
             let listSlippageRemoveLiquidity = [90,90];
-            let isOneCoin = false;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare,
@@ -727,7 +728,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                [0,0], isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                [0,0], typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -745,7 +746,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [100,0];
             let listSlippageRemoveLiquidity = [80,0];
-            let isOneCoin = true;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare,
@@ -755,7 +756,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -773,7 +774,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [0,100];
             let listSlippageRemoveLiquidity = [0,80];
-            let isOneCoin = true;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare, listAverageRemoveLiquidity, listSlippageRemoveLiquidity);
@@ -782,7 +783,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -800,7 +801,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [100,0];
             let listSlippageRemoveLiquidity = [80,0];
-            let isOneCoin = true;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare,
@@ -810,7 +811,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -828,7 +829,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [50,50];
             let listSlippageRemoveLiquidity = [90,90];
-            let isOneCoin = false;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare,
@@ -838,7 +839,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -856,7 +857,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [100,0];
             let listSlippageRemoveLiquidity = [80,0];
-            let isOneCoin = true;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare,
@@ -866,7 +867,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);
@@ -884,7 +885,7 @@ describe.only("Testing one click", async function () {
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
             let listAverageRemoveLiquidity = [100,0];
             let listSlippageRemoveLiquidity = [80,0];
-            let isOneCoin = true;
+            let typeRemoveLiquidity = 0;
 
             let {amountsOutMinCurve, listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress} =
                 await getBestQuoteOneClickOut(tokenOut, vault.address, config.versionStrategy, amountShare,
@@ -894,7 +895,7 @@ describe.only("Testing one click", async function () {
             let balanceTokenOutBefore = await erc20Task.balanceOf(tokenOut, deployer.address);
             await erc20Task.approve(vault.address, deployer, oneClick.address, amountShare);
             await oneClickTask.oneClickOut(oneClick.address, tokenOut, amountShare,
-                amountsOutMinCurve, isOneCoin, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
+                amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault.address
             );
             let balanceShareAfter = await erc20Task.balanceOf(vault.address, deployer.address);
             let balanceTokenOutAfter = await erc20Task.balanceOf(tokenOut, deployer.address);

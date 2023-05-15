@@ -40,6 +40,7 @@ SCompStrategyBase
 
     function setVariancePrice(uint _variant) external {
         _onlyGovernance();
+        require(_variant <= PRECISION, "variant must be less than PRECISION");
         variantPrice = _variant;
     }
 

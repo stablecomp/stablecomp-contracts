@@ -76,12 +76,13 @@ interface ICurvePool {
     ) external;
 
     function remove_liquidity_imbalance(
-        uint256 _amount,
-        uint256[3] calldata min_amounts
-    ) external returns(uint[] memory);
+        uint256[3] calldata min_amounts,
+        uint256 _amount
+    ) external;
 
     function remove_liquidity_imbalance(
-        uint256 _amount,
-        uint256[4] calldata min_amounts
-    ) external returns(uint[] memory);
+        uint256[4] calldata min_amounts,
+        uint256 _amount
+    ) external;
+
 }

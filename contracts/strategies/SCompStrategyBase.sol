@@ -215,16 +215,19 @@ UniswapSwapper
 
     function setSlippageSwapCrv(uint _slippage) external {
         _onlyGovernance();
+        require(_slippage <= PRECISION, "slippage must be less than PRECISION");
         slippageSwapCrv = _slippage;
     }
 
     function setSlippageSwapCvx(uint _slippage) external {
         _onlyGovernance();
+        require(_slippage <= PRECISION, "slippage must be less than PRECISION");
         slippageSwapCvx = _slippage;
     }
 
     function setSlippageLiquidity(uint _slippage) external {
         _onlyGovernance();
+        require(_slippage <= PRECISION, "slippage must be less than PRECISION");
         slippageLiquidity = _slippage;
     }
 
