@@ -7,13 +7,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interface/IFeeDistributor.sol";
+import "../utility/curve/CurveSwapper.sol";
+import "../utility/uniswap/UniswapSwapper.sol";
 
-/// @title BaseSurplusConverter
+/// @title SurplusConverter
 /// @author Angle Core Team
-/// @notice A base contract for the swap tokens from the surplus of the protocol to a reward token
-/// (could be ANGLE tokens, or another type of token like sanTokens)
-/// @dev All contracts implementing such swap features in Angle should implement this base contract
-abstract contract BaseSurplusConverter is AccessControl, Pausable, IFeeDistributor {
+/// @notice A contract for the swap tokens from the surplus of the protocol to a reward token
+contract SurplusConverter is AccessControl, Pausable, IFeeDistributor, UniswapSwapper, CurveSwapper {
     using SafeERC20 for IERC20;
 
     event FeeDistributorUpdated(address indexed newFeeDistributor, address indexed oldFeeDistributor);
@@ -34,6 +34,15 @@ abstract contract BaseSurplusConverter is AccessControl, Pausable, IFeeDistribut
 
     /// @notice Reward Token obtained by this contract
     IERC20 public immutable rewardToken;
+
+    struct ParamsSwapBuyback {
+        address token;
+        uint256 amount;
+        bytes pathData;
+        uint typeSwap;
+        address routerAddress;
+        uint minAmountOut;
+    }
 
     /// @notice Constructor of the `BaseSurplusConverter`
     /// @param _rewardToken Reward token that this contract tries to buy or otain
@@ -65,8 +74,6 @@ abstract contract BaseSurplusConverter is AccessControl, Pausable, IFeeDistribut
         _setRoleAdmin(GOVERNOR_ROLE, GOVERNOR_ROLE);
         _setRoleAdmin(GUARDIAN_ROLE, GOVERNOR_ROLE);
         _setRoleAdmin(WHITELISTED_ROLE, GUARDIAN_ROLE);
-        // Contract is paused after deployment
-        _pause();
     }
 
     /// @notice Changes the reference to the `FeeDistributor` allowed to distribute rewards to veANGLE holders
@@ -110,25 +117,31 @@ abstract contract BaseSurplusConverter is AccessControl, Pausable, IFeeDistribut
         _unpause();
     }
 
-    /// @notice Buys back `rewardToken` using the accumulated `token` and distributes the results of the
-    /// swaps to the `feeDistributor` contract (which can be another `SurplusConverter`)
-    /// @param token Token to use for buybacks of `rewardToken`
-    /// @param amount Amount of tokens to use for the buyback
-    /// @param minAmount Specify the minimum amount to receive - slippage protection
-    /// @param transfer Whether the function should transfer the bought back `rewardToken` directly to the `FeeDistributor`
-    /// contract
-    /// @dev This function should revert if `amount` is inferior to the amount of `token` owned by this contract
-    /// @dev The reason for the variable `amount` instead of simply using the whole contract's balance for buybacks
-    /// is that it gives more flexibility to the addresses handling buyback to optimize for the swap prices
-    /// @dev This function should be whitelisted because arbitrageurs could take advantage of it to do sandwich attacks
-    /// by just calling this function. Calls to this function could be sandwiched too but it's going harder for miners to
-    /// setup sandwich attacks
+    /// @notice Buys back `rewardToken` from UniswapV3 using the accumulated `token` and distributes
+    /// the results of the swaps to the `FeeDistributor` or some other `SurplusConverter` contract
+    /// contract or to the associated `SurplusConverter`
+    /// @dev This function always chooses the same path
     function buyback(
-        address token,
-        uint256 amount,
-        uint256 minAmount,
+        ParamsSwapBuyback memory params,
         bool transfer
-    ) external virtual;
+    ) external whenNotPaused onlyRole(WHITELISTED_ROLE) {
+        require(params.amount > 0, "amount must be > 0");
+        require(params.typeSwap < 3, "type swap not exist");
+        if(params.typeSwap == 0) {
+            // uniswap v2
+            _swapExactTokensForTokens(params.routerAddress, params.token, params.amount, params.minAmountOut, params.pathData, address(this));
+        } else if (params.typeSwap == 1) {
+            // uniswap v3
+            _swapExactInputMultihop(params.routerAddress, params.token, params.amount, params.minAmountOut, params.pathData, address(this));
+        } else {
+            // curve
+            _exchange_multiple(params.routerAddress, params.token, params.amount, params.minAmountOut, params.pathData, address(this));
+        }
+        if (transfer) {
+            // This call will automatic ally transfer all the `rewardToken` balance of this contract to the `FeeDistributor`
+            feeDistributor.burn(address(rewardToken));
+        }
+    }
 
     /// @notice Pulls tokens from another `SurplusConverter` contract
     /// @param token Address of the token to pull

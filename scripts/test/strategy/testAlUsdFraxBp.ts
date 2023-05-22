@@ -7,9 +7,9 @@ import {feeDistributionTask, surplusConverterTask} from "../../01_task/feeTask";
 import {testStrategyTask} from "../01_task/testStrategyTask";
 import {boosterTask} from "../../01_task/convex/convexTask";
 
-const { run, ethers } = hardhat;
+const { ethers } = hardhat;
 
-let nameConfig = "alusd3crv"
+let nameConfig = "alusdfraxbp"
 let config: ConfigStrategy;
 
 // json constant
@@ -35,7 +35,6 @@ let lastBalanceWantOfStrategy : any = 0;
 let storelLpAccount: any = [];
 
 async function main(): Promise<void> {
-    await run('compile');
     [deployer] = await ethers.getSigners();
     config = await deployScompTask.getConfig(nameConfig)
 }
@@ -135,9 +134,6 @@ main()
         await utilsTask.fundAccountETH(account1.address, ethers.utils.parseEther("0.5"))
         await utilsTask.fundAccountETH(account2.address, ethers.utils.parseEther("0.5"))
         await utilsTask.fundAccountETH(account3.address, ethers.utils.parseEther("0.5"))
-        console.log(" ----- ADD LIQUIDITY CURVE")
-/*        await testStrategyTask.addLiquidity([account1, account2, account3], config);
-*/
         console.log(" ----- STORE BALANCE LP")
         await checkLP();
 

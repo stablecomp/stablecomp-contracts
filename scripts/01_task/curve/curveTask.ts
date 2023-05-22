@@ -252,7 +252,7 @@ async function getBestQuoteSwapOneClick(inputToken: string, outputToken: string,
 
     await curve.init(
         'JsonRpc',
-        { url: process.env.ETH_MAINNET_URL, privateKey: process.env.PRIVATE_KEY },
+        { url: process.env.ETH_MAINNET_URL },
         { gasPrice: 0, maxFeePerGas: 0, maxPriorityFeePerGas: 0, chainId: 1 }
     );
     await curve.factory.fetchPools();
@@ -273,9 +273,9 @@ async function getBestQuoteSwapOneClick(inputToken: string, outputToken: string,
         }
 
         let swapParam : any[] = []
-        swapParam[0] = route[i].i;
-        swapParam[1] = route[i].j;
-        swapParam[2] = route[i].swapType;
+        swapParam[0] = route[i].i; // indice coin ingresso
+        swapParam[1] = route[i].j; // indice coin uscita
+        swapParam[2] = route[i].swapType; // azione da eseguire
         swapParamList.push(swapParam);
 
         poolAddressList.push(route[i].swapAddress);

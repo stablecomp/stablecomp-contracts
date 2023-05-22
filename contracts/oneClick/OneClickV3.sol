@@ -270,18 +270,18 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
 
     function _makeSwapV2(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint[] memory){
         if ( _tokenIn != address(0) ) {
-            return _swapExactTokensForTokens(_router, _tokenIn, _amountIn, _amountOutMin, _pathData);
+            return _swapExactTokensForTokens(_router, _tokenIn, _amountIn, _amountOutMin, _pathData, address(this));
         } else {
-            // todo swap exact eth
+            return _swapExactEthForTokens(_router, _amountIn, _amountOutMin, _pathData, address(this));
         }
     }
 
     function _makeSwapV3(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint) {
-        return _swapExactInputMultihop(_router, _tokenIn, _amountIn, _amountOutMin, _pathData);
+        return _swapExactInputMultihop(_router, _tokenIn, _amountIn, _amountOutMin, _pathData, address(this));
     }
 
     function _makeSwapCurve(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint) {
-        return _exchange_multiple(_router, _tokenIn, _amountIn, _amountOutMin, _pathData);
+        return _exchange_multiple(_router, _tokenIn, _amountIn, _amountOutMin, _pathData, address(this));
     }
 
     // CURVE

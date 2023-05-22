@@ -21,6 +21,7 @@
     "test-agEurEuroC": "npx hardhat run scripts/test/strategy/testAgEurEuroC.ts --network hardhat",
     "test-agEurEurTEurS": "npx hardhat run scripts/test/strategy/testAgEurEurTEurS.ts --network hardhat",
     "test-eusdFraxbp": "npx hardhat run scripts/test/strategy/testEusdFraxBp.ts --network hardhat",
+    "test-alUsdFraxBp": "npx hardhat run scripts/test/strategy/testAlUsdFraxBp.ts --network hardhat",
 
     "test-euroc3crv": "npx hardhat run scripts/test/strategy/testEuroc3Crv.ts --network hardhat",
     "test-eurt3crv": "npx hardhat run scripts/test/strategy/testEurt3Crv.ts --network hardhat",

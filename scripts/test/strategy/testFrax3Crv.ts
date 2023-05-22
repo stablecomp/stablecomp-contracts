@@ -40,19 +40,6 @@ async function main(): Promise<void> {
     config = await deployScompTask.getConfig(nameConfig)
 }
 
-async function buyBackConverter(): Promise<void> {
-
-    let balanceCrvOfSurplus = await utilsTask.getBalanceERC20(surplusConverterV2Contract.address, tokenInfo.crv.address);
-    if(balanceCrvOfSurplus > 0 ) {
-        await surplusConverterTask.buyback(surplusConverterV2Contract.address, tokenInfo.crv.address, balanceCrvOfSurplus, 0, true);
-    }
-
-    let balanceCvxOfSurplus = await utilsTask.getBalanceERC20(surplusConverterV2Contract.address, tokenInfo.cvx.address);
-    if(balanceCvxOfSurplus > 0 ) {
-        await surplusConverterTask.buyback(surplusConverterV2Contract.address, tokenInfo.cvx.address, balanceCvxOfSurplus, 0, true);
-    }
-}
-
 async function getFeeToDistribute(): Promise<void> {
     let WEEK = 7 * 86400;
     let week_cursor = firstTokenTime.sub(1).div(WEEK).mul(WEEK)
@@ -113,7 +100,7 @@ async function executeActionOneWeek(index: any): Promise<void> {
         await strategyTask.harvest(strategyContract.address, swapHarvest);
 
         console.log(" -------- BUYBACK CONVERTER")
-        await buyBackConverter();
+        await strategyTask.buyBackConverter(surplusConverterV2Contract.address);
 
         console.log(" -------- CHECK BALANCE")
         await checkBalance();
@@ -131,11 +118,11 @@ main()
     .then(async () => {
         // INITIAL ACTION
         console.log(" ----- SETUP CONTRACT")
-        const {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, oracleRouter, vault, strategy} =
+        const {sCompToken, ve, feeDistribution, surplusConverter, controller, timelockController, oracleRouter, vault, strategy} =
             await testStrategyTask.setupContractBase(config);
 
         feeDistributionContract = feeDistribution;
-        surplusConverterV2Contract = surplusConverterV2;
+        surplusConverterV2Contract = surplusConverter;
         strategyContract = strategy;
 
         console.log(" ----- SETUP ACCOUNT")

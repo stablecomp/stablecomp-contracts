@@ -18,7 +18,7 @@ main()
             let poolInfo = await boosterTask.getPoolInfo(i);
             let symbol = await erc20Task.getSymbol(poolInfo.lptoken)
             console.log("PID: ", i, " -- Symbol: ", symbol);
-            if (poolInfo.lptoken.toUpperCase() == ("0xb9446c4ef5ebe66268da6700d26f96273de3d571").toUpperCase()) {
+            if (poolInfo.lptoken.toUpperCase() == ("0xB30dA2376F63De30b42dC055C93fa474F31330A5").toUpperCase()) {
                 console.log(" Symbol: ", symbol);
                 console.log("Lp token: ", poolInfo.lptoken);
                 console.log("Token: ", poolInfo.token);

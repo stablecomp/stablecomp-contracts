@@ -28,7 +28,8 @@
     "ibEurUsdc": "0x1570af3df649fc74872c5b8f280a162a3bdd4eb6",
     "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571",
     "wethCrv": "0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511",
-    "wethFrax": "0x1631d0e588d475cee4be0f51b7410daaaabd7034"
+    "wethFrax": "0x1631d0e588d475cee4be0f51b7410daaaabd7034",
+    "alUsdFraxbp": "0xB30dA2376F63De30b42dC055C93fa474F31330A5"
 
   },
   "lp": {
@@ -57,7 +58,8 @@
     "ibEurUsdc": "0x8682fbf0cbf312c891532ba9f1a91e44f81ad7df",
     "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571",
     "wethCrv": "",
-    "wethFrax": ""
+    "wethFrax": "",
+    "alUsdFraxbp": "0xB30dA2376F63De30b42dC055C93fa474F31330A5"
 
   },
   "baseRewardPool": {
@@ -86,7 +88,8 @@
     "ibEurUsdc": "0xAab7202D93B5633eB7FB3b80873C817B240F6F44",
     "agEurEurtEurs": "0x4a9b7eDD67f58654a2c33B587f98c5709AC7d482",
     "wethCrv": "",
-    "wethFrax": ""
+    "wethFrax": "",
+    "alUsdFraxbp": "0x26598e3E511ADFadefD70ab2C3475Ff741741104"
   },
   "pid": {
     "cDaicUsdc": 0,
@@ -115,7 +118,8 @@
     "ibEurUsdc": 86,
     "agEurEurtEurs": 60,
     "wethCrv": 0,
-    "wethFrax": 0
+    "wethFrax": 0,
+    "alUsdFraxbp": 106
 
   },
   "nCoins": {
@@ -144,7 +148,8 @@
     "ibEurUsdc": 2,
     "agEurEurtEurs": 3,
     "wethCrv": 2,
-    "wethFrax": 2
+    "wethFrax": 2,
+    "alUsdFraxbp": 2
 
   },
   "coins": {
@@ -173,7 +178,8 @@
     "ibEurUsdc": ["0x96E61422b6A9bA0e068B6c5ADd4fFaBC6a4aae27", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
     "agEurEurtEurs": ["0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8", "0xC581b735A1688071A1746c968e0798D642EDE491", "0xdB25f211AB05b1c97D595516F45794528a807ad8"],
     "wethCrv": ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "0xD533a949740bb3306d119CC777fa900bA034cd52"],
-    "wethFrax": ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "0x853d955aCEf822Db058eb8505911ED77F175b99e"]
+    "wethFrax": ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "0x853d955aCEf822Db058eb8505911ED77F175b99e"],
+    "alUsdFraxbp": ["0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9", "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC"]
 
   }
 }

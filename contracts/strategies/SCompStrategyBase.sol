@@ -54,10 +54,14 @@ UniswapSwapper
     address public tokenCompoundAddress;
     IERC20 public tokenCompound;
 
+    mapping(address => bool) public whitelistRouter;
+
     uint256 public slippageSwapCrv = 100; // 5000 -> 50% ; 500 -> 5% ; 50 -> 0.5% ; 5 -> 0.05%
     uint256 public slippageSwapCvx = 100; // 5000 -> 50% ; 500 -> 5% ; 50 -> 0.5% ; 5 -> 0.05%
 
     uint256 public slippageLiquidity = 100; // 5000 -> 50% ; 500 -> 5% ; 50 -> 0.5% ; 5 -> 0.05%
+
+    address oracleRouter;
 
     struct CurvePoolConfig {
         address swap;
@@ -154,6 +158,35 @@ UniswapSwapper
 
     function version() virtual external pure returns (string memory);
 
+    function _setOracleRouter(address _router) internal {
+        oracleRouter = _router;
+    }
+
+    /**
+     * @dev add router to whitelist
+     * Requirements:
+     *
+     * - router must be not already whitelist.
+     */
+    function _addWhitelistRouter(address _address) public virtual {
+        require(!isWhitelistedRouter(_address), "already whitelisted");
+
+        whitelistRouter[_address] = true;
+    }
+
+    /**
+     * @dev remove router to whitelist
+     * Requirements:
+     *
+     * - router must be whitelist.
+     */
+    function _removeWhitelistRouter(address _address) public virtual {
+        require(isWhitelistedRouter(_address), "not whitelisted");
+
+        whitelistRouter[_address] = false;
+    }
+
+
     function _getAmountOutMinAddLiquidity(uint _amount) virtual public view returns(uint);
 
     function getName() external view override returns (string memory) {
@@ -188,29 +221,26 @@ UniswapSwapper
 
     }
 
-    function setUniswapV3Router(address _router) external {
-        _onlyGovernance();
-        _setUniswapV3Router(_router);
-    }
-
-    function setUniswapV2Router(address _router) external {
-        _onlyGovernance();
-        _setUniswapV2Router(_router);
-    }
-
-    function setSushiswapRouter(address _router) external {
-        _onlyGovernance();
-        _setSushiswapRouter(_router);
-    }
-
-    function setCurveRouter(address _router) external {
-        _onlyGovernance();
-        _setCurveRouter(_router);
-    }
-
     function setOracleRouter(address _router) external {
         _onlyGovernance();
         _setOracleRouter(_router);
+    }
+
+    function addWhitelistRouter(address _address) external {
+        _onlyGovernance();
+        _addWhitelistRouter(_address);
+    }
+
+    function removeWhitelistRouter(address _address) external {
+        _onlyGovernance();
+        _removeWhitelistRouter(_address);
+    }
+
+    /**
+     * @dev check if router is whitelisted
+     */
+    function isWhitelistedRouter(address _address) public view returns(bool) {
+        return whitelistRouter[_address];
     }
 
     function setSlippageSwapCrv(uint _slippage) external {
@@ -411,14 +441,15 @@ UniswapSwapper
         );
     }
 
-    function _makeSwap(address _tokenIn, address _tokenOut, uint _amountIn, uint swapType, address router, bytes memory pathData) internal {
+    function _makeSwap(address _tokenIn, address _tokenOut, uint _amountIn, uint _swapType, address _router, bytes memory _pathData) internal {
+        require(isWhitelistedRouter(_router), "_router is not whitelisted");
         uint amountOutMin = _getAmountOutMinSwap(_tokenIn, _tokenOut, _amountIn);
-        if(swapType == 0) {
-            _swapExactTokensForTokens(router, _tokenIn, _amountIn, amountOutMin, pathData);
-        } else if(swapType == 1) {
-            _swapExactInputMultihop(router, _tokenIn, _amountIn, amountOutMin, pathData);
+        if(_swapType == 0) {
+            _swapExactTokensForTokens(_router, _tokenIn, _amountIn, amountOutMin, _pathData, address(this));
+        } else if(_swapType == 1) {
+            _swapExactInputMultihop(_router, _tokenIn, _amountIn, amountOutMin, _pathData, address(this));
         } else {
-            _exchange_multiple(router, _tokenIn, _amountIn, amountOutMin, pathData);
+            _exchange_multiple(_router, _tokenIn, _amountIn, amountOutMin, _pathData, address(this));
         }
     }
 

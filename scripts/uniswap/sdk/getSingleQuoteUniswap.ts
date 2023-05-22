@@ -16,7 +16,7 @@ async function main(): Promise<void> {
 
 async function getQuote(nameQuote: string, tokenInAddress: any, tokenOutAddress: any, amountIn: any) {
         console.log("Quote: " + nameQuote);
-        let {coinPath, feePath, versionProtocol} = await uniswapSdkTask.getBestQuoteSwap(tokenInAddress, tokenOutAddress, amountIn);
+        let {coinPath, feePath, versionProtocol} = await uniswapSdkTask.getBestQuoteSwapOneClick(tokenInAddress, tokenOutAddress, amountIn);
         console.log("Version protocol: ", versionProtocol);
         for (let i = 0 ; i < coinPath.length; i++ ) {
                 let tokenSymbol = await erc20Task.getSymbol(coinPath[i]);

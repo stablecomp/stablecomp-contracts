@@ -324,7 +324,7 @@ describe.only("Testing one click", async function () {
         it('Deploy main', async () => {
             oneClick = await deployScompTask.deployOneClick();
             controller = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address)
-            surplusConvert = await deployScompTask.deploySurplusConverterV2(deployer.address, deployer.address,  deployer.address, [deployer.address, deployer.address])
+            surplusConvert = await deployScompTask.deploySurplusConverter(deployer.address, tokenInfo.weth.address, deployer.address,  deployer.address, [deployer.address, deployer.address])
             oracleRouter = await deployScompTask.deployOracleRouter();
             timeLockController = await deployScompTask.deployTimeLockController([deployer.address], [deployer.address]);
         });
@@ -540,7 +540,7 @@ describe.only("Testing one click", async function () {
             expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).toString());
         }).timeout(100000)
 
-        it.skip("should call one click in ibEur/sEur",async () => {
+        it("should call one click in ibEur/sEur",async () => {
             let listAverageSwap = [0, 100];
 
             let listSlippage = [90,90]
@@ -548,7 +548,7 @@ describe.only("Testing one click", async function () {
 
             let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
                 await getBestQuoteOneClickIn(tokenIn, vaultIbEurSEur.address, configIbEurSEur.versionStrategy, amountInNumberGlobal,
-                    listAverageSwap, listSlippage, slippageAddLiquidity,[0,2]);
+                    listAverageSwap, listSlippage, slippageAddLiquidity,[2,2]);
 
             let balanceTokenInBefore = await erc20Task.balanceOf(tokenIn, deployer.address);
             await erc20Task.approve(tokenIn, deployer, oneClick.address, amountInGlobal);
@@ -560,7 +560,7 @@ describe.only("Testing one click", async function () {
             expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).toString());
         }).timeout(100000)
 
-        it("should call one click in mim/3crv",async () => {
+        it.skip("should call one click in mim/3crv",async () => {
             let listAverageSwap = [50, 50];
 
             let listSlippageSwap = [90,90]

@@ -4,6 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 const { run, ethers } = hardhat;
 
 import { deployScompTask } from "../01_task/sCompTask";
+let tokenInfo = require('../../info/address_mainnet/tokenInfo.json')
 
 let deployer : SignerWithAddress;
 let account2 : SignerWithAddress;
@@ -13,7 +14,7 @@ let sCompTokenContract : Contract;
 let veScompContract : Contract;
 let masterchefScompContract : Contract;
 let feeDistributionContract : Contract;
-let surplusConverterV2Contract : Contract;
+let surplusConverterContract : Contract;
 let sCompControllerContract : Contract;
 let sCompTimelockControllerContract : Contract;
 let oracleRouterContract : Contract;
@@ -37,7 +38,7 @@ main()
         veScompContract = await deployScompTask.deployVe(sCompTokenContract.address);
         masterchefScompContract = await deployScompTask.deployMasterchef(sCompTokenContract.address, veScompContract.address);
         feeDistributionContract = await deployScompTask.deployFeeDistribution(sCompTokenContract.address, veScompContract.address, deployer.address, deployer.address);
-        surplusConverterV2Contract = await deployScompTask.deploySurplusConverterV2(feeDistributionContract.address, deployer.address, deployer.address, [deployer.address, deployer.address])
+        surplusConverterContract = await deployScompTask.deploySurplusConverter(feeDistributionContract.address, tokenInfo.weth.address, deployer.address, deployer.address, [deployer.address, deployer.address])
         sCompControllerContract = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address);
         sCompTimelockControllerContract = await deployScompTask.deployTimeLockController([deployer.address], [deployer.address]);
         oracleRouterContract = await deployScompTask.deployOracleRouter();

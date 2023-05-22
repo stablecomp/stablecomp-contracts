@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.7;
 
-import "./BaseSurplusConverter.sol";
+import "./SurplusConverter.sol";
 import "../utility/uniswap/interface/IUniswapV3Router.sol";
 import "../utility/uniswap/interface/IUniswapRouterV2.sol";
 
@@ -12,7 +12,7 @@ import "../utility/uniswap/interface/IUniswapRouterV2.sol";
 /// (could be ANGLE tokens, or another type of token)
 /// @dev This contract for each swap compares swaps using UniswapV2 with swaps using Sushiswap and does the swap with the
 /// exchange with the best price
-contract SurplusConverterUniV2Sushi is BaseSurplusConverter {
+contract SurplusConverterUniV2Sushi is SurplusConverter {
     using SafeERC20 for IERC20;
 
     event PathAdded(address indexed token, address[] path, uint8 typePath);
@@ -46,7 +46,7 @@ contract SurplusConverterUniV2Sushi is BaseSurplusConverter {
         address whitelisted,
         address governor,
         address[] memory guardians
-    ) BaseSurplusConverter(_rewardToken, _feeDistributor, whitelisted, governor, guardians) {
+    ) SurplusConverter(_rewardToken, _feeDistributor, whitelisted, governor, guardians) {
         require(_uniswapV2Router != address(0) && _sushiswapRouter != address(0), "0");
         sushiswapRouter = IUniswapV2Router(_sushiswapRouter);
         uniswapV2Router = IUniswapV2Router(_uniswapV2Router);
@@ -131,7 +131,7 @@ contract SurplusConverterUniV2Sushi is BaseSurplusConverter {
         uint256 amount,
         uint256 minAmount,
         bool transfer
-    ) external override whenNotPaused onlyRole(WHITELISTED_ROLE) {
+    ) external whenNotPaused onlyRole(WHITELISTED_ROLE) {
         // Storing the values in memory to avoid multiple storage reads
         address[] memory sushiswapPath = sushiswapPaths[token];
         address[] memory uniswapPath = uniswapPaths[token];

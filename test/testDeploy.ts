@@ -6,6 +6,7 @@ import {Contract} from "@ethersproject/contracts";
 import {ConfigStrategy, deployScompTask} from "../scripts/01_task/sCompTask";
 
 const curveInfo = require('../info/address_mainnet/curveAddress.json');
+let tokenInfo = require('../info/address_mainnet/tokenInfo.json')
 
 let deployer: SignerWithAddress;
 let admin: SignerWithAddress;
@@ -57,7 +58,7 @@ describe("Testing deploy", async function () {
             let balanceAfterController = await deployer.getBalance();
             let diff = balanceBeforeController.sub(balanceAfterController);
             console.log("Cost deploy: " + diff)
-            surplusConvert = await deployScompTask.deploySurplusConverterV2(deployer.address, deployer.address,  deployer.address, [deployer.address, deployer.address])
+            surplusConvert = await deployScompTask.deploySurplusConverter(deployer.address, tokenInfo.weth.address, deployer.address,  deployer.address, [deployer.address, deployer.address])
             oracleRouter = await deployScompTask.deployOracleRouter();
             timeLockController = await deployScompTask.deployTimeLockController([deployer.address], [deployer.address]);
         });

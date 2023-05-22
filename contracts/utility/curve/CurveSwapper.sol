@@ -36,7 +36,8 @@ contract CurveSwapper is BaseSwapper {
         address _startToken,
         uint256 _amountIn,
         uint256 _amountsOutMin,
-        bytes memory _pathData
+        bytes memory _pathData,
+        address _recipient
     ) internal returns(uint){
 
         _safeApproveHelper(_startToken, _router, _amountIn);
@@ -44,7 +45,7 @@ contract CurveSwapper is BaseSwapper {
         // encode path data curve
         (address[9] memory pathAddress, uint[3][4] memory swapParams, address[4] memory poolAddress) = _encodePathDataCurve(_pathData);
 
-        return ISwapRouterCurve(_router).exchange_multiple(pathAddress, swapParams, _amountIn, _amountsOutMin, poolAddress, address(this));
+        return ISwapRouterCurve(_router).exchange_multiple(pathAddress, swapParams, _amountIn, _amountsOutMin, poolAddress, _recipient);
     }
 
     function _add_liquidity_single_coin(

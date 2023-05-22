@@ -67,7 +67,7 @@ async function getBestQuoteSwapEncoded(tokenInAddress: any, tokenOutAddress: any
     return {coinPath, feePath, versionProtocol, rawQuote, pathEncoded}
 }
 
-async function getBestQuoteSwapOneClick(tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<BestQuoteStruct> {
+async function getBestQuoteSwapOneClick(tokenInAddress: any, tokenOutAddress: any, amountIn: number): Promise<BestQuoteStruct> {
     let bestQuote : BestQuoteStruct = <BestQuoteStruct>{};
 
     let erc20In = await getErc20(tokenInAddress);
@@ -257,7 +257,7 @@ async function getBestPathUniswap(tokenIn: Token, tokenOut: Token, amountIn: any
 
 }
 
-async function getBestPathUniswapOneClick(tokenIn: Token, tokenOut: Token, amountIn: any): Promise<any> {
+async function getBestPathUniswapOneClick(tokenIn: Token, tokenOut: Token, amountIn: number): Promise<any> {
     let route = await getRoutingSwap(tokenIn, tokenOut, amountIn);
 
     let listPoolAddress = route?.route[0].poolAddresses;
@@ -406,7 +406,7 @@ export const uniswapSdkTask = {
     getBestQuoteSwap: async function (tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<any>{
         return await getBestQuoteSwap(tokenInAddress, tokenOutAddress, amountIn);
     },
-    getBestQuoteSwapOneClick: async function (tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<BestQuoteStruct>{
+    getBestQuoteSwapOneClick: async function (tokenInAddress: any, tokenOutAddress: any, amountIn: number): Promise<BestQuoteStruct>{
         return await getBestQuoteSwapOneClick(tokenInAddress, tokenOutAddress, amountIn);
     },
     writeBestQuoteUniswap: async function (nameQuote: string, coinPath: string[], feePath: string[], versionProtocol: string): Promise<any>{

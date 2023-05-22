@@ -23,39 +23,14 @@ contract UniswapSwapper is BaseSwapper {
     using SafeMath for uint256;
     using BytesLib for bytes;
 
-    address public uniswapV2; // Uniswap router
-    address public sushiswap; // Sushiswap router
-    address public uniswapV3; // Uniswapv3 router
-    address public curveRouter; // curve router
-    address public oracleRouter; // Aggregator chainlink oracle
-
-    function _setUniswapV2Router(address _router) internal {
-        uniswapV2 = _router;
-    }
-
-    function _setSushiswapRouter(address _router) internal {
-        sushiswap = _router;
-    }
-
-    function _setUniswapV3Router(address _router) internal {
-        uniswapV3 = _router;
-    }
-
-    function _setOracleRouter(address _router) internal {
-        oracleRouter = _router;
-    }
-
-    function _setCurveRouter(address _router) internal {
-        curveRouter = _router;
-    }
-
     // V2
     function _swapExactTokensForTokens(
         address _router,
         address _startToken,
         uint256 _amountIn,
         uint256 _amountOutMin,
-        bytes memory _pathEncoded
+        bytes memory _pathEncoded,
+        address _recipient
     ) internal returns(uint[] memory) {
         require(_pathEncoded.length > 0, "path not valid");
 
@@ -66,8 +41,27 @@ contract UniswapSwapper is BaseSwapper {
             _amountIn,
             _amountOutMin,
             _pathAddress,
-            address(this),
-            block.timestamp
+            _recipient,
+            block.timestamp + 1000
+        );
+    }
+
+    function _swapExactEthForTokens(
+        address _router,
+        uint256 _amountIn,
+        uint _minAmountOut,
+        bytes memory _pathEncoded,
+        address _recipient
+    ) internal returns(uint[] memory) {
+        require(_pathEncoded.length > 0, "path not valid");
+
+        address[] memory _pathAddress = _encodePathDataV2(_pathEncoded);
+
+        return IUniswapV2Router(_router).swapExactETHForTokens{value: _amountIn}(
+            _minAmountOut,
+            _pathAddress,
+            _recipient,
+            block.timestamp + 1000
         );
     }
 
@@ -77,7 +71,8 @@ contract UniswapSwapper is BaseSwapper {
         address _startToken,
         uint256 _amountIn,
         uint256 _amountsOutMin,
-        bytes memory _pathData
+        bytes memory _pathData,
+        address _recipient
     ) internal returns(uint){
         ISwapRouter swapRouter = ISwapRouter(_router);
 
@@ -86,8 +81,8 @@ contract UniswapSwapper is BaseSwapper {
         ISwapRouter.ExactInputParams memory params =
         ISwapRouter.ExactInputParams({
             path: _pathData,
-            recipient: address(this),
-            deadline: block.timestamp,
+            recipient: _recipient,
+            deadline: block.timestamp + 1000,
             amountIn: _amountIn,
             amountOutMinimum: _amountsOutMin
         });

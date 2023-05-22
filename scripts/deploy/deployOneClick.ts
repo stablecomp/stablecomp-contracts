@@ -1,35 +1,23 @@
-require("dotenv").config();
-import { ethers } from "hardhat";
+import hardhat from 'hardhat';
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+const { run, ethers } = hardhat;
+let deployer : SignerWithAddress;
 
-/* ------------------------------- Uni address ------------------------------ */
-const UniswapV2Router = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-const UniswapV2Factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
+import { deployScompTask } from "../01_task/sCompTask";
 
-/* ------------------------------ Token address ----------------------------- */
-const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-
-async function main() {
-  /* ----------------------------- Deploy address ----------------------------- */
-  const accounts = await ethers.getSigners();
-  const account = accounts[0];
-  console.log("Deploying contracts by account:", account.address);
-  console.log("Account balance:", (await account.getBalance()).toString());
-
-  /* --------------------------- Deploy the contract -------------------------- */
-
-  const OneClickFactory = await ethers.getContractFactory("OneClick");
-  const OneClick = await OneClickFactory.deploy(
-    UniswapV2Router,
-    UniswapV2Factory,
-    WETH,
-    20,
-    account.address
-  );
-  await OneClick.deployed();
-  console.log("ONECLICK contract deployed to:", OneClick.address);
+async function main(): Promise<void> {
+    await run('compile');
+    [deployer] = await ethers.getSigners();
+    console.log("Script run with deployer address: ", deployer.address)
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main()
+    .then(async () => {
+        await deployScompTask.deployOneClick();
+        process.exit(0)
+    })
+    .catch((error: Error) => {
+        console.error(error);
+        process.exit(1);
+    });
+

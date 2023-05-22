@@ -1,10 +1,12 @@
 import hardhat from 'hardhat';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+const { ethers } = hardhat;
 import {ConfigStrategy, deployScompTask, strategyTask, vaultTask} from "../../01_task/sCompTask";
 import {utilsTask} from "../../01_task/standard/utilsTask";
 import {taskPoolCurve} from "../../01_task/curve/curveTask";
 import {erc20Task} from "../../01_task/standard/erc20Task";
-const { ethers } = hardhat;
+
+let tokenInfo = require('../../../info/address_mainnet/tokenInfo.json')
 
 async function setupContractBase(config: ConfigStrategy): Promise<any> {
 
@@ -16,7 +18,7 @@ async function setupContractBase(config: ConfigStrategy): Promise<any> {
 
     let feeDistribution = await deployScompTask.deployFeeDistribution(sCompToken.address, ve.address, deployer.address, deployer.address);
 
-    let surplusConverterV2 = await deployScompTask.deploySurplusConverterV2(feeDistribution.address, deployer.address, deployer.address, [deployer.address, deployer.address])
+    let surplusConverter = await deployScompTask.deploySurplusConverter(feeDistribution.address, tokenInfo.weth.address, deployer.address, deployer.address, [deployer.address, deployer.address])
 
     let controller = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address);
 
@@ -27,14 +29,14 @@ async function setupContractBase(config: ConfigStrategy): Promise<any> {
     let vault = await deployScompTask.deployVault(controller.address, config.want, deployer.address, config.feeDeposit);
 
     let strategy = await deployScompTask.deployStrategy(
-        config.name, deployer.address, surplusConverterV2.address, controller.address,
+        config.name, deployer.address, surplusConverter.address, controller.address,
         config.want, config.tokenCompound, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
         config.curveSwap, config.nElementPool, config.versionStrategy
     );
 
     await strategyTask.setConfig(strategy.address, config, controller.address, oracleRouter.address, timelockController.address);
 
-    return {sCompToken, ve, feeDistribution, surplusConverterV2, controller, timelockController, oracleRouter, vault, strategy}
+    return {sCompToken, ve, feeDistribution, surplusConverter, controller, timelockController, oracleRouter, vault, strategy}
 }
 
 async function setupContractPartial(): Promise<any> {
@@ -47,7 +49,7 @@ async function setupContractPartial(): Promise<any> {
 
     let feeDistribution = await deployScompTask.deployFeeDistribution(sCompToken.address, ve.address, deployer.address, deployer.address);
 
-    let surplusConverterV2 = await deployScompTask.deploySurplusConverterV2(feeDistribution.address, deployer.address, deployer.address, [deployer.address, deployer.address])
+    let surplusConverterV2 = await deployScompTask.deploySurplusConverter(feeDistribution.address, tokenInfo.weth.address, deployer.address, deployer.address, [deployer.address, deployer.address])
 
     let controller = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address);
 
