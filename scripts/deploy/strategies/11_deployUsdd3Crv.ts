@@ -2,10 +2,10 @@ import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 let deployer : SignerWithAddress;
 
-const controllerJson = require('../../../info/deploy_address/scaling_node/controller/sCompControllerContract.json');
-const surplusConverterJson = require('../../../info/deploy_address/scaling_node/manageFee/surplusConverterV2.json');
-const oracleRouterJson = require('../../../info/deploy_address/scaling_node/oracle/oracleRouter.json');
-const timeLockControllerJson = require('../../../info/deploy_address/scaling_node/timelock/sCompTimeLockControllerContract.json');
+const controllerJson = require('../../../info/deploy_address/eth_mainnet/controller/sCompControllerContract.json');
+//const surplusConverterJson = require('../../../info/deploy_address/eth_mainnet/manageFee/surplusConverterV2.json');
+const oracleRouterJson = require('../../../info/deploy_address/eth_mainnet/oracle/oracleRouter.json');
+//const timeLockControllerJson = require('../../../info/deploy_address/eth_mainnet/timelock/sCompTimeLockControllerContract.json');
 import {ConfigStrategy, deployScompTask, strategyTask} from "../../01_task/sCompTask";
 import {ethers} from "hardhat";
 
@@ -25,14 +25,15 @@ async function main(): Promise<void> {
 main()
     .then(async () => {
         let controllerAddress = controllerJson.sCompController.address;
-        let timeLockControllerAddress = timeLockControllerJson.sCompTimelockController.address;
+        let timeLockControllerAddress = ethers.constants.AddressZero
         let oracleRouterAddress = oracleRouterJson.oracleRouter.address;
 
         let treasuryFee = deployer.address;
         sCompVault = await deployScompTask.deployVault(controllerJson.sCompController.address, config.want, treasuryFee, config.feeDeposit);
 
         let governance = deployer.address;
-        let strategist = surplusConverterJson.surplusConverterV2Contract.address;
+        //let strategist = surplusConverterJson.surplusConverterV2Contract.address;
+        let strategist = deployer.address
 
         sCompStrategy = await deployScompTask.deployStrategy(config.name, governance, strategist,
             controllerAddress,

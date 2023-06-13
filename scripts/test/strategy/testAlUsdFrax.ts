@@ -7,9 +7,9 @@ import {feeDistributionTask, surplusConverterTask} from "../../01_task/feeTask";
 import {testStrategyTask} from "../01_task/testStrategyTask";
 import {boosterTask} from "../../01_task/convex/convexTask";
 
-const { run, ethers } = hardhat;
+const { ethers } = hardhat;
 
-let nameConfig = "fraxusdc"
+let nameConfig = "alusdfrax"
 let config: ConfigStrategy;
 
 // json constant
@@ -35,7 +35,6 @@ let lastBalanceWantOfStrategy : any = 0;
 let storelLpAccount: any = [];
 
 async function main(): Promise<void> {
-    await run('compile');
     [deployer] = await ethers.getSigners();
     config = await deployScompTask.getConfig(nameConfig)
 }
@@ -118,7 +117,7 @@ main()
     .then(async () => {
         // INITIAL ACTION
         console.log(" ----- SETUP CONTRACT")
-        const {sCompToken, ve, feeDistribution, surplusConverter, controller, timelockController, oracleRouter, vault, strategy} =
+        const {sCompToken, ve, feeDistribution, surplusConverter, controller, timelockController, oracleRouter, vault, strategy} : Contract =
             await testStrategyTask.setupContractBase(config);
 
         feeDistributionContract = feeDistribution;
@@ -131,11 +130,10 @@ main()
         account2 = acc2;
         account3 = acc3;
 
-        console.log(" ----- FUND ACCOUNT")
+        console.log(" ----- FUND ACCOUNT ETH")
         await utilsTask.fundAccountETH(account1.address, ethers.utils.parseEther("0.5"))
         await utilsTask.fundAccountETH(account2.address, ethers.utils.parseEther("0.5"))
         await utilsTask.fundAccountETH(account3.address, ethers.utils.parseEther("0.5"))
-
         console.log(" ----- STORE BALANCE LP")
         await checkLP();
 

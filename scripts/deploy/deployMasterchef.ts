@@ -4,7 +4,8 @@ const { run, ethers } = hardhat;
 let deployer : SignerWithAddress;
 
 import { deployScompTask } from "../01_task/sCompTask";
-const mainnetAddress = require('../../info/deploy_address/address_scaling_node/mainAddress.json');
+const SCompTokenInfo = require('../../info/deploy_address/scaling_node/token/sCompTokenContract.json');
+const SCompVeInfo = require('../../info/deploy_address/scaling_node/farming/veScompContract.json');
 
 async function main(): Promise<void> {
     await run('compile');
@@ -14,7 +15,7 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-        await deployScompTask.deployMasterchef(mainnetAddress.sCompTokenContract.address, mainnetAddress.veScompContract.address);
+        await deployScompTask.deployMasterchef(SCompTokenInfo.sCompTokenContract.address, SCompVeInfo.veScompContract.address);
         process.exit(0)
     })
     .catch((error: Error) => {

@@ -33,10 +33,10 @@ main()
         let amountInNumber2 = 200;
 
         await getQuote("crv_ibEur", tokenInfo.crv.address, tokenInfo.ibEur.address, amountInNumber2);
-        await getQuote("wbtc_euroC", tokenInfo.wbtc.address, tokenInfo.euroC.address, amountInNumber);
-        await getQuote("wbtc_tetherEur", tokenInfo.wbtc.address, tokenInfo.tetherEur.address, amountInNumber);
-        await getQuote("wbtc_agEur", tokenInfo.wbtc.address, tokenInfo.agEur.address, amountInNumber);
-        await getQuote("wbtc_frax", tokenInfo.wbtc.address, tokenInfo.frax.address, amountInNumber);
+        //await getQuote("wbtc_euroC", tokenInfo.wbtc.address, tokenInfo.euroC.address, amountInNumber);
+        //await getQuote("wbtc_tetherEur", tokenInfo.wbtc.address, tokenInfo.tetherEur.address, amountInNumber);
+        //await getQuote("wbtc_agEur", tokenInfo.wbtc.address, tokenInfo.agEur.address, amountInNumber);
+        //await getQuote("wbtc_frax", tokenInfo.wbtc.address, tokenInfo.frax.address, amountInNumber);
 
         process.exit(0)
     })

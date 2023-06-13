@@ -1,32 +1,29 @@
 import hardhat, {network} from 'hardhat';
 import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {deploy} from "@openzeppelin/hardhat-upgrades/dist/utils";
 
-const { run, ethers, upgrades } = hardhat;
+const { ethers } = hardhat;
 
-const info = require('../../info/infoPool/fraxUsdc.json');
-const mainnetAddress = require('../../info/deploy_address/address_scaling_node/mainAddress.json');
+const mainnetAddress = require('../../info/deploy_address/eth_mainnet/controller/sCompControllerContract.json');
 
 let deployer : SignerWithAddress;
 
 // contract deploy
 let sCompController : Contract;
 
-let wantAddress = "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859";
+let wantAddress = "0xe6b5cc1b4b47305c58392ce3d359b10282fc36ea";
 
 async function main(): Promise<void> {
 
-    await run('compile');
     [deployer] = await ethers.getSigners();
-    console.log("Deployer addresss: ", deployer.address)
+    console.log("Deployer address: ", deployer.address)
 }
 
 async function getContractController(): Promise<void> {
     let factoryScompController = await ethers.getContractFactory("SCompController");
     sCompController = await factoryScompController.attach(mainnetAddress.sCompController.address);
 
-    console.log("SComp vault deployed to: ", sCompController.address);
+    console.log("Controller deployed to: ", sCompController.address);
 }
 
   main()

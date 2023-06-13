@@ -101,7 +101,7 @@ async function deployVe(sCompTokenAddress: string): Promise<Contract> {
 
 async function deployMasterchef(sCompTokenAddress: string, veAddress: string): Promise<Contract> {
     let tokenPerBlock = ethers.utils.parseEther("1.5");
-    let delayStart = 600; // su eth 300 block/h circa
+    let delayStart = 100; // su eth 300 block/h circa
     let blockNumber = await ethers.provider.getBlockNumber();
     let initialBlock = blockNumber + delayStart;
 
@@ -416,14 +416,10 @@ async function deployOracleRouter(): Promise<Contract> {
     return oracleRouter;
 }
 
-async function deployOneClick(): Promise<Contract> {
-    const [deployer] = await ethers.getSigners();
-    let feeAmount = 20;
-    let feeAddress = deployer.address;
-
+async function deployOneClick(feeAmount : any, feeAddress : string): Promise<Contract> {
     // deploy
     let factoryVault = await ethers.getContractFactory("OneClickV3")
-    let oneClickV3 = await factoryVault.deploy(tokenInfo.weth.address, feeAmount, feeAddress);
+    let oneClickV3 = await factoryVault.deploy(feeAmount, feeAddress);
     await oneClickV3.deployed();
 
     // Write json
@@ -522,6 +518,9 @@ async function deployVault(controllerAddress: string, wantAddress: string, treas
                 treasuryFeeAddress,
                 feeDeposit
             ],
+        }).catch((error: any) => {
+            console.log("Error catch")
+            console.log(error)
         });
     }
 
@@ -605,7 +604,10 @@ async function deployStrategy(nameStrategy: string, governance: string, strategi
                 [feeGovernance, feeStrategist, feeWithdraw],
                 {swap: curveSwapAddress, tokenCompoundPosition: tokenCompoundPosition, numElements: nElementPool}
             ],
-        });
+        }).catch((error: any) => {
+            console.log("Error catch")
+            console.log(error)
+        });;
     }
 
     return sCompStrategy;
@@ -666,8 +668,8 @@ async function setConfig(strategyAddress: string, config: ConfigStrategy, contro
     tx.wait();
 
     // set timelock controller in strategy
-    tx = await strategy.connect(deployer).setTimeLockController(timeLockControllerAddress);
-    await tx.wait();
+    /*tx = await strategy.connect(deployer).setTimeLockController(timeLockControllerAddress);
+    await tx.wait();*/
 
     // set slippage
     await strategyTask.setSlippageSwapCrv(strategy.address, config.slippageSwapCrv);
@@ -961,7 +963,24 @@ async function oneClickIn(oneClickV3Address: string, minMintAmount: any,
         listRouterAddress : listRouterAddress,
         minMintAmount : minMintAmount
     }
-    await oneClick.OneClickIn(tokenIn, amountIn, vault, oneClickParams);
+    let tx = await oneClick.OneClickIn(tokenIn, amountIn, vault, oneClickParams);
+    await tx.wait();
+}
+async function oneClickInEth(oneClickV3Address: string, minMintAmount: any,
+                          tokenIn: string, amountIn: any,
+                          listAverageSwap: any, listPathData: string[],
+                          listTypeSwap: any[], listAmountOutMin: any[], listRouterAddress: any[],
+                          vault: string): Promise<any> {
+    let oneClick = await getOneClickV3(oneClickV3Address)
+    let oneClickParams : any = {
+        listAverageSwap : listAverageSwap,
+        listPathData : listPathData,
+        listTypeSwap : listTypeSwap,
+        listAmountOutMin : listAmountOutMin,
+        listRouterAddress : listRouterAddress,
+        minMintAmount : minMintAmount
+    }
+    return await oneClick.OneClickIn(tokenIn, amountIn, vault, oneClickParams, {value: amountIn});
 }
 
 async function oneClickOut(oneClickV3Address: string,
@@ -1485,7 +1504,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             versionStrategy: "1.2"
         }
     }
-    else if (name == "usdp3crv" ) { // harvest non funziona
+    else if (name == "usdp3crv" ) {
         config = {
             name: "Usdp3Crv",
             want: curveInfo.lp.usdp3crv,
@@ -1748,8 +1767,8 @@ export const deployScompTask = {
     deployOracleRouter: async function (): Promise<Contract>{
         return await deployOracleRouter();
     },
-    deployOneClick: async function (): Promise<Contract>{
-        return await deployOneClick();
+    deployOneClick: async function (feeAmount : any, feeAddress : string): Promise<Contract>{
+        return await deployOneClick(feeAmount, feeAddress);
     },
     deployVault: async function (controllerAddress: string, wantAddress: string, treasuryFee: string, feeDeposit: any): Promise<Contract>{
         return await deployVault(controllerAddress, wantAddress, treasuryFee, feeDeposit);
@@ -1773,6 +1792,16 @@ export const oneClickTask = {
                                 listAmountOutMin: any[], listRouterAddress: any[], vault: string
     ): Promise<void>{
         return await oneClickIn(oneClickV3Address, minMintAmount,
+            tokenIn, amountIn,
+            listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
+    },
+    oneClickInEth: async function (oneClickV3Address: string, minMintAmount: any,
+                                tokenIn: string, amountIn: any,
+                                listAverageSwap: any, listPathData: string[],
+                                listTypeSwap: any[],
+                                listAmountOutMin: any[], listRouterAddress: any[], vault: string
+    ): Promise<any>{
+        return await oneClickInEth(oneClickV3Address, minMintAmount,
             tokenIn, amountIn,
             listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
     },

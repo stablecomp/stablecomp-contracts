@@ -10,7 +10,7 @@ import "solidity-coverage";
 import "@nomiclabs/hardhat-web3";
 import "hardhat-contract-sizer";
 import "@openzeppelin/hardhat-upgrades";
-
+import "hardhat-tracer";
 dotenv.config();
 
 const config: HardhatUserConfig = {
@@ -92,6 +92,7 @@ const config: HardhatUserConfig = {
             chainId: 1,
             accounts:
                 process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+            gasPrice: 31000000000,
         },
         scaling_node: {
             chainId: 1000,

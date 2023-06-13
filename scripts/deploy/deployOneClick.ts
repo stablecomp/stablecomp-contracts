@@ -13,7 +13,10 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-        await deployScompTask.deployOneClick();
+        let feeAmount = 20;
+        let feeAddress = deployer.address;
+
+        await deployScompTask.deployOneClick(feeAmount, feeAddress);
         process.exit(0)
     })
     .catch((error: Error) => {

@@ -3,10 +3,10 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 let deployer : SignerWithAddress;
 
-const controllerJson = require('../../../info/deploy_address/scaling_node/controller/sCompControllerContract.json');
-const surplusConverterJson = require('../../../info/deploy_address/scaling_node/manageFee/surplusConverterV2.json');
-const oracleRouterJson = require('../../../info/deploy_address/scaling_node/oracle/oracleRouter.json');
-const timeLockControllerJson = require('../../../info/deploy_address/scaling_node/timelock/sCompTimeLockControllerContract.json');
+const controllerJson = require('../../../info/deploy_address/eth_mainnet/controller/sCompControllerContract.json');
+const surplusConverterJson = require('../../../info/deploy_address/eth_mainnet/manageFee/surplusConverterV2.json');
+const oracleRouterJson = require('../../../info/deploy_address/eth_mainnet/oracle/oracleRouter.json');
+const timeLockControllerJson = require('../../../info/deploy_address/eth_mainnet/timelock/sCompTimeLockControllerContract.json');
 import {ConfigStrategy, deployScompTask, strategyTask} from "../../01_task/sCompTask";
 
 // contract deploy

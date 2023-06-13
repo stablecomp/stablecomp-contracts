@@ -91,6 +91,28 @@ contract UniswapSwapper is BaseSwapper {
         return swapRouter.exactInput(params);
     }
 
+    function _swapExactInputMultihopETH(
+        address _router,
+        uint256 _amountIn,
+        uint256 _amountsOutMin,
+        bytes memory _pathData,
+        address _recipient
+    ) internal returns(uint){
+        ISwapRouter swapRouter = ISwapRouter(_router);
+
+        ISwapRouter.ExactInputParams memory params =
+        ISwapRouter.ExactInputParams({
+            path: _pathData,
+            recipient: _recipient,
+            deadline: block.timestamp + 1000,
+            amountIn: _amountIn,
+            amountOutMinimum: _amountsOutMin
+        });
+
+        // Executes the swap.
+        return swapRouter.exactInput{value: _amountIn}(params);
+    }
+
     // INTERNAL
 
     function _encodePathDataV2(bytes memory _data) internal pure returns(address[] memory){

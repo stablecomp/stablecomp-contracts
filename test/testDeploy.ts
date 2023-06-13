@@ -52,7 +52,9 @@ describe("Testing deploy", async function () {
     describe('Setup', async () => {
 
         it('Deploy main', async () => {
-            oneClick = await deployScompTask.deployOneClick();
+            let feeAmount = 20;
+            let feeAddress = deployer.address;
+            oneClick = await deployScompTask.deployOneClick(feeAmount, feeAddress);
             let balanceBeforeController = await deployer.getBalance();
             controller = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address)
             let balanceAfterController = await deployer.getBalance();

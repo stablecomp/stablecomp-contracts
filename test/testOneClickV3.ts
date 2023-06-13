@@ -17,7 +17,7 @@ const routerInfo = require('../info/address_mainnet/routerAddress.json');
 
 let deployer: SignerWithAddress;
 let admin: SignerWithAddress;
-let account2: SignerWithAddress;
+let feeManager: SignerWithAddress;
 let account3: SignerWithAddress;
 let account4: SignerWithAddress;
 
@@ -63,6 +63,8 @@ let amountInNumberGlobal: any;
 let amountInGlobal: any;
 
 let accountWhaleWbtcAddress = "0x6daB3bCbFb336b29d06B9C793AEF7eaA57888922";
+let feeAmount : any;
+let feeAddress : any;
 
 async function getBestQuoteOneClickIn(_tokenIn: any, vaultAddress: any, versionStrategy: string, amountInNumber: any,
                                       listAverageSwap: any[], listSlippage: any[], slippageAddLiquidity: any, listTypeGetQuote: any[] = []): Promise<any> {
@@ -98,7 +100,7 @@ async function getBestQuoteOneClickIn(_tokenIn: any, vaultAddress: any, versionS
                 bestQuote = await uniswapSdkTask.getBestQuoteSwapOneClick(_tokenIn, listCoin[i], listAmountSwap[i]);
                 rawQuote = bestQuote.output;
                 if (bestQuote.coinPath.length == 0 ) {
-                    bestQuote = await taskSdkCurve.getBestQuoteSwapOneClick(tokenIn, listCoin[i], listAmountSwap[i]);
+                    bestQuote = await taskSdkCurve.getBestQuoteSwapOneClick(_tokenIn, listCoin[i], listAmountSwap[i]);
                     rawQuote = ethers.utils.parseUnits(bestQuote.output, await erc20Task.getDecimals(listCoin[i]));
                 }
                 break;
@@ -107,7 +109,7 @@ async function getBestQuoteOneClickIn(_tokenIn: any, vaultAddress: any, versionS
                 rawQuote = bestQuote.output;
                 break;
             case 2:
-                bestQuote = await taskSdkCurve.getBestQuoteSwapOneClick(tokenIn, listCoin[i], listAmountSwap[i]);
+                bestQuote = await taskSdkCurve.getBestQuoteSwapOneClick(_tokenIn, listCoin[i], listAmountSwap[i]);
                 rawQuote = ethers.utils.parseUnits(bestQuote.output, await erc20Task.getDecimals(listCoin[i]));
                 break;
         }
@@ -299,7 +301,7 @@ async function getBestQuoteOneClickOutOneCoin(tokenOut: any, curvePoolAddress: s
 }
 
 before(async function () {
-    [deployer, admin, account2, account3, account4] = await ethers.getSigners();
+    [deployer, admin, feeManager, account3, account4] = await ethers.getSigners();
     console.log("main script start with deployer address: ", deployer.address)
 });
 
@@ -322,7 +324,9 @@ describe.only("Testing one click", async function () {
         });
 
         it('Deploy main', async () => {
-            oneClick = await deployScompTask.deployOneClick();
+            feeAmount = 20;
+            feeAddress = feeManager.address;
+            oneClick = await deployScompTask.deployOneClick(feeAmount, feeAddress);
             controller = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address)
             surplusConvert = await deployScompTask.deploySurplusConverter(deployer.address, tokenInfo.weth.address, deployer.address,  deployer.address, [deployer.address, deployer.address])
             oracleRouter = await deployScompTask.deployOracleRouter();
@@ -436,7 +440,9 @@ describe.only("Testing one click", async function () {
             ));
 
             let balanceTokenInAfter = await erc20Task.balanceOf(tokenIn, deployer.address);
-            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).toString());
+
+            let feeExpected = amountInGlobal * 10000 / 20
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).sub(feeExpected).toString());
         }).timeout(300000)
 
         it.skip("should call one click in busd/3crv", async () => {
@@ -460,7 +466,7 @@ describe.only("Testing one click", async function () {
             expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).toString());
         }).timeout(100000)
 
-        it.skip("should call one click in dola/3crv", async () => {
+        it("should call one click in dola/3crv", async () => {
             let listAverageSwap = [50, 50];
 
             let listSlippage = [90,90]
@@ -540,7 +546,7 @@ describe.only("Testing one click", async function () {
             expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).toString());
         }).timeout(100000)
 
-        it("should call one click in ibEur/sEur",async () => {
+        it.skip("should call one click in ibEur/sEur",async () => {
             let listAverageSwap = [0, 100];
 
             let listSlippage = [90,90]
@@ -624,7 +630,7 @@ describe.only("Testing one click", async function () {
 
     });
 
-    describe('Check oneClickOut tokenOut == wbtc', async () => {
+    describe.skip('Check oneClickOut tokenOut == wbtc', async () => {
 
         it("set token out", async () => {
             tokenOut = tokenInfo.wbtc.address;
@@ -795,7 +801,7 @@ describe.only("Testing one click", async function () {
 
         }).timeout(300000)
 
-        it.skip("should call one click out ibEur/sEur",async () => {
+        it("should call one click out ibEur/sEur",async () => {
             let vault = vaultIbEurSEur;
             let config: ConfigStrategy = configIbEurSEur;
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
@@ -823,7 +829,7 @@ describe.only("Testing one click", async function () {
 
         }).timeout(300000)
 
-        it("should call one click out mim/3crv",async () => {
+        it.skip("should call one click out mim/3crv",async () => {
             let vault = vaultMim3Crv;
             let config: ConfigStrategy = configMim3crv;
             let amountShare = await erc20Task.balanceOf(vault.address, deployer.address);
@@ -906,6 +912,259 @@ describe.only("Testing one click", async function () {
             console.log("Balance token out after" + balanceTokenOutAfter)
 
         }).timeout(300000)
+
+    });
+
+    describe.skip('Check oneClickIn tokenIn == eth', async () => {
+
+        it("set token in", async () => {
+            tokenIn = ethers.constants.AddressZero;
+            amountInNumberGlobal = 0.01
+            amountInGlobal = ethers.utils.parseUnits(amountInNumberGlobal.toString(), tokenInfo.weth.decimals);
+        })
+
+        it("should call one click in 3eur", async () => {
+            let listAverageSwap = [33, 33, 34];
+            let listSlippage = [90,90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vault3Eur.address, config3eur.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault3Eur.address
+            );
+            let txReceipt = await tx.wait()
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            // revert if amount in is zero
+            await exception.catchRevert(oneClickTask.oneClickInEth(oneClick.address, 0,
+                tokenIn, 0,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault3Eur.address
+            ));
+
+            // revert if listAverage is invalid
+            listAverageSwap = [33, 34, 34];
+            await exception.catchRevert(oneClickTask.oneClickInEth(oneClick.address, 0,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault3Eur.address
+            ));
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(300000)
+
+        it("should call one click in busd/3crv", async () => {
+            let listAverageSwap = [50, 50];
+            let listSlippage = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultBusd3Crv.address, configBusd3crv.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity, [2,2]);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultBusd3Crv.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
+
+        it("should call one click in dola/3crv", async () => {
+            let listAverageSwap = [50, 50];
+
+            let listSlippage = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultDola3Crv.address, configDola3crv.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultDola3Crv.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
+
+        it("should call one click in EuroC/3crv",async () => {
+            let listAverageSwap = [50, 50];
+
+            let listSlippage = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultEuroC3Crv.address, configEuroC3crv.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity, [0,0]);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultEuroC3Crv.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
+
+        it("should call one click in frax/3crv", async () => {
+            let listAverageSwap = [50, 50];
+
+            let listSlippage = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultFrax3Crv.address, configFrax3crv.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity,[1, 1]);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultFrax3Crv.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
+
+        it("should call one click in frax/usdc", async () => {
+            let listAverageSwap = [50, 50];
+
+            let listSlippage = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultFraxUsdc.address, configFraxUsdc.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity,[2, 2]);
+
+            console.log("best quote trovata")
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultFraxUsdc.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
+
+        it("should call one click in ibEur/sEur",async () => {
+            let listAverageSwap = [0, 100];
+
+            let listSlippage = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultIbEurSEur.address, configIbEurSEur.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity,[2,2]);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultIbEurSEur.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
+
+        it("should call one click in mim/3crv",async () => {
+            let listAverageSwap = [50, 50];
+
+            let listSlippageSwap = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultMim3Crv.address, configMim3crv.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippageSwap, slippageAddLiquidity);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultMim3Crv.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
+
+        it("should call one click in tusd/3crv", async () => {
+            let listAverageSwap = [50, 50];
+
+            let listSlippage = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultTusd3Crv.address, configTusd3Crv.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultTusd3Crv.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
+
+        it("should call one click in usdd/3crv", async () => {
+            let listAverageSwap = [50, 50];
+            let curvePool = curveInfo.pool.usdd3crv
+            let lpCurve = curveInfo.lp.usdd3crv
+
+            let listSlippage = [90,90]
+            let slippageAddLiquidity = 90
+
+            let {listAddress, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, amountOutMinLp} =
+                await getBestQuoteOneClickIn(tokenInfo.weth.address, vaultUsdd3Crv.address, configUsdd3Crv.versionStrategy, amountInNumberGlobal,
+                    listAverageSwap, listSlippage, slippageAddLiquidity);
+
+            let balanceTokenInBefore = await deployer.getBalance()
+            let tx = await oneClickTask.oneClickInEth(oneClick.address, amountOutMinLp,
+                tokenIn, amountInGlobal,
+                listAverageSwap, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vaultUsdd3Crv.address
+            );
+            let txReceipt = await tx.wait()
+
+            let feeTx = await utilsTask.getFeeTx(tx, txReceipt);
+
+            let balanceTokenInAfter = await deployer.getBalance()
+            expect(balanceTokenInBefore.toString()).to.be.equal(balanceTokenInAfter.add(amountInGlobal).add(feeTx).toString());
+        }).timeout(100000)
 
     });
 

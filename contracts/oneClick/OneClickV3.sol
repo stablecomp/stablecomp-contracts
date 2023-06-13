@@ -19,11 +19,7 @@ import "../strategies/interface/IStrategy.sol";
 
 contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
     using SafeERC20 for IERC20;
-
-    IWETH public immutable wEth;
-
-    uint256 private constant minAmount = 1000;
-    uint256 public constant maxInt = 2 ** 256 - 1;
+    using SafeMath for uint256;
 
     uint256 public constant oneClickFeeMax = 10000; // 100%
     uint256 public oneClickFee; // 1 = 0.01% ; 10 = 0.1% ; 100 = 1% ; 1000 = 10% ; 10000 = 100%
@@ -48,15 +44,6 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         address[] listRouterAddress;
     }
 
-    /**
-     * @notice Fallback for wToken
-     * @dev when user send ETH with payable function,
-     *      the amount will be send to the WETH contract and then receive WETH token
-     */
-    receive() external payable {
-        assert(msg.sender == address(wEth));
-    }
-
     // Owner recovers token
     event NewOneClickIn(address indexed sender, address indexed vault, address tokenIn, uint amountIn, uint amountOut, uint share);
     event NewOneClickOut(address indexed sender, address indexed vault, address tokenOut, uint amountIn, uint amountOut);
@@ -67,14 +54,9 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
      * @notice Constructor
      */
     constructor(
-        address _weth,
         uint256 _oneClickFee,
         address _oneClickFeeAddress
     ) {
-
-        //wToken
-        wEth = IWETH(_weth);
-
         //OneClick Fee
         oneClickFee = _oneClickFee;
         oneClickFeeAddress = _oneClickFeeAddress;
@@ -94,7 +76,9 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
 
         (address lpCurve, address curvePool) = _getCurveAddress(_vault);
 
-        _amountIn = transferTokenIn(_tokenIn, _amountIn);
+        if(_tokenIn != address(0)) {
+            _amountIn = transferTokenIn(_tokenIn, _amountIn, false);
+        }
 
         uint[] memory amountsInCurve = _executeSwapIn(_amountIn, _tokenIn, _paramsSwap);
 
@@ -120,7 +104,7 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
 
         (address lpCurve, address curvePool) = _getCurveAddress(_vault);
 
-        _amountIn = transferTokenIn(_vault, _amountIn);
+        _amountIn = transferTokenIn(_vault, _amountIn, true);
 
         uint lpAmount = ISCompVault(_vault).withdraw(_amountIn);
 
@@ -180,7 +164,13 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         return (lpCurve, curvePool);
     }
 
-    function transferTokenIn(address _tokenIn, uint _amountIn) internal returns(uint){
+    function transferTokenIn(address _tokenIn, uint _amountIn, bool isOut) internal returns(uint) {
+        if (!isOut) {
+            // take fee
+            uint amountFee = _amountIn.mul(oneClickFee).div(oneClickFeeMax);
+            IERC20(_tokenIn).safeTransferFrom(msg.sender, oneClickFeeAddress, amountFee);
+            _amountIn -= amountFee;
+        }
         uint balanceBefore = IERC20(_tokenIn).balanceOf(address(this));
         IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _amountIn);
         uint balanceAfter = IERC20(_tokenIn).balanceOf(address(this));
@@ -277,7 +267,11 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
     }
 
     function _makeSwapV3(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint) {
-        return _swapExactInputMultihop(_router, _tokenIn, _amountIn, _amountOutMin, _pathData, address(this));
+        if( _tokenIn != address(0)) {
+            return _swapExactInputMultihop(_router, _tokenIn, _amountIn, _amountOutMin, _pathData, address(this));
+        } else {
+            return _swapExactInputMultihopETH(_router, _amountIn, _amountOutMin, _pathData, address(this));
+        }
     }
 
     function _makeSwapCurve(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint) {

@@ -13,7 +13,7 @@ import {ethers} from "hardhat";
 let sCompVault : Contract;
 let sCompStrategy : Contract;
 
-let nameConfig = "alusd3crv"
+let nameConfig = "alusdfraxbp"
 let config: ConfigStrategy;
 
 async function main(): Promise<void> {
@@ -34,14 +34,13 @@ main()
         let governanceStrategy = deployer.address;
         //let strategist = surplusConverterJson.surplusConverterV2Contract.address;
         let strategist = deployer.address
-/*
+
         sCompStrategy = await deployScompTask.deployStrategy(config.name, governanceStrategy, strategist,
             controllerAddress,
             config.want, config.tokenCompound, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
             config.curveSwap, config.nElementPool, config.versionStrategy,
         );
-*/
-        await strategyTask.setConfig("0xd76108c47f7ab8aab4226cF3eE996fa178A09b55", config,
+        await strategyTask.setConfig(sCompStrategy.address, config,
             controllerAddress, oracleRouterAddress, timeLockControllerAddress)
 
         process.exit(0)

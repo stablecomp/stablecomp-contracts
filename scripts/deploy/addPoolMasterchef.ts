@@ -9,9 +9,6 @@ let deployer : SignerWithAddress;
 // contract deploy json
 const masterchefJson = require('../../info/deploy_address/scaling_node/farming/masterchefScompContract.json');
 const tokenJson = require('../../info/deploy_address/scaling_node/token/sCompTokenContract.json');
-const busd3Crv = require('../../info/deploy_address/scaling_node/vault/sCompVault_BUSD3CRV-f.json')
-const dola3Crv = require('../../info/deploy_address/scaling_node/vault/sCompVault_DOLA3POOL3CRV-f.json')
-const fraxusdc = require('../../info/deploy_address/scaling_node/vault/sCompVault_crvFRAX.json')
 
 let masterchefScomp : Contract;
 let masterchefScompAddress = masterchefJson.masterchefScomp.address
@@ -53,12 +50,19 @@ main()
     .then(async () => {
         await setupContract();
         await fundContract();
-        await addPool(busd3Crv.sCompVault.address)
-        console.log("Pool busd3crv added")
-        await addPool(dola3Crv.sCompVault.address)
-        console.log("Pool dola3crv added")
-        await addPool(fraxusdc.sCompVault.address)
-        console.log("Pool fraxusdc added")
+
+        await addPool("0x1df2933B9c8815CC8990AFb4A079A717bC369185")
+        console.log("Pool usdp-3crv added")
+        await addPool("0x0a1da14519309eCEa6E19DC940D95A7Fc850a911")
+        console.log("Pool tusd-3crv added")
+        await addPool("0x5073383c90cFBcc666227a67F301dcF910C3971e")
+        console.log("Pool mim-3crv added")
+        await addPool("0x494d51A38ACEEBcc1D6b8e6A1EE8D8d489052033")
+        console.log("Pool alusd-3crv added")
+        await addPool("0xe87A72E170f7ab225b39f3Ba8d0E407e37F29B8A")
+        console.log("Pool alusd-fraxbp added")
+        await addPool("0xA918c6B097569B6584014257CE89cB546f85fe33")
+        console.log("Pool usdd-3crv added")
 
         process.exit(0)
     })
