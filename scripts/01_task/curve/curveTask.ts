@@ -249,7 +249,12 @@ async function getSwapRouter(): Promise<Contract> {
 async function getBestQuoteSwapOneClick(inputToken: string, outputToken: string, amountIn: string | number): Promise<BestQuoteStruct>{
     let bestQuote : BestQuoteStruct = <BestQuoteStruct>{};
     bestQuote.versionProtocol = "Curve"
-
+    if (inputToken == ethers.constants.AddressZero) {
+        inputToken = "ETH"
+    }
+    if (outputToken == ethers.constants.AddressZero) {
+        outputToken = "ETH"
+    }
     await curve.init(
         'JsonRpc',
         { url: process.env.ETH_MAINNET_URL },
@@ -257,6 +262,7 @@ async function getBestQuoteSwapOneClick(inputToken: string, outputToken: string,
     );
     await curve.factory.fetchPools();
     await curve.cryptoFactory.fetchPools();
+
     const { route, output } = await curve.router.getBestRouteAndOutput(inputToken, outputToken, amountIn)
     bestQuote.output = output;
 

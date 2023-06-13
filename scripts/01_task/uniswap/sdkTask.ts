@@ -13,6 +13,7 @@ import * as path from "path";
 
 const poolUniswapV3Abi = require('../../../info/abi/poolUniswapV3.json');
 const poolUniswapV2Abi = require('../../../info/abi/poolUniswapV2.json');
+const tokenInfo = require('../../../info/address_mainnet/tokenInfo.json');
 
 async function getBestQuoteSwap(tokenInAddress: any, tokenOutAddress: any, amountIn: any): Promise<any> {
     let erc20In = await getErc20(tokenInAddress);
@@ -70,6 +71,12 @@ async function getBestQuoteSwapEncoded(tokenInAddress: any, tokenOutAddress: any
 async function getBestQuoteSwapOneClick(tokenInAddress: any, tokenOutAddress: any, amountIn: number): Promise<BestQuoteStruct> {
     let bestQuote : BestQuoteStruct = <BestQuoteStruct>{};
 
+    if (tokenInAddress == ethers.constants.AddressZero) {
+        tokenInAddress = tokenInfo.weth.address;
+    }
+    if (tokenOutAddress == ethers.constants.AddressZero) {
+        tokenOutAddress = tokenInfo.weth.address;
+    }
     let erc20In = await getErc20(tokenInAddress);
     const tokenIn = new Token(
         SupportedChainId.MAINNET,

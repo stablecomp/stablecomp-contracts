@@ -48,6 +48,20 @@ contract CurveSwapper is BaseSwapper {
         return ISwapRouterCurve(_router).exchange_multiple(pathAddress, swapParams, _amountIn, _amountsOutMin, poolAddress, _recipient);
     }
 
+    function _exchange_multiple_eth(
+        address _router,
+        uint256 _amountIn,
+        uint256 _amountsOutMin,
+        bytes memory _pathData,
+        address _recipient
+    ) internal returns(uint){
+
+        // encode path data curve
+        (address[9] memory pathAddress, uint[3][4] memory swapParams, address[4] memory poolAddress) = _encodePathDataCurve(_pathData);
+
+        return ISwapRouterCurve(_router).exchange_multiple{value: _amountIn}(pathAddress, swapParams, _amountIn, _amountsOutMin, poolAddress, _recipient);
+    }
+
     function _add_liquidity_single_coin(
         address swap,
         address inputToken,

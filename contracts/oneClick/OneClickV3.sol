@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
@@ -48,8 +49,6 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
     event NewOneClickIn(address indexed sender, address indexed vault, address tokenIn, uint amountIn, uint amountOut, uint share);
     event NewOneClickOut(address indexed sender, address indexed vault, address tokenOut, uint amountIn, uint amountOut);
 
-    event TokenRecovery(address indexed token, uint256 amount);
-
     /**
      * @notice Constructor
      */
@@ -60,6 +59,14 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
         //OneClick Fee
         oneClickFee = _oneClickFee;
         oneClickFeeAddress = _oneClickFeeAddress;
+    }
+
+    function changeOneClickFee(uint _newOneClickFee) external onlyOwner{
+        oneClickFee = _newOneClickFee;
+    }
+
+    function changeOneClickFeeAddress(address _newOneClickFeeAddress) external onlyOwner{
+        oneClickFeeAddress = _newOneClickFeeAddress;
     }
 
     /**
@@ -275,7 +282,11 @@ contract OneClickV3 is Ownable, UniswapSwapper, CurveSwapper {
     }
 
     function _makeSwapCurve(address _router, address _tokenIn, uint _amountIn, uint _amountOutMin, bytes memory _pathData) internal returns(uint) {
-        return _exchange_multiple(_router, _tokenIn, _amountIn, _amountOutMin, _pathData, address(this));
+        if( _tokenIn != address(0)) {
+            return _exchange_multiple(_router, _tokenIn, _amountIn, _amountOutMin, _pathData, address(this));
+        } else {
+            return _exchange_multiple_eth(_router, _amountIn, _amountOutMin, _pathData, address(this));
+        }
     }
 
     // CURVE

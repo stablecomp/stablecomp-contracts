@@ -1000,6 +1000,27 @@ async function oneClickOut(oneClickV3Address: string,
     await oneClick.OneClickOut(tokenOut, amountIn, vault, oneClickParams);
 }
 
+async function changeOneClickFee(oneClickV3Address: string, newOneClickFee: any): Promise<void> {
+    let oneClick = await getOneClickV3(oneClickV3Address)
+
+    await oneClick.changeOneClickFee(newOneClickFee);
+}
+async function changeOneClickFeeAddress(oneClickV3Address: string, newOneClickFeeAddress: any): Promise<void> {
+    let oneClick = await getOneClickV3(oneClickV3Address)
+
+    await oneClick.changeOneClickFeeAddress(newOneClickFeeAddress);
+}
+async function getOneClickFee(oneClickV3Address: string): Promise<any> {
+    let oneClick = await getOneClickV3(oneClickV3Address)
+
+    return await oneClick.oneClickFee();
+}
+async function getOneClickFeeAddress(oneClickV3Address: string): Promise<any> {
+    let oneClick = await getOneClickV3(oneClickV3Address)
+
+    return await oneClick.oneClickFeeAddress();
+}
+
 async function getOneClickV3(oneClickV3Address: string): Promise<Contract> {
     let factory = await ethers.getContractFactory("OneClickV3");
     return factory.attach(oneClickV3Address);
@@ -1812,6 +1833,18 @@ export const oneClickTask = {
     ): Promise<void>{
         return await oneClickOut(oneClickV3Address, tokenOut, amountIn,
             amountsOutMinCurve, typeRemoveLiquidity, listPathData, listTypeSwap, listAmountOutMin, listRouterAddress, vault);
+    },
+    changeOneClickFee: async function (oneClickV3Address: string, newOneClickFee: any): Promise<void>{
+        return await changeOneClickFee(oneClickV3Address, newOneClickFee);
+    },
+    changeOneClickFeeAddress: async function (oneClickV3Address: string, newOneClickFeeAddress: any): Promise<void>{
+        return await changeOneClickFeeAddress(oneClickV3Address, newOneClickFeeAddress);
+    },
+    getOneClickFee: async function (oneClickV3Address: string): Promise<any>{
+        return await getOneClickFee(oneClickV3Address);
+    },
+    getOneClickFeeAddress: async function (oneClickV3Address: string): Promise<any>{
+        return await getOneClickFeeAddress(oneClickV3Address);
     },
 };
 

@@ -38,7 +38,7 @@
     "getSingleQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/getSingleQuoteUniswap.ts --network eth_mainnet",
     "updateAllQuote": "npx hardhat run scripts/strategy/updateAllQuote.ts --network eth_mainnet",
     "updateSingleQuoteUniswap": "npx hardhat run scripts/uniswap/sdk/updateSingleQuoteUniswap.ts --network eth_mainnet",
-    "test": "hh test --network hardhat --vv",
+    "test": "hh test --network hardhat",
     "compile": "npx hardhat compile"
   },
   "repository": {
