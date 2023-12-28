@@ -9,7 +9,7 @@ import {boosterTask} from "../../01_task/convex/convexTask";
 
 const { run, ethers } = hardhat;
 
-let nameConfig = "3pool"
+let nameConfig = "threePool"
 let config: ConfigStrategy;
 
 // json constant

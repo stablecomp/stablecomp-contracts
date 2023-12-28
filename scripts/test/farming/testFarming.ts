@@ -62,6 +62,8 @@ async function deployContract(): Promise<void> {
     veScomp = await deployScompTask.deployVe(sCompToken.address)
     masterchefScomp = await deployScompTask.deployMasterchef(sCompToken.address, veScomp.address)
 
+    console.log(masterchefScomp.address)
+
 }
 
 async function setupUtilityContract(): Promise<void> {

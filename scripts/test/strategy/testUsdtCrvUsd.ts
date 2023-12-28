@@ -9,7 +9,7 @@ import {boosterTask} from "../../01_task/convex/convexTask";
 
 const { run, ethers } = hardhat;
 
-let nameConfig = "fraxusdc"
+let nameConfig = "usdtcrvusd"
 let config: ConfigStrategy;
 
 // json constant
@@ -97,8 +97,6 @@ async function executeActionOneWeek(index: any): Promise<void> {
         let swapHarvest = await strategyTask.getSwapHarvest(strategyContract.address);
 
         console.log(" -------- HARVEST")
-        console.log("swapHarvest")
-        console.log(swapHarvest)
         await strategyTask.harvest(strategyContract.address, swapHarvest);
 
         console.log(" -------- BUYBACK CONVERTER")

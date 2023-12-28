@@ -348,7 +348,7 @@ async function getBestPathUniswapOneClick(tokenIn: Token, tokenOut: Token, amoun
 
         }
     } else {
-        //console.log("No pool founded for route: ", await erc20Task.getSymbol(tokenIn.address), " -> ", await erc20Task.getSymbol(tokenOut.address))
+        console.log("No pool founded for route: ", await erc20Task.getSymbol(tokenIn.address), " -> ", await erc20Task.getSymbol(tokenOut.address))
     }
 
     return {coinPath, feePath, versionProtocol, rawQuote}

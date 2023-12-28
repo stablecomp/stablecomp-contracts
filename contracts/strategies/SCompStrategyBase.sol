@@ -61,7 +61,7 @@ UniswapSwapper
 
     uint256 public slippageLiquidity = 100; // 5000 -> 50% ; 500 -> 5% ; 50 -> 0.5% ; 5 -> 0.05%
 
-    address oracleRouter;
+    address public oracleRouter;
 
     struct CurvePoolConfig {
         address swap;

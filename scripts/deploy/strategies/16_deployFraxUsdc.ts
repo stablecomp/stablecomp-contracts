@@ -2,10 +2,8 @@ import {Contract} from "@ethersproject/contracts";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 let deployer : SignerWithAddress;
 
-const controllerJson = require('../../../info/deploy_address/scaling_node/controller/sCompControllerContract.json');
-const surplusConverterJson = require('../../../info/deploy_address/scaling_node/manageFee/surplusConverterV2.json');
-const oracleRouterJson = require('../../../info/deploy_address/scaling_node/oracle/oracleRouter.json');
-const timeLockControllerJson = require('../../../info/deploy_address/scaling_node/timelock/sCompTimeLockControllerContract.json');
+const controllerJson = require('../../../info/deploy_address/eth_mainnet/controller/sCompControllerContract.json');
+const oracleRouterJson = require('../../../info/deploy_address/eth_mainnet/oracle/oracleRouter.json');
 import {ConfigStrategy, deployScompTask, strategyTask} from "../../01_task/sCompTask";
 import {ethers} from "hardhat";
 
@@ -25,15 +23,30 @@ async function main(): Promise<void> {
 main()
     .then(async () => {
         let controllerAddress = controllerJson.sCompController.address;
-        let timeLockControllerAddress = timeLockControllerJson.sCompTimelockController.address;
+        //let timeLockControllerAddress = timeLockControllerJson.sCompTimelockController.address;
+        let timeLockControllerAddress = ethers.constants.AddressZero
         let oracleRouterAddress = oracleRouterJson.oracleRouter.address;
+        let balanceBeforeVault = await deployer.getBalance();
 
         let treasuryFee = deployer.address;
         sCompVault = await deployScompTask.deployVault(controllerAddress, config.want, treasuryFee, config.feeDeposit);
 
-        let governance = deployer.address;
-        let strategist = surplusConverterJson.surplusConverterV2Contract.address;
+        let sScompVaultAddress = "0xdd1722a31ae4d26946134dc003775f7a6a92e61e"
+        let sCompVaultFactory = await ethers.getContractFactory("SCompVault");
+        sCompVault = sCompVaultFactory.attach(sScompVaultAddress);
 
+        let balanceAfterVault = await deployer.getBalance();
+        let diff = balanceBeforeVault.sub(balanceAfterVault);
+
+        console.log("Cost deploy vault: " + diff)
+
+        let governance = deployer.address;
+        //let strategist = surplusConverterJson.surplusConverterV2Contract.address;
+        let strategist = deployer.address
+
+        let balanceBeforeStrategy = await deployer.getBalance();
+
+        /*
         sCompStrategy = await deployScompTask.deployStrategy(config.name, governance, strategist,
             controllerAddress,
             config.want, config.tokenCompound, config.tokenCompoundPosition, config.pidPool, config.feeGovernance, config.feeStrategist, config.feeWithdraw,
@@ -41,6 +54,11 @@ main()
         );
         await strategyTask.setConfig(sCompStrategy.address, config,
             controllerAddress, oracleRouterAddress, timeLockControllerAddress)
+*/
+        let balanceAfterStrategy = await deployer.getBalance();
+        let diffStrategy = balanceBeforeStrategy.sub(balanceAfterStrategy);
+
+        console.log("Cost deploy strategy: " + diffStrategy)
 
         process.exit(0)
     })

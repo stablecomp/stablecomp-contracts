@@ -11,8 +11,6 @@ import "./interface/ICurveFi.sol";
 import "./interface/ISwapRouterCurve.sol";
 import "../BaseSwapper.sol";
 
-import "hardhat/console.sol";
-
 /*
     Expands swapping functionality over base strategy
     - ETH in and ETH out Variants

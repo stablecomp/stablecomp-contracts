@@ -2,10 +2,9 @@ import hardhat from 'hardhat';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 const { run, ethers } = hardhat;
 let deployer : SignerWithAddress;
+let tokenInfo = require('../../info/address_mainnet/tokenInfo.json')
 
 import { deployScompTask } from "../01_task/sCompTask";
-const SCompTokenInfo = require('../../info/deploy_address/scaling_node/token/sCompTokenContract.json');
-const SCompVeInfo = require('../../info/deploy_address/scaling_node/farming/veScompContract.json');
 
 async function main(): Promise<void> {
     await run('compile');
@@ -15,7 +14,29 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-        await deployScompTask.deployMasterchef(SCompTokenInfo.sCompTokenContract.address, SCompVeInfo.veScompContract.address);
+        let sCompTokenContract = await deployScompTask.deploySCompToken();
+        console.log("sCompTokenContract: ", sCompTokenContract.address)
+
+        let veScompContract = await deployScompTask.deployVe(
+            sCompTokenContract.address
+        );
+        console.log("veScompContract: ", veScompContract.address)
+
+        let masterchefScompContract = await deployScompTask.deployMasterchef(
+            sCompTokenContract.address, veScompContract.address
+        );
+        console.log("masterchefScompContract: ", masterchefScompContract.address)
+
+        let feeDistributionContract = await deployScompTask.deployFeeDistribution(
+            sCompTokenContract.address, veScompContract.address, deployer.address, deployer.address
+        );
+        console.log("feeDistributionContract: ", feeDistributionContract.address)
+
+        let surplusConverterContract = await deployScompTask.deploySurplusConverter(
+            feeDistributionContract.address, tokenInfo.weth.address, deployer.address, deployer.address, [deployer.address, deployer.address]
+        )
+        console.log("surplusConverterContract: ", surplusConverterContract.address)
+
         process.exit(0)
     })
     .catch((error: Error) => {

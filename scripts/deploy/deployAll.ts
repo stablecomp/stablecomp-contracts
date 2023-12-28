@@ -39,8 +39,9 @@ main()
         masterchefScompContract = await deployScompTask.deployMasterchef(sCompTokenContract.address, veScompContract.address);
         feeDistributionContract = await deployScompTask.deployFeeDistribution(sCompTokenContract.address, veScompContract.address, deployer.address, deployer.address);
         surplusConverterContract = await deployScompTask.deploySurplusConverter(feeDistributionContract.address, tokenInfo.weth.address, deployer.address, deployer.address, [deployer.address, deployer.address])
-        sCompControllerContract = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address);
         sCompTimelockControllerContract = await deployScompTask.deployTimeLockController([deployer.address], [deployer.address]);
+
+        sCompControllerContract = await deployScompTask.deployController(deployer.address, deployer.address, deployer.address);
         oracleRouterContract = await deployScompTask.deployOracleRouter();
 
         let finalBalance:any = await deployer.getBalance();

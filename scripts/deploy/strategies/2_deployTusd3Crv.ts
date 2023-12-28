@@ -27,7 +27,6 @@ main()
         let controllerAddress = controllerJson.sCompController.address;
         let timeLockControllerAddress = ethers.constants.AddressZero
         let oracleRouterAddress = oracleRouterJson.oracleRouter.address;
-/*
         let balanceBeforeVault = await deployer.getBalance();
 
         let treasuryFee = deployer.address;
@@ -37,7 +36,7 @@ main()
         let diff = balanceBeforeVault.sub(balanceAfterVault);
 
         console.log("Cost deploy vault: " + diff)
-*/
+
         let governanceStrategy = deployer.address;
         //let strategist = surplusConverterJson.surplusConverterV2Contract.address;
         let strategist = deployer.address

@@ -18,7 +18,7 @@ main()
             let poolInfo = await boosterTask.getPoolInfo(i);
             let symbol = await erc20Task.getSymbol(poolInfo.lptoken)
             console.log("PID: ", i, " -- Symbol: ", symbol);
-            if (poolInfo.lptoken.toUpperCase() == ("0xB30dA2376F63De30b42dC055C93fa474F31330A5").toUpperCase()) {
+            if (poolInfo.lptoken.toUpperCase() == ("0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1").toUpperCase()) {
                 console.log(" Symbol: ", symbol);
                 console.log("Lp token: ", poolInfo.lptoken);
                 console.log("Token: ", poolInfo.token);
@@ -26,7 +26,9 @@ main()
                 console.log("Crv rewards: ", poolInfo.crvRewards);
             }
         }
+        process.exit(0)
     })
+
     .catch((error: Error) => {
         console.error(error);
         process.exit(1);

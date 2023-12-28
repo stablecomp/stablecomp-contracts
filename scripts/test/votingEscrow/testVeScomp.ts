@@ -55,7 +55,7 @@ async function deployContract(): Promise<void> {
 async function setupUtilityContract(): Promise<void> {
 
     let factory = await ethers.getContractFactory("TestErc20");
-    tokenDeposit = await factory.attach(tokenAddress);
+    tokenDeposit = factory.attach(tokenAddress);
 }
 
 async function impersonateAccount(): Promise<void> {

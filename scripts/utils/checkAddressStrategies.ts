@@ -11,7 +11,7 @@ let deployer : SignerWithAddress;
 // contract deploy
 let sCompController : Contract;
 
-let wantAddress = "0xe6b5cc1b4b47305c58392ce3d359b10282fc36ea";
+let wantAddress = "0x43b4fdfd4ff969587185cdb6f0bd875c5fc83f8c";
 
 async function main(): Promise<void> {
 
@@ -29,11 +29,15 @@ async function getContractController(): Promise<void> {
   main()
     .then(async () => {
         await getContractController();
-        let vaultAddress = await sCompController.vaults(wantAddress);
-        console.log("Vault address: ", vaultAddress)
-        let strategyAddress = await sCompController.strategies(wantAddress);
-        console.log("Strategy address: ", strategyAddress)
 
+        for (let i = 0; i< 100; i++) {
+
+            let vaultAddress = await sCompController.vaults(wantAddress);
+            console.log("Vault address: ", vaultAddress)
+            let strategyAddress = await sCompController.strategies(wantAddress);
+            console.log("Strategy address: ", strategyAddress)
+
+        }
         process.exit(0)
     })
     .catch((error: Error) => {

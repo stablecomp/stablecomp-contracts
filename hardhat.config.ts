@@ -11,6 +11,7 @@ import "@nomiclabs/hardhat-web3";
 import "hardhat-contract-sizer";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-tracer";
+import process from "process";
 dotenv.config();
 
 const config: HardhatUserConfig = {
@@ -92,13 +93,14 @@ const config: HardhatUserConfig = {
             chainId: 1,
             accounts:
                 process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-            gasPrice: 31000000000,
+            gasPrice: 30000000000,
         },
         scaling_node: {
-            chainId: 1000,
+            chainId: 1,
             url: process.env.SCALING_NODE_URL !== undefined ? process.env.SCALING_NODE_URL: "",
             accounts:
                 process.env.PRIVATE_KEY !== undefined ? [
+                    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
                     process.env.PRIVATE_KEY,
                     "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
                     "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
@@ -147,16 +149,36 @@ const config: HardhatUserConfig = {
                     "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e",
                 ] : [],
         },
+        polygon_mainnet: {
+            chainId: 137,
+            url: process.env.POLYGON_MAINNET_URL,
+            accounts:
+                process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        },
         hardhat: {
             forking: {
                 url: process.env.ETH_MAINNET_URL !== undefined ? process.env.ETH_MAINNET_URL : "",
             },
+            accounts:[
+                {
+                    privateKey: process.env.PRIVATE_KEY!,
+                    balance: "10000000000000000000000"
+                },
+            ],
+            //gasPrice: 33000000000,
+
+        },
+        build_bear: {
+            url: process.env.BUILD_BEAR_URL,
+            chainId: process.env.BUILD_BEAR_CHAIN_ID !== undefined ? parseInt(process.env.BUILD_BEAR_CHAIN_ID) : 0,
+            accounts:
+                process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
         },
     },
     gasReporter: {
         enabled: process.env.REPORT_GAS !== undefined,
         currency: "USD",
-        gasPrice: 30,
+        gasPrice: 60,
 
     },
     etherscan: {

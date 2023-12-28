@@ -14,7 +14,9 @@ async function main(): Promise<void> {
 
 main()
     .then(async () => {
-        await deployScompTask.deployVe(SCompTokenInfo.sCompTokenContract.address);
+        let sCompToken = "0xde0f01EA4d2eFd7E8Cd4f2FC2eb0F788ad49f552";
+        let ve = await deployScompTask.deployVe(sCompToken);
+        console.log("Ve deployed to: ", ve.address)
         process.exit(0)
     })
     .catch((error: Error) => {

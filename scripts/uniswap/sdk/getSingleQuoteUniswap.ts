@@ -15,14 +15,15 @@ async function main(): Promise<void> {
 }
 
 async function getQuote(nameQuote: string, tokenInAddress: any, tokenOutAddress: any, amountIn: any) {
-        console.log("Quote: " + nameQuote);
-        let {coinPath, feePath, versionProtocol} = await uniswapSdkTask.getBestQuoteSwapOneClick(tokenInAddress, tokenOutAddress, amountIn);
-        console.log("Version protocol: ", versionProtocol);
-        for (let i = 0 ; i < coinPath.length; i++ ) {
-                let tokenSymbol = await erc20Task.getSymbol(coinPath[i]);
-                console.log("Token ", i ," is: ", tokenSymbol, " with address: ", coinPath[i]);
-                if (i < feePath.length) console.log("Fee is: ", feePath[i]);
-        }
+    console.log("Quote: " + nameQuote);
+    let {coinPath, feePath, versionProtocol, output} = await uniswapSdkTask.getBestQuoteSwapOneClick(tokenInAddress, tokenOutAddress, amountIn);
+    console.log("Version protocol: ", versionProtocol);
+    for (let i = 0 ; i < coinPath.length; i++ ) {
+        let tokenSymbol = await erc20Task.getSymbol(coinPath[i]);
+        console.log("Token ", i ," is: ", tokenSymbol, " with address: ", coinPath[i]);
+        if (i < feePath.length) console.log("Fee is: ", feePath[i]);
+    }
+    console.log("Output estimate is: " + output)
 }
 
 main()
@@ -32,7 +33,7 @@ main()
         let amountInNumber = 0.01;
         let amountInNumber2 = 200;
 
-        await getQuote("crv_ibEur", tokenInfo.crv.address, tokenInfo.ibEur.address, amountInNumber2);
+        await getQuote("wbtc_tusd", "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6", "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", amountInNumber);
         //await getQuote("wbtc_euroC", tokenInfo.wbtc.address, tokenInfo.euroC.address, amountInNumber);
         //await getQuote("wbtc_tetherEur", tokenInfo.wbtc.address, tokenInfo.tetherEur.address, amountInNumber);
         //await getQuote("wbtc_agEur", tokenInfo.wbtc.address, tokenInfo.agEur.address, amountInNumber);

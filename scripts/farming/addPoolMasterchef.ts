@@ -24,11 +24,13 @@ async function main(): Promise<void> {
 }
 
 async function setupContract(): Promise<void> {
+    let sCompTokenAddress = "0x9A86494Ba45eE1f9EEed9cFC0894f6C5d13a1F0b"
+    let sCompFarming = "0xFf658343244c0475b9305859F1b7CDAB9784762f"
     let factoryMasterchef = await ethers.getContractFactory("MasterChefScomp");
-    masterchefScomp = await factoryMasterchef.attach(masterchefScompAddress);
+    masterchefScomp = await factoryMasterchef.attach(sCompFarming);
 
     let factorySCompToken = await ethers.getContractFactory("StableCompToken")
-    sCompTokenContract = await factorySCompToken.attach(sCompAddress)
+    sCompTokenContract = await factorySCompToken.attach(sCompTokenAddress)
 }
 
 async function fundContract(): Promise<void> {
@@ -49,7 +51,7 @@ async function addPool(lpToken: any): Promise<void> {
 main()
     .then(async () => {
         await setupContract();
-        await fundContract();
+        //await fundContract();
 
         await addPool("0x1df2933B9c8815CC8990AFb4A079A717bC369185")
         console.log("Pool usdp-3crv added")

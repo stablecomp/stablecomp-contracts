@@ -1,1 +1,1 @@
-{"veScompContract":{"address":"0xde0f01EA4d2eFd7E8Cd4f2FC2eb0F788ad49f552","args":{"sCompTokenAddress":"0xb62a89097207478d2a145bbc7b59Ba8814F1A146","nameVe":"Voting Escrow Scomp","symbolVe":"veScomp","versionVe":"veScomp1.0.0"}}}
+{"veScompContract":{"address":"0xC0340c0831Aa40A0791cF8C3Ab4287EB0a9705d8","args":{"sCompTokenAddress":"0x9A86494Ba45eE1f9EEed9cFC0894f6C5d13a1F0b","nameVe":"Voting Escrow Scomp","symbolVe":"veScomp","versionVe":"veScomp1.0.0"}}}

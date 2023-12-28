@@ -29,7 +29,8 @@
     "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571",
     "wethCrv": "0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511",
     "wethFrax": "0x1631d0e588d475cee4be0f51b7410daaaabd7034",
-    "alUsdFraxbp": "0xB30dA2376F63De30b42dC055C93fa474F31330A5"
+    "alUsdFraxbp": "0xB30dA2376F63De30b42dC055C93fa474F31330A5",
+    "usdtCrvUsd": "0x390f3595bCa2Df7d23783dFd126427CCeb997BF4"
 
   },
   "lp": {
@@ -59,7 +60,8 @@
     "agEurEurtEurs": "0xb9446c4ef5ebe66268da6700d26f96273de3d571",
     "wethCrv": "",
     "wethFrax": "",
-    "alUsdFraxbp": "0xB30dA2376F63De30b42dC055C93fa474F31330A5"
+    "alUsdFraxbp": "0xB30dA2376F63De30b42dC055C93fa474F31330A5",
+    "usdtCrvUsd": "0x390f3595bCa2Df7d23783dFd126427CCeb997BF4"
 
   },
   "baseRewardPool": {
@@ -89,7 +91,8 @@
     "agEurEurtEurs": "0x4a9b7eDD67f58654a2c33B587f98c5709AC7d482",
     "wethCrv": "",
     "wethFrax": "",
-    "alUsdFraxbp": "0x26598e3E511ADFadefD70ab2C3475Ff741741104"
+    "alUsdFraxbp": "0x26598e3E511ADFadefD70ab2C3475Ff741741104",
+    "usdtCrvUsd": "0xD1DdB0a0815fD28932fBb194C84003683AF8a824"
   },
   "pid": {
     "cDaicUsdc": 0,
@@ -119,7 +122,8 @@
     "agEurEurtEurs": 60,
     "wethCrv": 0,
     "wethFrax": 0,
-    "alUsdFraxbp": 106
+    "alUsdFraxbp": 106,
+    "usdtCrvUsd": 179
 
   },
   "nCoins": {
@@ -149,8 +153,8 @@
     "agEurEurtEurs": 3,
     "wethCrv": 2,
     "wethFrax": 2,
-    "alUsdFraxbp": 2
-
+    "alUsdFraxbp": 2,
+    "usdtCrvUsd": 2
   },
   "coins": {
     "threeEur": ["0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8", "0xC581b735A1688071A1746c968e0798D642EDE491", "0xdB25f211AB05b1c97D595516F45794528a807ad8"],
@@ -179,7 +183,8 @@
     "agEurEurtEurs": ["0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8", "0xC581b735A1688071A1746c968e0798D642EDE491", "0xdB25f211AB05b1c97D595516F45794528a807ad8"],
     "wethCrv": ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "0xD533a949740bb3306d119CC777fa900bA034cd52"],
     "wethFrax": ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "0x853d955aCEf822Db058eb8505911ED77F175b99e"],
-    "alUsdFraxbp": ["0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9", "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC"]
+    "alUsdFraxbp": ["0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9", "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC"],
+    "usdtCrvUsd": ["0xdAC17F958D2ee523a2206206994597C13D831ec7", "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E"]
 
   }
 }
