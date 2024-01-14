@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../interface/IVotingEscrow.sol";
+import "../interface/IMigratorChef.sol";
 
 contract MasterChefScomp is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
@@ -76,9 +77,10 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
     /// @notice Hard limit for maxmium boost factor, it must greater than BOOST_PRECISION
     uint256 public constant MAX_BOOST_PRECISION = 200 * 1e10;
 
-    uint maxMultiplier = 8;
+    uint public maxMultiplier = 8;
 
     IVotingEscrow public veContract;
+    IMigratorChef public migrator;
 
     // The block number when farming starts.
     uint256 public startBlock;
@@ -111,6 +113,19 @@ contract MasterChefScomp is Ownable, ReentrancyGuard {
         endBlock = _startBlock;
 
     }
+
+    // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
+    function migrateNext(
+        uint _pid
+    ) external {
+        require(address(migrator) != address(0), "migrate: no migrator");
+        uint bal = lpToken[_pid].balanceOf(address(this));
+        lpToken[_pid].safeApprove(address(migrator), bal);
+        IERC20 newLpToken = migrator.migrate(lpToken[_pid]);
+        require(bal == newLpToken.balanceOf(address(this)), "migrate: bad");
+        lpToken[_pid] = newLpToken;
+    }
+
 
     /// @notice Returns the number of MCV2 pools.
     function poolLength() public view returns (uint256 pools) {

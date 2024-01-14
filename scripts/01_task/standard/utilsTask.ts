@@ -82,6 +82,10 @@ async function mineBlock(dayToMine: any): Promise<any> {
 
 }
 
+async function setTimestampBlock(timestampToSet: any): Promise<any> {
+    await ethers.provider.send('evm_mine', [timestampToSet]);
+}
+
 export const utilsTask = {
     getPrivateKeyToMnemonic: async function (mnemonic: string): Promise<any>{
         return await getPrivateKeyToMnemonic(mnemonic);
@@ -110,4 +114,7 @@ export const utilsTask = {
     mineBlock: async function (dayToMine: any) {
         return await mineBlock(dayToMine);
     },
+    setTimestampBlock: async function (timestampToSet: any) {
+        return await setTimestampBlock(timestampToSet);
+    }
 };

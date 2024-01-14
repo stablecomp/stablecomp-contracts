@@ -4,6 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {create} from "domain";
 import price from '../../utils/price';
 import {deployScompTask} from "../../01_task/sCompTask";
+import {utilsTask} from "../../01_task/standard/utilsTask";
 
 const { run, ethers, upgrades } = hardhat;
 
@@ -54,6 +55,12 @@ let amountToDeposit3 = ethers.utils.parseEther("1000");
 async function main(): Promise<void> {
     await run('compile');
     [deployer, account1, account2, account3] = await ethers.getSigners();
+
+    console.log("Deploying contracts with the account:", deployer.address);
+    console.log("Account balance:", ethers.utils.formatEther(await deployer.getBalance()));
+    console.log("Account 1 address is: ", account1.address);
+    console.log("Account 2 address is: ", account2.address);
+    console.log("Account 3 address is: ", account3.address);
 }
 
 async function deployContract(): Promise<void> {
@@ -62,7 +69,9 @@ async function deployContract(): Promise<void> {
     veScomp = await deployScompTask.deployVe(sCompToken.address)
     masterchefScomp = await deployScompTask.deployMasterchef(sCompToken.address, veScomp.address)
 
-    console.log(masterchefScomp.address)
+    console.log("Scomp token address: ", sCompToken.address);
+    console.log("Ve scomp address: ", veScomp.address);
+    console.log("Masterchef scomp address: ", masterchefScomp.address);
 
 }
 
@@ -354,11 +363,15 @@ async function readPendingToken(account: SignerWithAddress, pid: any): Promise<v
         await fundAccount(account2, amountToDeposit2, amountToLock2);
         await fundAccount(account3, amountToDeposit3, amountToLock3);
 
-        await fundContract();
-
-        await createLock(account1, amountToLock1, lockTime1);
-        await createLock(account2, amountToLock2, lockTime2);
-        await createLock(account3, amountToLock3, lockTime3);
+        let amountToDeposit1_1 = amountToDeposit1.div(3);
+        let amountToDeposit1_2 = amountToDeposit2.div(3);
+        let amountToDeposit1_3 = amountToDeposit1.sub(amountToDeposit1_1).sub(amountToDeposit1_2);
+        let amountToDeposit2_1 = amountToDeposit2.div(3);
+        let amountToDeposit2_2 = amountToDeposit2.div(3);
+        let amountToDeposit2_3 = amountToDeposit2.sub(amountToDeposit2_1).sub(amountToDeposit2_2);
+        let amountToDeposit3_1 = amountToDeposit3.div(3);
+        let amountToDeposit3_2 = amountToDeposit3.div(3);
+        let amountToDeposit3_3 = amountToDeposit3.sub(amountToDeposit3_1).sub(amountToDeposit3_2);
 
         await checkpoint();
 
@@ -369,7 +382,7 @@ async function readPendingToken(account: SignerWithAddress, pid: any): Promise<v
 
         await readMultiplier([account1, account2, account3], 0);
 
-        await deposit([account1, account2, account3],0,amountToDeposit1.div(2))
+        await deposit([account1, account2, account3],0,amountToDeposit1_1)
         //await deposit([account1],0,amountToDeposit1)
 
         await reachInitialBlock();
@@ -383,8 +396,7 @@ async function readPendingToken(account: SignerWithAddress, pid: any): Promise<v
         let balanceSComp = await sCompToken.balanceOf(account1.address);
         console.log("Balance sComp before: ", ethers.utils.formatEther(balanceSComp))
 
-        await deposit([account1, account2, account3],0,amountToDeposit1.div(2))
-
+        await deposit([account1, account2, account3],0,amountToDeposit1_2)
 
         // check pending token
         let balanceSCompAfter = await sCompToken.balanceOf(account1.address);
@@ -392,7 +404,13 @@ async function readPendingToken(account: SignerWithAddress, pid: any): Promise<v
 
         await readMultiplier([account1, account2, account3], 0);
 
-        await mineBlock(10);
+        console.log("Set timestamp 1 week")
+        let block = await utilsTask.getBlock();
+        await utilsTask.setTimestampBlock(block.timestamp + (blockOneDay * 8 * blockTime));
+
+        await deposit([account2],0,amountToDeposit1_3)
+
+        await readMultiplier([account1, account2, account3], 0);
 
         await readPendingToken(account1, 0);
         await readPendingToken(account2, 0);
