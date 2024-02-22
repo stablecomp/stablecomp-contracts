@@ -141,7 +141,18 @@ main()
         await testStrategyTask.depositVault([account1, account2, account3], vault.address, config);
 
         console.log(" ----- EARN")
+
+        // READ BALANCE WANT BEFORE
+        let balanceWantBefore = await utilsTask.getBalanceERC20(vault.address, config.want);
+
         await vaultTask.earn(vault.address, deployer);
+
+        // READ BALANCE WANT AFTER
+        let balanceWantAfter = await utilsTask.getBalanceERC20(vault.address, config.want);
+
+        console.log("Balance before: ", ethers.utils.formatEther(balanceWantBefore))
+        console.log("Balance after: ", ethers.utils.formatEther(balanceWantAfter))
+        console.log("Diff: ", ethers.utils.formatEther(balanceWantAfter.sub(balanceWantBefore)))
 
         console.log(" ----- STORE BALANCE WANT")
         await checkBalance();

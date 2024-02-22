@@ -1,6 +1,6 @@
 import hardhat from 'hardhat';
 import {CurrencyAmount, Percent, SupportedChainId, Token, TradeType} from "@uniswap/sdk-core";
-import {AlphaRouter, ChainId, SwapType, SwapOptionsSwapRouter02} from "@uniswap/smart-order-router"
+import {AlphaRouter, SwapType, SwapOptionsSwapRouter02, SUPPORTED_CHAINS} from "@uniswap/smart-order-router"
 import { Protocol } from "@uniswap/router-sdk";
 import {JsonRpcProvider} from "@ethersproject/providers/src.ts/json-rpc-provider";
 import JSBI from "jsbi";
@@ -149,7 +149,7 @@ async function getRoutingSwap(tokenIn : Token, tokenOut: Token, amountIn: any): 
         process.env.ETH_MAINNET_URL
     )
     let router: AlphaRouter = new AlphaRouter({
-        chainId: ChainId.MAINNET,
+        chainId: SUPPORTED_CHAINS[0],
         provider: provider,
     })
     let options: SwapOptionsSwapRouter02 = {

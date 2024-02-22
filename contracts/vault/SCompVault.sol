@@ -18,7 +18,7 @@ contract SCompVault is ERC20SCompVault {
 
     IERC20 public token;
 
-    uint256 public min = 9500;
+    uint256 public min = 9999;
     uint256 public constant max = 10000;
 
     address public governance;
