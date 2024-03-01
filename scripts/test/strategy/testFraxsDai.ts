@@ -9,7 +9,7 @@ import {boosterTask} from "../../01_task/convex/convexTask";
 
 const { run, ethers } = hardhat;
 
-let nameConfig = "fraxusdc"
+let nameConfig = "fraxsdai"
 let config: ConfigStrategy;
 
 // json constant
@@ -58,15 +58,24 @@ async function getFeeToDistribute(): Promise<void> {
 async function checkLP(): Promise<void> {
     if (storelLpAccount.length != 0 ) {
         let balance1 = await utilsTask.getBalanceERC20(account1.address, config.want);
+        console.log("Balance before: ", ethers.utils.formatEther(storelLpAccount[0]))
+        console.log("Balance after: ", ethers.utils.formatEther(balance1))
         console.log("Diff 1: ", ethers.utils.formatEther(balance1.sub(storelLpAccount[0])))
         let balance2 = await utilsTask.getBalanceERC20(account2.address, config.want);
+        console.log("Balance before: ", ethers.utils.formatEther(storelLpAccount[1]))
+        console.log("Balance after: ", ethers.utils.formatEther(balance2))
         console.log("Diff 2: ", ethers.utils.formatEther(balance2.sub(storelLpAccount[1])))
         let balance3 = await utilsTask.getBalanceERC20(account3.address, config.want);
+        console.log("Balance before: ", ethers.utils.formatEther(storelLpAccount[2]))
+        console.log("Balance after: ", ethers.utils.formatEther(balance3))
         console.log("Diff 3: ", ethers.utils.formatEther(balance3.sub(storelLpAccount[2])))
     }
-    storelLpAccount[0] = await utilsTask.getBalanceERC20(account1.address, config.want);
-    storelLpAccount[1] = await utilsTask.getBalanceERC20(account2.address, config.want);
-    storelLpAccount[2] = await utilsTask.getBalanceERC20(account3.address, config.want);
+    let balanceLP0 = await utilsTask.getBalanceERC20(account1.address, config.want);
+    storelLpAccount[0] = balanceLP0.gt(config.amountToDepositVault) ? config.amountToDepositVault : balanceLP0;
+    let balanceLP1 = await utilsTask.getBalanceERC20(account2.address, config.want);
+    storelLpAccount[1] = balanceLP1.gt(config.amountToDepositVault) ? config.amountToDepositVault : balanceLP1;
+    let balanceLP2 = await utilsTask.getBalanceERC20(account3.address, config.want);
+    storelLpAccount[2] = balanceLP2.gt(config.amountToDepositVault) ? config.amountToDepositVault : balanceLP2;
 }
 
 async function checkBalance(): Promise<void> {
@@ -88,16 +97,20 @@ async function executeActionOneWeek(index: any): Promise<void> {
     console.log(" -------- MINE BLOCK")
     await utilsTask.mineBlock(dayToMine);
 
+    let block = await utilsTask.getBlock();
+    console.log("Block timestamp ", block.timestamp)
+
     console.log(" -------- EARNMARK REWARD")
     await boosterTask.earnmarkReward(config.pidPool);
 
-    if (index > 2 ) {
+    if (index >= 0) {
 
         console.log(" -------- GET SWAP HARVEST")
         let swapHarvest = await strategyTask.getSwapHarvest(strategyContract.address);
 
         console.log(" -------- HARVEST")
         await strategyTask.harvest(strategyContract.address, swapHarvest);
+        //await strategyTask.tend(strategyContract.address);
 
         console.log(" -------- BUYBACK CONVERTER")
         await strategyTask.buyBackConverter(surplusConverterContract.address);
@@ -131,10 +144,12 @@ main()
         account2 = acc2;
         account3 = acc3;
 
-        console.log(" ----- FUND ACCOUNT")
-        await utilsTask.fundAccountETH(account1.address, ethers.utils.parseEther("0.5"))
-        await utilsTask.fundAccountETH(account2.address, ethers.utils.parseEther("0.5"))
-        await utilsTask.fundAccountETH(account3.address, ethers.utils.parseEther("0.5"))
+        await utilsTask.fundAccountETH(account1.address, ethers.utils.parseEther("1"))
+        await utilsTask.fundAccountETH(account2.address, ethers.utils.parseEther("1"))
+        await utilsTask.fundAccountETH(account3.address, ethers.utils.parseEther("1"))
+
+        console.log(" ----- ADD LIQUIDITY CURVE")
+        await testStrategyTask.addLiquidity([account1, account2, account3], config);
 
         console.log(" ----- STORE BALANCE LP")
         await checkLP();

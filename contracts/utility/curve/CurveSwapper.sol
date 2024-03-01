@@ -67,7 +67,7 @@ contract CurveSwapper is BaseSwapper {
         uint256 inputPosition,
         uint256 numPoolElements,
         uint256 min_mint_amount
-    ) internal {
+    ) internal virtual {
         _safeApproveHelper(inputToken, swap, inputAmount);
         if (numPoolElements == 2) {
             uint256[2] memory convertedAmounts;
@@ -84,6 +84,14 @@ contract CurveSwapper is BaseSwapper {
         } else {
             revert("Bad numPoolElements");
         }
+    }
+
+    function _add_liquidity(
+        address pool,
+        uint256[] memory amounts,
+        uint256 min_mint_amount
+    ) internal {
+        ICurveFi(pool).add_liquidity(amounts, min_mint_amount);
     }
 
     function _add_liquidity(

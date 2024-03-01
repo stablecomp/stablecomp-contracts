@@ -18,12 +18,13 @@ main()
             let poolInfo = await boosterTask.getPoolInfo(i);
             let symbol = await erc20Task.getSymbol(poolInfo.lptoken)
             console.log("PID: ", i, " -- Symbol: ", symbol);
-            if (poolInfo.lptoken.toUpperCase() == ("0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1").toUpperCase()) {
+            if (poolInfo.lptoken.toUpperCase() == ("0x383E6b4437b59fff47B619CBA855CA29342A8559").toUpperCase()) {
                 console.log(" Symbol: ", symbol);
                 console.log("Lp token: ", poolInfo.lptoken);
                 console.log("Token: ", poolInfo.token);
                 console.log("Gauge: ", poolInfo.gauge);
                 console.log("Crv rewards: ", poolInfo.crvRewards);
+                console.log("Stash: ", poolInfo.stash);
             }
         }
         process.exit(0)

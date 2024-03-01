@@ -17,6 +17,7 @@ import "../utility/curve/CurveSwapper.sol";
 
 pragma experimental ABIEncoderV2;
 
+import "hardhat/console.sol";
 
 /*
 Version 1.0:
@@ -362,6 +363,16 @@ UniswapSwapper
     function tend() external whenNotPaused returns (TendData memory) {
         TendData memory tendData;
 
+        // Track harvested coins, before conversion
+        tendData.crvTended = crvToken.balanceOf(address(this));
+        tendData.cvxTended = cvxToken.balanceOf(address(this));
+
+        console.log("tendData.crvTended before: ", tendData.crvTended);
+        console.log("tendData.cvxTended before: ", tendData.cvxTended);
+
+        uint balancePyusd = IERC20(0x6c3ea9036406852006290770BEdFcAbA0e23A0e8).balanceOf(address(this));
+        console.log("balancePyusd before: ", balancePyusd);
+
         // 1. Harvest gains from positions
         _tendGainsFromPositions();
 
@@ -369,7 +380,12 @@ UniswapSwapper
         tendData.crvTended = crvToken.balanceOf(address(this));
         tendData.cvxTended = cvxToken.balanceOf(address(this));
 
-        emit Tend(0);
+        console.log("tendData.crvTended after: ", tendData.crvTended);
+        console.log("tendData.cvxTended after: ", tendData.cvxTended);
+
+        balancePyusd = IERC20(0x6c3ea9036406852006290770BEdFcAbA0e23A0e8).balanceOf(address(this));
+        console.log("balancePyusd after: ", balancePyusd);
+
         emit TendState(
             tendData.crvTended,
             tendData.cvxTended
@@ -381,14 +397,28 @@ UniswapSwapper
         uint256 idleWant = IERC20(want).balanceOf(address(this));
         uint256 totalWantBefore = balanceOf();
 
+        console.log("idleWant: ", idleWant);
+        console.log("totalWantBefore: ", totalWantBefore);
+
+        uint balancePyusd = IERC20(0x6c3ea9036406852006290770BEdFcAbA0e23A0e8).balanceOf(address(this));
+        console.log("balancePyusd: ", balancePyusd);
+
         // 1. Withdraw accrued rewards from staking positions (claim unclaimed positions as well)
         baseRewardsPool.getReward(address(this), true);
+
+
+        balancePyusd = IERC20(0x6c3ea9036406852006290770BEdFcAbA0e23A0e8).balanceOf(address(this));
+
+        console.log("balancePyusd: ", balancePyusd);
+
 
         // 2. Sell reward - fee for underlying
         uint crvToSell = crvToken.balanceOf(address(this));
         if(crvToSell > 0)  {
             uint fee = _takeFeeAutoCompounded(crv, crvToSell);
             crvToSell = crvToSell.sub(fee);
+            console.log("crvToSell", crvToSell / 1e18);
+            console.log("fee", fee / 1e18);
 
             _makeSwap(crv, tokenCompoundAddress, crvToSell,
                 paramsSwap.listTypeSwap[0], paramsSwap.listRouterAddress[0], paramsSwap.listPathData[0]);
@@ -398,6 +428,8 @@ UniswapSwapper
         if(cvxToSell > 0)  {
             uint fee = _takeFeeAutoCompounded(cvx, cvxToSell);
             cvxToSell = cvxToSell.sub(fee);
+            console.log("cvxToSell", cvxToSell / 1e18);
+            console.log("fee", fee / 1e18);
 
             _makeSwap(cvx, tokenCompoundAddress, cvxToSell,
                 paramsSwap.listTypeSwap[1], paramsSwap.listRouterAddress[1], paramsSwap.listPathData[1]);
@@ -408,6 +440,7 @@ UniswapSwapper
         uint256 wantGained;
 
         if (tokenCompoundToDeposit > 0) {
+            console.log("tokenCompoundToDeposit ", tokenCompoundToDeposit / 1e6);
 
             _addLiquidityCurve(tokenCompoundToDeposit);
 
@@ -422,6 +455,9 @@ UniswapSwapper
         }
 
         uint256 totalWantAfter = balanceOf();
+
+        console.log("totalWantAfter ", totalWantAfter);
+
         require(totalWantAfter >= totalWantBefore, "want-decreased");
 
         emit Harvest(wantGained, block.number);

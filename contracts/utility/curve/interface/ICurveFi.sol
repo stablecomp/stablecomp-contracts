@@ -14,6 +14,11 @@ interface ICurveFi {
     ) external view returns (uint256);
 
     function calc_token_amount(
+        uint256[] calldata _amounts,
+        bool _isDeposit
+    ) external view returns (uint256);
+
+    function calc_token_amount(
         uint256[2] calldata _amounts,
         bool _isDeposit
     ) external view returns (uint256);
@@ -55,19 +60,21 @@ interface ICurveFi {
     ) external view returns (uint256);
 
     function add_liquidity(
-    // renbtc/tbtc pool
         uint256[2] calldata amounts,
         uint256 min_mint_amount
     ) external;
 
     function add_liquidity(
-    // sBTC pool
+        uint256[] calldata amounts,
+        uint256 min_mint_amount
+    ) external;
+
+    function add_liquidity(
         uint256[3] calldata amounts,
         uint256 min_mint_amount
     ) external;
 
     function add_liquidity(
-    // bUSD pool
         uint256[4] calldata amounts,
         uint256 min_mint_amount
     ) external;

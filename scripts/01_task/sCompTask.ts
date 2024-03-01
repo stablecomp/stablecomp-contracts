@@ -539,13 +539,15 @@ async function deployStrategy(nameStrategy: string, governance: string, strategi
                               feeWithdraw: number, curveSwapAddress: string, nElementPool: number ,
                               versionStrategy: string): Promise<Contract> {
 
-    let factoryStrategy;
-    if (versionStrategy == "1.2") {
-        factoryStrategy = await ethers.getContractFactory("SCompStrategyV1_2")
+    let factoryStrategy: any;
+    if (versionStrategy == "1.0") {
+        factoryStrategy = await ethers.getContractFactory("SCompStrategyV1_0")
     } else if (versionStrategy == "1.1") {
         factoryStrategy = await ethers.getContractFactory("SCompStrategyV1_1")
-    } else {
-        factoryStrategy = await ethers.getContractFactory("SCompStrategyV1_0")
+    } else if (versionStrategy == "1.2") {
+        factoryStrategy = await ethers.getContractFactory("SCompStrategyV1_2")
+    } else if (versionStrategy == "1.3") {
+        factoryStrategy = await ethers.getContractFactory("SCompStrategyV1_3")
     }
 
     let sCompStrategy = await factoryStrategy.deploy(
@@ -797,21 +799,32 @@ async function harvest(strategyAddress: string, swapHarvest: any): Promise<void>
     await tx.wait();
 }
 
+async function tend(strategyAddress: string): Promise<void> {
+    let strategy: Contract = await getStrategy(strategyAddress)
+    const [deployer] = await ethers.getSigners();
+    let tx = await strategy.connect(deployer).tend();
+    await tx.wait();
+}
+
 async function buyBackConverter(surplusConvertAddress: string): Promise<void> {
     let balanceCrvOfSurplus = await utilsTask.getBalanceERC20(surplusConvertAddress, tokenInfo.crv.address);
-    if(+balanceCrvOfSurplus > +ethers.utils.parseEther("1") ) {
+    if(+balanceCrvOfSurplus > +ethers.utils.parseEther("1")) {
         let amountIn : number = +ethers.utils.formatEther(balanceCrvOfSurplus)
         let paramsSwap = await getSwapPath(tokenInfo.crv.address, tokenInfo.weth.address, +amountIn.toFixed(0), 80);
         await surplusConverterTask.buyback(surplusConvertAddress, tokenInfo.crv.address, balanceCrvOfSurplus, paramsSwap.minAmountOut,
             paramsSwap.routerAddress, paramsSwap.pathData, paramsSwap.typeSwap, true);
+    } else {
+        console.log("Not enough crv to buyback")
     }
 
     let balanceCvxOfSurplus = await utilsTask.getBalanceERC20(surplusConvertAddress, tokenInfo.cvx.address);
-    if(+balanceCvxOfSurplus > +ethers.utils.parseEther("1") ) {
+    if(+balanceCvxOfSurplus > +ethers.utils.parseEther("1")) {
         let amountIn : number = +ethers.utils.formatEther(balanceCvxOfSurplus)
         let paramsSwap = await getSwapPath(tokenInfo.cvx.address, tokenInfo.weth.address, +amountIn.toFixed(0), 80);
         await surplusConverterTask.buyback(surplusConvertAddress, tokenInfo.cvx.address, balanceCvxOfSurplus, paramsSwap.minAmountOut,
             paramsSwap.routerAddress, paramsSwap.pathData, paramsSwap.typeSwap, true);
+    } else {
+        console.log("Not enough cvx to buyback")
     }
 }
 async function addRouterWhitelist(strategyAddress: string, routerAddress: string): Promise<void> {
@@ -843,14 +856,6 @@ async function getSwapPath(tokenIn: string, tokenOut: string, amount: number, sl
         paramsSwap.minAmountOut = bestQuoteUniswap.output.mul(slippage).div(100);
 
     } else {
-        console.log("bestQuoteCurve")
-        console.log(bestQuoteCurve)
-
-        console.log("bestQuoteCurve.output")
-        console.log(bestQuoteCurve.output)
-        console.log("pathEncoded")
-        console.log(bestQuoteCurve.pathEncoded)
-
         let routerAddress = routerInfo.curve;
         let typeSwap = 2
         paramsSwap.pathData = bestQuoteCurve.pathEncoded;
@@ -1773,6 +1778,64 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             versionStrategy: "1.1"
         }
     }
+    else if (name == "pyusdusdc" ) {
+        config = {
+            name: "PyUsdUsdc",
+            want: curveInfo.lp.pyusdUsdc,
+            tokenCompound: tokenInfo.pyUsdc.address,
+            tokenCompoundPosition: 0,
+            feed: oracleInfo.pyUsdc_usd.address,
+            timeUpdate: oracleInfo.pyUsdc_usd.timeUpdate,
+            priceAdmin: ethers.utils.parseUnits("0", 6),
+            curveSwap: curveInfo.pool.pyusdUsdc,
+            tokenDeposit: tokenInfo.usdc.address,
+            account1: "0xD6153F5af5679a75cC85D8974463545181f48772",
+            account2: "0xAFAaDfa18D9d63d09F19a5445e29CEc601054C5e",
+            account3: "0x5B541d54e79052B34188db9A43F7b00ea8E2C4B1",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("0", tokenInfo.pyUsdc.decimals), ethers.utils.parseUnits("50000", tokenInfo.usdc.decimals)],
+            baseRewardPool: curveInfo.baseRewardPool.pyusdUsdc,
+            pidPool: curveInfo.pid.pyusdUsdc,
+            nElementPool: curveInfo.nCoins.pyusdUsdc,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            slippageSwapCrv: 500,
+            slippageSwapCvx: 500,
+            slippageLiquidity: 100,
+            amountToDepositVault: ethers.utils.parseEther("50000"),
+            versionStrategy: "1.3"
+        }
+    }
+    else if (name == "fraxsdai" ) {
+        config = {
+            name: "FraxsDai",
+            want: curveInfo.lp.pyusdUsdc,
+            tokenCompound: tokenInfo.pyUsdc.address,
+            tokenCompoundPosition: 0,
+            feed: oracleInfo.pyUsdc_usd.address,
+            timeUpdate: oracleInfo.pyUsdc_usd.timeUpdate,
+            priceAdmin: ethers.utils.parseUnits("0", 6),
+            curveSwap: curveInfo.pool.pyusdUsdc,
+            tokenDeposit: tokenInfo.usdc.address,
+            account1: "0xD6153F5af5679a75cC85D8974463545181f48772",
+            account2: "0xAFAaDfa18D9d63d09F19a5445e29CEc601054C5e",
+            account3: "0x5B541d54e79052B34188db9A43F7b00ea8E2C4B1",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("0", tokenInfo.pyUsdc.decimals), ethers.utils.parseUnits("50000", tokenInfo.usdc.decimals)],
+            baseRewardPool: curveInfo.baseRewardPool.pyusdUsdc,
+            pidPool: curveInfo.pid.pyusdUsdc,
+            nElementPool: curveInfo.nCoins.pyusdUsdc,
+            feeGovernance: 500,
+            feeStrategist: 500,
+            feeWithdraw: 20,
+            feeDeposit: 0,
+            slippageSwapCrv: 500,
+            slippageSwapCvx: 500,
+            slippageLiquidity: 100,
+            amountToDepositVault: ethers.utils.parseEther("50000"),
+            versionStrategy: "1.3"
+        }
+    }
     else {
         config = {
             account1: "",
@@ -1917,6 +1980,9 @@ export const strategyTask = {
     },
     harvest: async function (strategyAddress: string, swapHarvest: any): Promise<void>{
         return await harvest(strategyAddress, swapHarvest);
+    },
+    tend: async function (strategyAddress: string, ): Promise<void>{
+        return await tend(strategyAddress);
     },
     buyBackConverter: async function (surplusConvertAddress: string): Promise<void>{
         return await buyBackConverter(surplusConvertAddress);

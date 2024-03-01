@@ -98,5 +98,9 @@
   "eusd_usd": {
     "address": "",
     "timeUpdate": 100
+  },
+  "pyUsdc_usd": {
+    "address": "0x8f1dF6D7F2db73eECE86a18b4381F4707b918FB1",
+    "timeUpdate": 86424
   }
 }

@@ -83,6 +83,8 @@ async function depositVault(accounts: SignerWithAddress[], vaultAddress: string,
 
         let balanceLp = await erc20Task.balanceOf(config.want, accounts[i].address);
         let amountIn = balanceLp.gt(config.amountToDepositVault) ? config.amountToDepositVault : balanceLp;
+
+        console.log("Account : ", i , " with address: ", accounts[i].address, " deposit: ", ethers.utils.formatEther(amountIn));
         await vaultTask.deposit(vaultAddress, accounts[i], amountIn)
     }
 }

@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 
-import {HardhatUserConfig} from "hardhat/config";
+import {HardhatUserConfig, subtask} from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-vyper";
@@ -13,7 +13,16 @@ import "@openzeppelin/hardhat-upgrades";
 import "hardhat-tracer";
 import process from "process";
 dotenv.config();
+import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from "hardhat/builtin-tasks/task-names";
 
+// Add a subtask that sets the action for the TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS task
+subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(async (_, __, runSuper) => {
+    // Get the list of source paths that would normally be passed to the Solidity compiler
+    const paths = await runSuper();
+
+    // Apply a filter function to exclude paths that contain the string "ignore"
+    return paths.filter((p: any) => !p.includes("ignore"));
+});
 const config: HardhatUserConfig = {
     vyper: {
         compilers: [
@@ -149,15 +158,10 @@ const config: HardhatUserConfig = {
                     "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e",
                 ] : [],
         },
-        polygon_mainnet: {
-            chainId: 137,
-            url: process.env.POLYGON_MAINNET_URL,
-            accounts:
-                process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-        },
         hardhat: {
             forking: {
                 url: process.env.ETH_MAINNET_URL !== undefined ? process.env.ETH_MAINNET_URL : "",
+                blockNumber: 19041408,
             },
             accounts:[
                 {
@@ -183,12 +187,6 @@ const config: HardhatUserConfig = {
             ],
             //gasPrice: 33000000000,
 
-        },
-        build_bear: {
-            url: process.env.BUILD_BEAR_URL,
-            chainId: process.env.BUILD_BEAR_CHAIN_ID !== undefined ? parseInt(process.env.BUILD_BEAR_CHAIN_ID) : 0,
-            accounts:
-                process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
         },
     },
     gasReporter: {

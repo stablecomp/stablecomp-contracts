@@ -36,6 +36,11 @@ async function addLiquidity(operator: SignerWithAddress,
             "function add_liquidity(uint[4] calldata amounts, uint min_mint_amount)",
         ];
     }
+    if (curveSwapAddress.toLowerCase() == curveInfo.pool.pyusdUsdc.toLowerCase()) {
+        poolCurveABI = [
+            "function add_liquidity(uint[] calldata amounts, uint min_mint_amount)",
+        ];
+    }
 
     let curveSwap = await ethers.getContractAt(poolCurveABI, curveSwapAddress, operator);
     let txApprove = await tokenDeposit.connect(operator).approve(curveSwapAddress, ethers.constants.MaxUint256);
@@ -70,6 +75,12 @@ async function removeLiquidity(operator: SignerWithAddress,
             "function removeLiquidity(uint256 _amount, uint256[4] calldata min_amounts)",
         ];
     }
+    if (curveSwapAddress.toLowerCase() == curveInfo.pool.pyusdUsdc) {
+        poolCurveABI = [
+            "function removeLiquidity(uint256 _amount, uint256[] calldata min_amounts)",
+        ];
+    }
+
 
     let curveSwap = await ethers.getContractAt(poolCurveABI, curveSwapAddress, operator);
     if(lpCurve.address != curveSwapAddress) {
@@ -257,7 +268,7 @@ async function getBestQuoteSwapOneClick(inputToken: string, outputToken: string,
     }
     await curve.init(
         'JsonRpc',
-        { url: process.env.ETH_MAINNET_URL },
+        { url: process.env.ETH_MAINNET_URL, privateKey: process.env.PRIVATE_KEY },
         { gasPrice: 0, maxFeePerGas: 0, maxPriorityFeePerGas: 0, chainId: 1 }
     );
     await curve.factory.fetchPools();
