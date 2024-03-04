@@ -95,10 +95,24 @@ async function checkBalance(): Promise<void> {
 
 async function executeActionOneWeek(index: any): Promise<void> {
     console.log(" -------- MINE BLOCK")
-    await utilsTask.mineBlock(dayToMine);
+    // await utilsTask.mineBlock(dayToMine);
+
+    for (let i = 0; i < 51000; i++) {
+        let blockOneDay: any = 7200;
+        let blockTime: any = 13;
+
+        let blockNumber = await ethers.provider.getBlockNumber();
+        let block = await ethers.provider.getBlock(blockNumber);
+        let newTimestamp = block.timestamp + blockTime
+
+        await ethers.provider.send('evm_mine', [newTimestamp]);
+    }
+
+    // await utilsTask.mineBlock(dayToMine);
 
     let block = await utilsTask.getBlock();
     console.log("Block timestamp ", block.timestamp)
+    console.log("Block number ", block.number)
 
     console.log(" -------- EARNMARK REWARD")
     await boosterTask.earnmarkReward(config.pidPool);
@@ -108,9 +122,17 @@ async function executeActionOneWeek(index: any): Promise<void> {
         console.log(" -------- GET SWAP HARVEST")
         let swapHarvest = await strategyTask.getSwapHarvest(strategyContract.address);
 
+        let balanceBefore = await utilsTask.getBalanceERC20("0x85D81Ee851D36423A5784CD3Cb6f1a1193Cb5978", tokenInfo.pyUsdc.address);
         console.log(" -------- HARVEST")
         await strategyTask.harvest(strategyContract.address, swapHarvest);
         //await strategyTask.tend(strategyContract.address);
+
+        let balanceAfter = await utilsTask.getBalanceERC20("0x85D81Ee851D36423A5784CD3Cb6f1a1193Cb5978", tokenInfo.pyUsdc.address);
+        let diff = ethers.utils.formatUnits(balanceAfter.sub(balanceBefore), 6)
+
+        console.log("Balance before: ", ethers.utils.formatUnits(balanceBefore, 6))
+        console.log("Balance after: ", ethers.utils.formatUnits(balanceAfter, 6))
+        console.log("Diff: ", diff)
 
         console.log(" -------- BUYBACK CONVERTER")
         await strategyTask.buyBackConverter(surplusConverterContract.address);

@@ -10,8 +10,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../controller/interface/IController.sol";
 import "../../accessControl/SCompAccessControl.sol";
 
-import "hardhat/console.sol";
-
 /*
     ===== Badger Base Strategy =====
     Common base class for all Sett strategies
@@ -208,12 +206,6 @@ abstract contract BaseStrategy is Pausable, SCompAccessControl {
 
         // Process withdrawal fee
         uint256 _fee = _processWithdrawalFee(_toWithdraw);
-
-        console.log("withdrawalFee: ", withdrawalFee);
-        console.log("_amount:       ", _amount);
-        console.log("_toWithdraw:   ", _toWithdraw);
-        console.log("_fee:   ", _fee);
-        console.log("_toWithdraw.sub(_fee):   ", _toWithdraw.sub(_fee));
 
         // Transfer remaining to Vault to handle withdrawal
         _transferToVault(_toWithdraw.sub(_fee));

@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../controller/interface/IController.sol";
 import "./ERC20SCompVault.sol";
 
-import "hardhat/console.sol";
 contract SCompVault is ERC20SCompVault {
     using SafeERC20 for IERC20;
     using Address for address;
@@ -166,11 +165,8 @@ contract SCompVault is ERC20SCompVault {
             uint256 _after = token.balanceOf(address(this));
             uint256 _diff = _after.sub(b);
             if (_diff < _withdraw) {
-                console.log("Diff: %s", _diff);
-                console.log("Withdraw: %s", _withdraw);
                 r = b.add(_diff);
             }
-            console.log("R: %s", r);
         }
 
         token.safeTransfer(msg.sender, r);
