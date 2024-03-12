@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "test-fraxsDai": "npx hardhat run scripts/test/strategy/testFraxsDai.ts --network hardhat",
     "test-pyusdUsdc": "npx hardhat run scripts/test/strategy/testPyUsdUsdc.ts --network hardhat",
     "test-usdtCrvUsd": "npx hardhat run scripts/test/strategy/testUsdtCrvUsd.ts --network hardhat",
     "test-busd3crv": "npx hardhat run scripts/test/strategy/testBusd3Crv.ts --network hardhat",

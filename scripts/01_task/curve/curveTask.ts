@@ -36,7 +36,7 @@ async function addLiquidity(operator: SignerWithAddress,
             "function add_liquidity(uint[4] calldata amounts, uint min_mint_amount)",
         ];
     }
-    if (curveSwapAddress.toLowerCase() == curveInfo.pool.pyusdUsdc.toLowerCase()) {
+    if (curveSwapAddress.toLowerCase() == curveInfo.pool.pyusdUsdc.toLowerCase() || curveSwapAddress.toLowerCase() == curveInfo.pool.fraxsDai.toLowerCase()) {
         poolCurveABI = [
             "function add_liquidity(uint[] calldata amounts, uint min_mint_amount)",
         ];

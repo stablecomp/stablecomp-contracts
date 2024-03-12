@@ -102,7 +102,7 @@ const config: HardhatUserConfig = {
             chainId: 1,
             accounts:
                 process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-            gasPrice: 40000000000,
+            gasPrice: 60000000000,
         },
         scaling_node: {
             chainId: 1,

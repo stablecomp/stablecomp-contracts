@@ -32,7 +32,7 @@
     "alUsdFraxbp": "0xB30dA2376F63De30b42dC055C93fa474F31330A5",
     "usdtCrvUsd": "0x390f3595bCa2Df7d23783dFd126427CCeb997BF4",
     "pyusdUsdc": "0x383E6b4437b59fff47B619CBA855CA29342A8559",
-    "fraxsDai": ""
+    "fraxsDai": "0xcE6431D21E3fb1036CE9973a3312368ED96F5CE7"
 
   },
   "lp": {
@@ -65,7 +65,7 @@
     "alUsdFraxbp": "0xB30dA2376F63De30b42dC055C93fa474F31330A5",
     "usdtCrvUsd": "0x390f3595bCa2Df7d23783dFd126427CCeb997BF4",
     "pyusdUsdc": "0x383E6b4437b59fff47B619CBA855CA29342A8559",
-    "fraxsDai": ""
+    "fraxsDai": "0xcE6431D21E3fb1036CE9973a3312368ED96F5CE7"
 
   },
   "baseRewardPool": {
@@ -98,7 +98,7 @@
     "alUsdFraxbp": "0x26598e3E511ADFadefD70ab2C3475Ff741741104",
     "usdtCrvUsd": "0xD1DdB0a0815fD28932fBb194C84003683AF8a824",
     "pyusdUsdc": "0xc583e81bB36A1F620A804D8AF642B63b0ceEb5c0",
-    "fraxsDai": ""
+    "fraxsDai": "0xE627082369689b2B86D948c377A4aE4e739C59eE"
   },
   "pid": {
     "cDaicUsdc": 0,

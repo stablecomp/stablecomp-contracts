@@ -369,7 +369,6 @@ UniswapSwapper
         tendData.crvTended = crvToken.balanceOf(address(this));
         tendData.cvxTended = cvxToken.balanceOf(address(this));
 
-        emit Tend(0);
         emit TendState(
             tendData.crvTended,
             tendData.cvxTended

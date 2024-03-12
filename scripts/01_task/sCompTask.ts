@@ -666,6 +666,8 @@ async function setConfig(strategyAddress: string, config: ConfigStrategy, contro
     // set router in strategy
     await strategy.connect(deployer).setOracleRouter(oracleRouterAddress);
 
+    console.log("Set oracle router in strategy")
+
     // set strategy in controller
     let controllerFactory = await ethers.getContractFactory("SCompController");
     let controller = await controllerFactory.attach(controllerAddress);
@@ -673,8 +675,12 @@ async function setConfig(strategyAddress: string, config: ConfigStrategy, contro
     let tx = await controller.connect(deployer).approveStrategy(config.want, strategy.address);
     await tx.wait();
 
+    console.log("Approve strategy in controller")
+
     tx = await controller.connect(deployer).setStrategy(config.want, strategy.address);
     tx.wait();
+
+    console.log("Set strategy in controller")
 
     // set timelock controller in strategy
     /*tx = await strategy.connect(deployer).setTimeLockController(timeLockControllerAddress);
@@ -684,6 +690,8 @@ async function setConfig(strategyAddress: string, config: ConfigStrategy, contro
     await strategyTask.setSlippageSwapCrv(strategy.address, config.slippageSwapCrv);
     await strategyTask.setSlippageSwapCvx(strategy.address, config.slippageSwapCvx);
     await strategyTask.setSlippageLiquidity(strategy.address, config.slippageLiquidity);
+
+    console.log("Set slippage in strategy")
 
     // add price feed
     let timeUpdateMock = 100000000
@@ -697,10 +705,14 @@ async function setConfig(strategyAddress: string, config: ConfigStrategy, contro
     }
     await oracleRouterTask.addFeed(oracleRouterAddress, config.tokenCompound, config.feed, config.priceAdmin, timeUpdateMock, true)
 
+    console.log("Add price feed in oracle router")
+
     // add router whitelist
     await strategyTask.addRouterWhitelist(strategyAddress, routerInfo.uniswapV2);
     await strategyTask.addRouterWhitelist(strategyAddress, routerInfo.uniswapV3);
     await strategyTask.addRouterWhitelist(strategyAddress, routerInfo.curve);
+
+    console.log("Add router whitelist in strategy")
 }
 async function setSlippageSwapCrv(strategyAddress: string, newSlippage: string): Promise<void> {
     let strategy: Contract = await getStrategy(strategyAddress)
@@ -1777,8 +1789,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             amountToDepositVault: ethers.utils.parseEther("5000"),
             versionStrategy: "1.1"
         }
-    }
-    else if (name == "pyusdusdc" ) {
+    } else if (name == "pyusdusdc" ) {
         config = {
             name: "PyUsdUsdc",
             want: curveInfo.lp.pyusdUsdc,
@@ -1800,31 +1811,30 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             feeStrategist: 500,
             feeWithdraw: 20,
             feeDeposit: 0,
-            slippageSwapCrv: 500,
-            slippageSwapCvx: 500,
+            slippageSwapCrv: 1000,
+            slippageSwapCvx: 1000,
             slippageLiquidity: 100,
             amountToDepositVault: ethers.utils.parseEther("50000"),
             versionStrategy: "1.3"
         }
-    }
-    else if (name == "fraxsdai" ) {
+    } else if (name == "fraxsdai" ) {
         config = {
             name: "FraxsDai",
-            want: curveInfo.lp.pyusdUsdc,
-            tokenCompound: tokenInfo.pyUsdc.address,
+            want: curveInfo.lp.fraxsDai,
+            tokenCompound: tokenInfo.frax.address,
             tokenCompoundPosition: 0,
-            feed: oracleInfo.pyUsdc_usd.address,
-            timeUpdate: oracleInfo.pyUsdc_usd.timeUpdate,
-            priceAdmin: ethers.utils.parseUnits("0", 6),
-            curveSwap: curveInfo.pool.pyusdUsdc,
-            tokenDeposit: tokenInfo.usdc.address,
-            account1: "0xD6153F5af5679a75cC85D8974463545181f48772",
-            account2: "0xAFAaDfa18D9d63d09F19a5445e29CEc601054C5e",
-            account3: "0x5B541d54e79052B34188db9A43F7b00ea8E2C4B1",
-            pathAddLiquidityCurve: [ethers.utils.parseUnits("0", tokenInfo.pyUsdc.decimals), ethers.utils.parseUnits("50000", tokenInfo.usdc.decimals)],
-            baseRewardPool: curveInfo.baseRewardPool.pyusdUsdc,
-            pidPool: curveInfo.pid.pyusdUsdc,
-            nElementPool: curveInfo.nCoins.pyusdUsdc,
+            feed: oracleInfo.frax_usd.address,
+            timeUpdate: oracleInfo.frax_usd.timeUpdate,
+            priceAdmin: ethers.utils.parseUnits("0", tokenInfo.frax.decimals),
+            curveSwap: curveInfo.pool.fraxsDai,
+            tokenDeposit: tokenInfo.frax.address,
+            account1: "0x4C569Fcdd8b9312B8010Ab2c6D865c63C4De5609",
+            account2: "0x3eC92C9d09403a76bda445FFDFaf6de59717219f",
+            account3: "0xDBC13E67F678Cc00591920ceCe4dCa6322a79AC7",
+            pathAddLiquidityCurve: [ethers.utils.parseUnits("50000", tokenInfo.frax.decimals), ethers.utils.parseUnits("0", tokenInfo.dai.decimals)],
+            baseRewardPool: curveInfo.baseRewardPool.fraxsDai,
+            pidPool: curveInfo.pid.fraxsDai,
+            nElementPool: curveInfo.nCoins.fraxsDai,
             feeGovernance: 500,
             feeStrategist: 500,
             feeWithdraw: 20,
@@ -1835,8 +1845,7 @@ async function getConfig(name: string): Promise<ConfigStrategy> {
             amountToDepositVault: ethers.utils.parseEther("50000"),
             versionStrategy: "1.3"
         }
-    }
-    else {
+    } else {
         config = {
             account1: "",
             account2: "",
